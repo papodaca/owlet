@@ -128,6 +128,8 @@ Still open (see `docs/plans/`):
 | --- | --- |
 | 8 | Expand `shortcuts-dialog.ui` to match Preferences (+ Copy / Clear) — dialog is still Quit/Show Shortcuts only |
 | 9 | Finish gettext/`po/` (`kaki.pot` not committed yet; `LINGUAS` empty) |
+| 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
+| 11 | Sound feedback on Record/Dictate start/stop + Preferences disable — see `docs/plans/phase-11-sound-feedback.md` |
 
 ## Layout
 

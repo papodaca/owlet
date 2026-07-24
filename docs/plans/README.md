@@ -27,6 +27,8 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 7 | [`phase-7-testing-framework.md`](phase-7-testing-framework.md) | pytest + meson integration suite (automate `docs/testing.md`) |
 | 8 | [`phase-8-shortcuts-dialog-sync.md`](phase-8-shortcuts-dialog-sync.md) | Expand Shortcuts dialog to match Preferences (+ Copy / Clear) |
 | 9 | [`phase-9-i18n.md`](phase-9-i18n.md) | Finish gettext/`po/` pipeline, string audit, commit `kaki.pot` |
+| 10 | [`phase-10-close-to-tray.md`](phase-10-close-to-tray.md) | Close-to-tray via GIO SNI; red record light while mic is open |
+| 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
 
 ## Architectural decisions
 
@@ -82,6 +84,8 @@ meson setup build -Dgpu_backend=cpu                        # CPU
 8. Phase 7 — testing / integration framework (`meson test` + pytest)
 9. Phase 8 — Shortcuts dialog coverage sync with Preferences
 10. Phase 9 — gettext i18n (`po/kaki.pot`, string audit, contributor docs)
+11. Phase 10 — close to tray (GIO SNI + Preferences switch)
+12. Phase 11 — sound feedback (bundled start/stop tones + Preferences switch)
 
 ## Open follow-ups
 
@@ -96,3 +100,7 @@ meson setup build -Dgpu_backend=cpu                        # CPU
    accelerators plus Copy / Clear (GSettings store already correct).
 5. Phase 9: non-English `.po` locales (Weblate / Damned Lies optional);
    polish placeholder AppStream/desktop marketing copy separately.
+6. Phase 10: close-to-tray via GIO StatusNotifierItem + DBusMenu;
+   GNOME needs an AppIndicator extension for the icon (see plan).
+7. Phase 11: sound feedback for Record/Dictate start/stop; disable via
+   Preferences (see [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md)).
