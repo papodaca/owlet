@@ -12,6 +12,10 @@
  * minimal for Kaki (flat Show / Dictate / Quit menu, theme IconName
  * swap for the recording indicator).
  *
+ * Tray hosts resolve IconName from the installed icon theme in their
+ * own process. Icons ship via meson to $datadir/icons/hicolor/… like
+ * any other GNOME app; no gresource / pixmap fallback is exported.
+ *
  * Objects are exported via Vala [DBus] classes + register_object<T>(),
  * which is the supported GIO registration path in Vala (the C vtable
  * form of register_object is not bound).
@@ -34,8 +38,9 @@ public class Kaki.Tray : GLib.Object {
     private const string WATCHER_IFACE = "org.kde.StatusNotifierWatcher";
     private const string ITEM_PATH = "/StatusNotifierItem";
     private const string MENU_PATH = "/MenuBar";
-    private const string IDLE_ICON = "org.kaki.app";
-    private const string RECORDING_ICON = "org.kaki.app-recording";
+    private const string IDLE_ICON = "org.kaki.app-symbolic";
+    // Must end in -symbolic so hosts/GTK apply the same recoloring as idle.
+    private const string RECORDING_ICON = "org.kaki.app-recording-symbolic";
 
     // Flat menu ids (root is always 0; children start at 1).
     private const int MENU_SHOW = 1;
@@ -92,8 +97,11 @@ public class Kaki.Tray : GLib.Object {
         apply_recording_visuals ();
         if (!visible || item == null)
             return;
+        // NewIcon alone is not enough on every host; NewStatus forces a
+        // full property re-read (IconName / ToolTip).
         item.new_icon ();
         item.new_tool_tip ();
+        item.new_status ("Active");
     }
 
     private void apply_recording_visuals () {

@@ -98,10 +98,14 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
 - **Close-to-tray**: hand-rolled StatusNotifierItem + DBusMenu over
   GIO (`src/services/tray.vala`) — no ayatana dep. Pref
   `close-to-tray` hides (does not destroy) the window on close so
-  global shortcuts keep working. Idle icon `org.kaki.app`; while the
-  mic is recording, swaps to `org.kaki.app-recording` (red record
-  light). GNOME Shell needs an AppIndicator / KStatusNotifierItem
-  extension for the icon to appear.
+  global shortcuts keep working. Idle tray icon
+  `org.kaki.app-symbolic`; while the mic is recording, swaps to
+  `org.kaki.app-recording-symbolic` (record-light badge). Icons
+  install via meson to `$datadir/icons/hicolor/…`; hosts resolve
+  IconName from the installed theme (no gresource / IconPixmap
+  fallback, so icons require an installed build). App / desktop
+  icon remains `org.kaki.app`. GNOME Shell needs an AppIndicator /
+  KStatusNotifierItem extension for the icon to appear.
 - **libsecret schema** is `org.kaki.app` with attribute `type=api-key`
   (plans README saying schema name `kaki` is stale).
 - Models live under `$XDG_DATA_HOME/kaki/models/` (typically
