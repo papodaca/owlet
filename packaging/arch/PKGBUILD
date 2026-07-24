@@ -1,0 +1,162 @@
+pkgbase=kaki
+_build_backend=${KAKI_BACKEND:-all}
+case "${_build_backend}" in
+  all)    pkgname=('kaki' 'kaki-vulkan' 'kaki-hip') ;;
+  cpu)    pkgname=('kaki') ;;
+  vulkan) pkgname=('kaki-vulkan') ;;
+  hip)    pkgname=('kaki-hip') ;;
+  *)
+    error "KAKI_BACKEND must be one of: all, cpu, vulkan, hip"
+    return 1
+    ;;
+esac
+pkgver=0.1.0.r0.0000000
+pkgrel=1
+pkgdesc='Speech-to-text GNOME app using local transcribe.cpp (GTK4/libadwaita)'
+url='https://github.com/papodaca/kaki'
+license=('GPL-3.0-or-later')
+arch=('x86_64')
+install=kaki.install
+source=()
+sha256sums=()
+
+makedepends=(
+  meson
+  ninja
+  vala
+  pkgconf
+  cmake
+  gcc
+  git
+  glib2
+  appstream
+  desktop-file-utils
+  gtk4
+  libadwaita
+  gstreamer
+  gst-plugins-base-libs
+  libsoup3
+  libsecret
+  json-glib
+  libei
+  blas
+  cblas
+  transcribe-cpp
+  python-pytest
+)
+
+if [[ ${_build_backend} == all || ${_build_backend} == vulkan ]]; then
+  makedepends+=(vulkan-headers shaderc)
+fi
+
+if [[ ${_build_backend} == all || ${_build_backend} == hip ]]; then
+  makedepends+=(hip-runtime-amd rocminfo hipblas rocblas)
+fi
+
+_common_depends=(
+  gtk4
+  libadwaita
+  gstreamer
+  gst-plugins-base-libs
+  gst-plugins-good
+  gst-plugin-pipewire
+  glib2
+  libsoup3
+  libsecret
+  json-glib
+  libei
+  blas
+  cblas
+  gcc-libs
+  desktop-file-utils
+)
+
+_common_optdepends=(
+  'ydotool: keystroke injection fallback'
+  'xdotool: X11 keystroke injection fallback'
+  'xdg-desktop-portal: GlobalShortcuts portal'
+  'libnotify: notifications from kaki-signal'
+)
+
+pkgver() {
+  cd "${startdir}/../.."
+  printf '0.1.0.r%s.%s' \
+    "$(git rev-list --count HEAD)" \
+    "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "${startdir}/../.."
+  local common=(
+    --prefix=/usr
+    --buildtype=plain
+    -Dtranscribe_dir=/usr/src/transcribe.cpp
+  )
+  local backends=()
+
+  if [[ ${_build_backend} == all ]]; then
+    backends=(cpu vulkan hip)
+  else
+    backends=("${_build_backend}")
+  fi
+
+  local backend
+  for backend in "${backends[@]}"; do
+    if [[ ${backend} == hip ]]; then
+      meson setup build-hip "${common[@]}" -Dgpu_backend=hip \
+        '-Damd_targets=gfx1100;gfx1030;gfx906;gfx90a;gfx1200;gfx1201'
+    else
+      meson setup "build-${backend}" "${common[@]}" -Dgpu_backend="${backend}"
+    fi
+
+    ninja -C "build-${backend}"
+  done
+}
+
+check() {
+  cd "${startdir}/../.."
+  local check_backend=${_build_backend}
+  if [[ ${check_backend} == all ]]; then
+    check_backend=cpu
+  fi
+
+  meson test -C "build-${check_backend}" --print-errorlogs --suite unit
+  meson test -C "build-${check_backend}" --print-errorlogs \
+    'Validate desktop file' \
+    'Validate appstream file' \
+    'Validate schema file'
+}
+
+package_kaki() {
+  depends=("${_common_depends[@]}")
+  optdepends=("${_common_optdepends[@]}")
+  conflicts=('kaki-vulkan' 'kaki-hip')
+
+  cd "${startdir}/../.."
+  DESTDIR="${pkgdir}" meson install -C build-cpu
+  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+}
+
+package_kaki-vulkan() {
+  pkgdesc+=' (Vulkan backend)'
+  depends=("${_common_depends[@]}" vulkan-icd-loader)
+  optdepends=("${_common_optdepends[@]}")
+  provides=('kaki')
+  conflicts=('kaki')
+
+  cd "${startdir}/../.."
+  DESTDIR="${pkgdir}" meson install -C build-vulkan
+  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+}
+
+package_kaki-hip() {
+  pkgdesc+=' (AMD HIP/ROCm backend)'
+  depends=("${_common_depends[@]}" hip-runtime-amd hipblas rocblas)
+  optdepends=("${_common_optdepends[@]}")
+  provides=('kaki')
+  conflicts=('kaki')
+
+  cd "${startdir}/../.."
+  DESTDIR="${pkgdir}" meson install -C build-hip
+  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+}

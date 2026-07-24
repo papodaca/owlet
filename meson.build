@@ -63,9 +63,17 @@ endif
 
 gpu_backend = get_option('gpu_backend')
 
-transcribe_src      = meson.project_source_root() / 'subprojects' / 'transcribe.cpp'
+transcribe_dir = get_option('transcribe_dir')
+if transcribe_dir == ''
+  transcribe_src = meson.project_source_root() / 'subprojects' / 'transcribe.cpp'
+  transcribe_inc = include_directories('subprojects' / 'transcribe.cpp' / 'include')
+  transcribe_include_args = []
+else
+  transcribe_src = transcribe_dir
+  transcribe_inc = []
+  transcribe_include_args = ['-I' + (transcribe_src / 'include')]
+endif
 transcribe_builddir = meson.current_build_dir() / 'subprojects' / 'transcribe.cpp'
-transcribe_inc      = include_directories('subprojects' / 'transcribe.cpp' / 'include')
 
 # CMake args common to all backends. We only build the `transcribe` target
 # (libtranscribe.a + the ggml archives the selected backend pulls in); the
@@ -147,10 +155,11 @@ if gpu_backend == 'hip'
     endif
     message('Auto-detected AMD target: @0@'.format(amd_targets))
   endif
+  cmake_amd_targets = '\'' + amd_targets + '\''
   cmake_args += [
     '-DGGML_HIP=ON',
-    '-DAMDGPU_TARGETS=' + amd_targets,
-    '-DCMAKE_HIP_ARCHITECTURES=' + amd_targets,
+    '-DAMDGPU_TARGETS=' + cmake_amd_targets,
+    '-DCMAKE_HIP_ARCHITECTURES=' + cmake_amd_targets,
   ]
   # CMake's enable_language(HIP) needs to find hipcc and clang on PATH
   # (CMAKE_HIP_COMPILER rejects the hipcc wrapper — it wants clang
@@ -217,7 +226,7 @@ libggml_cpu_a    = transcribe_builddir / 'ggml' / 'src' / 'libggml-cpu.a'
 transcribe_dep = declare_dependency(
   sources: transcribe_build,
   include_directories: transcribe_inc,
-  compile_args: transcribe_compile_defs,
+  compile_args: transcribe_compile_defs + transcribe_include_args,
   link_args: [libtranscribe_a, libggml_a, libggml_base_a, libggml_cpu_a] + extra_archives,
   dependencies: transcribe_link_libs,
 )

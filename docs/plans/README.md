@@ -29,6 +29,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 9 | [`phase-9-i18n.md`](phase-9-i18n.md) | Finish gettext/`po/` pipeline, string audit, commit `kaki.pot` |
 | 10 | [`phase-10-close-to-tray.md`](phase-10-close-to-tray.md) | Close-to-tray via GIO SNI; red record light while mic is open |
 | 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
+| 12 | [`phase-12-packaging.md`](phase-12-packaging.md) | Arch PKGBUILD: split CPU/Vulkan/HIP packages + transcribe-cpp |
 
 ## Architectural decisions
 

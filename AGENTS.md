@@ -139,6 +139,7 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | 8 | Expand `shortcuts-dialog.ui` to match Preferences (+ Copy / Clear) — dialog is still Quit/Show Shortcuts only |
 | 9 | Finish gettext/`po/` (`kaki.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
+| 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP + transcribe-cpp) — see `docs/plans/phase-12-packaging.md` |
 
 ## Layout
 

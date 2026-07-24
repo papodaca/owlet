@@ -5,7 +5,60 @@ Speech-to-text GNOME app built with GTK4 + libadwaita in Vala. Uses
 local inference (HIP / Vulkan / CPU) and supports OpenAI-compatible
 remote transcription APIs.
 
-## Build & run
+## Build an Arch Linux package
+
+These steps create an installable package on Arch Linux or an
+Arch-based distribution. No programming tools need to be configured by
+hand; `makepkg` installs the required build dependencies.
+
+1. Install Arch's package-building tools:
+
+   ```bash
+   sudo pacman -S --needed base-devel git
+   ```
+
+2. Download Kaki and enter its directory:
+
+   ```bash
+   git clone https://github.com/papodaca/kaki.git
+   cd kaki
+   ```
+
+3. Build and install the `transcribe.cpp` source package required by
+   Kaki:
+
+   ```bash
+   cd packaging/arch-transcribe-cpp
+   makepkg -si
+   ```
+
+4. Enter the Kaki packaging directory, then build and install **one**
+   variant. The other variants and their GPU dependencies will not be
+   built or installed.
+
+   ```bash
+   cd ../arch
+   ```
+
+   | Variant | Recommended for | Build and install command |
+   | --- | --- | --- |
+   | CPU | Any computer; slowest but most compatible | `KAKI_BACKEND=cpu makepkg -si` |
+   | Vulkan | Most AMD, Intel, and NVIDIA GPUs | `KAKI_BACKEND=vulkan makepkg -si` |
+   | HIP | AMD GPUs with ROCm support | `KAKI_BACKEND=hip makepkg -si` |
+
+   The variants conflict with each other because GPU support is compiled
+   into Kaki. Installing another variant with `makepkg -si` will offer to
+   replace the currently installed one.
+
+After installation, launch **Kaki** from the application menu. Speech
+models are downloaded from Kaki's Preferences window and are not bundled
+in the package.
+
+To update later, run `git pull` in the `kaki` directory and repeat steps
+3–4. The generated package version includes the current Git revision, so
+it changes automatically when the project is updated.
+
+## Build & run from source
 
 ```bash
 git submodule update --init --recursive
