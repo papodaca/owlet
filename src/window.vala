@@ -32,6 +32,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     private Kaki.Recorder recorder;
     private Kaki.TranscriptionSource source;
     private Kaki.Keystroke keystroke;
+    private Kaki.SoundFeedback sound_feedback;
 
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
@@ -81,6 +82,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         recorder = new Kaki.Recorder ();
         keystroke = new Kaki.Keystroke ();
         settings = new GLib.Settings ("org.kaki.app");
+        sound_feedback = new Kaki.SoundFeedback (settings);
 
         // Pick the keystroke backend from settings. auto|libei|ydotool|
         // xdotool map to the Keystroke.Backend enum; an unknown value
@@ -297,6 +299,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
 
     private void on_recording_started () {
         recording = true;
+        sound_feedback.play_start ();
 
         // Move the utterance-start mark to the end of the buffer so
         // the new recording's text is appended after any prior
@@ -333,6 +336,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     private void on_stop () {
         if (!recording)
             return;
+        sound_feedback.play_stop ();
         recorder.stop ();
         // recording_stopped drives the finalize / batch path.
     }
@@ -443,6 +447,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         if (!dictating)
             return;
         if (recording) {
+            sound_feedback.play_stop ();
             recorder.stop ();
             // recording_stopped drives the finalize path; dictating is
             // cleared in on_recording_stopped / transcribe_batch_async

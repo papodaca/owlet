@@ -119,15 +119,15 @@ static lib. Submodule must be initialized.
 
 ## Plans status
 
-Phases 0–7 are in tree (Phase 7 = pytest suites under `meson test`).
-Still open (see `docs/plans/`):
+Phases 0–7 and 11 are in tree (Phase 7 = pytest suites under `meson test`;
+Phase 11 = recording start/stop tones + Preferences disable). Still open
+(see `docs/plans/`):
 
 | # | Goal |
 | --- | --- |
 | 8 | Expand `shortcuts-dialog.ui` to match Preferences (+ Copy / Clear) — dialog is still Quit/Show Shortcuts only |
 | 9 | Finish gettext/`po/` (`kaki.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
-| 11 | Sound feedback on Record/Dictate start/stop + Preferences disable — see `docs/plans/phase-11-sound-feedback.md` |
 
 ## Layout
 

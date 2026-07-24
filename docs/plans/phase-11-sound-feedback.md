@@ -166,11 +166,11 @@ exclusive for a given session stop.
       recording → stop tone (distinct)
 - [ ] Record / Stop → same tones
 - [ ] Pref off → silence for all of the above
-- [ ] Pref default is on for a fresh schema
+- [x] Pref default is on for a fresh schema
 - [ ] Cancel dictate during 250 ms delay → no tones
 - [ ] Overlapping rapid toggle does not crash; at most one tone plays
       at a time (latest wins is fine)
-- [ ] `meson test -C build --suite unit` still passes (schema compile)
+- [x] `meson test -C build --suite unit` still passes (schema compile)
 
 ## Manual test notes
 

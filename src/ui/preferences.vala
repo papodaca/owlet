@@ -31,6 +31,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     [GtkChild] unowned Adw.SpinRow cpu_threads_row;
     [GtkChild] unowned Adw.SwitchRow flash_attention_row;
     [GtkChild] unowned Adw.SwitchRow streaming_row;
+    [GtkChild] unowned Adw.SwitchRow sound_feedback_row;
 
     // ----- Models page -----
     [GtkChild] unowned Adw.PreferencesGroup installed_group;
@@ -170,6 +171,8 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         settings.bind ("flash-attention", flash_attention_row, "active",
                        GLib.SettingsBindFlags.DEFAULT);
         settings.bind ("use-streaming",   streaming_row,     "active",
+                       GLib.SettingsBindFlags.DEFAULT);
+        settings.bind ("sound-feedback",  sound_feedback_row, "active",
                        GLib.SettingsBindFlags.DEFAULT);
     }
 

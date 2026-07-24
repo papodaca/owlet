@@ -115,6 +115,18 @@
             </child>
           </object>
         </child>
+
+        <child>
+          <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Feedback</property>
+            <child>
+              <object class="AdwSwitchRow" id="sound_feedback_row">
+                <property name="title" translatable="yes">Sound feedback</property>
+                <property name="subtitle" translatable="yes">Play a tone when recording starts and stops</property>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
     </child>
 

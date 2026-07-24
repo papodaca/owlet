@@ -28,6 +28,7 @@ kaki_sources = [
   'services/model-downloader.vala',
   'services/secret-store.vala',
   'services/global-shortcuts.vala',
+  'services/sound-feedback.vala',
   'ui/preferences.vala',
   # Phase 5: portable SIGRTMIN (glibc exposes it as a function-based
   # macro, musl as a constant; posix.vapi has no binding).

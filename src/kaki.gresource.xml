@@ -10,6 +10,9 @@
          shortcuts-dialog.ui. -->
     <file preprocess="xml-stripblanks" alias="preferences.ui">ui/preferences.ui</file>
     <file alias="test-sample.wav">ui/test-sample.wav</file>
+    <!-- Phase 11: short start/stop tones for recording feedback. -->
+    <file alias="sounds/start.ogg">sounds/start.ogg</file>
+    <file alias="sounds/stop.ogg">sounds/stop.ogg</file>
     <!-- Phase 5: the fallback helper script is also installed to bindir
          by data/meson.build, but for uninstalled/flatpak builds the
          Preferences "Install helper script" button writes this copy to

@@ -36,6 +36,11 @@
 			<summary>Append a newline after each dictation session</summary>
 			<description>When true, a newline is typed after the final transcript of each dictation session. Useful when dictating into a chat composer that sends on Enter.</description>
 		</key>
+		<key name="sound-feedback" type="b">
+			<default>true</default>
+			<summary>Play sounds when recording starts and stops</summary>
+			<description>When true, short tones play after the microphone starts and when the user stops recording or dictation.</description>
+		</key>
 		<key name="keystroke-backend" type="s">
 			<default>"auto"</default>
 			<summary>Keystroke injection backend: auto|libei|ydotool|xdotool</summary>
