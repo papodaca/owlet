@@ -95,6 +95,13 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
 - **Global shortcuts**: xdg-desktop-portal `GlobalShortcuts`, with
   `data/kaki-signal.sh` (installed as `kaki-signal`) as the
   portal-less fallback.
+- **Close-to-tray**: hand-rolled StatusNotifierItem + DBusMenu over
+  GIO (`src/services/tray.vala`) — no ayatana dep. Pref
+  `close-to-tray` hides (does not destroy) the window on close so
+  global shortcuts keep working. Idle icon `org.kaki.app`; while the
+  mic is recording, swaps to `org.kaki.app-recording` (red record
+  light). GNOME Shell needs an AppIndicator / KStatusNotifierItem
+  extension for the icon to appear.
 - **libsecret schema** is `org.kaki.app` with attribute `type=api-key`
   (plans README saying schema name `kaki` is stale).
 - Models live under `$XDG_DATA_HOME/kaki/models/` (typically
@@ -134,7 +141,7 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | Path | Role |
 | --- | --- |
 | `src/*.vala`, `src/ui/` | App + preferences UI |
-| `src/services/` | Recorder, local/remote transcription, keystroke, secrets, shortcuts, downloads |
+| `src/services/` | Recorder, local/remote transcription, keystroke, secrets, shortcuts, downloads, tray (SNI) |
 | `src/vapi/` | Hand-written bindings + shims |
 | `data/` | Desktop/AppStream/GSettings, `kaki-signal` helper |
 | `docs/plans/` | Phase plans — **may lag the code**; trust `meson.build` / `src/` |

@@ -41,6 +41,11 @@
 			<summary>Play sounds when recording starts and stops</summary>
 			<description>When true, short tones play after the microphone starts and when the user stops recording or dictation.</description>
 		</key>
+		<key name="close-to-tray" type="b">
+			<default>false</default>
+			<summary>Hide to system tray on window close</summary>
+			<description>When true, closing the main window hides Kaki to a StatusNotifierItem tray icon instead of quitting. Use Quit (Ctrl+Q) or the tray Quit item to exit. On GNOME Shell, an AppIndicator / KStatusNotifierItem extension is required for the icon to appear.</description>
+		</key>
 		<key name="keystroke-backend" type="s">
 			<default>"auto"</default>
 			<summary>Keystroke injection backend: auto|libei|ydotool|xdotool</summary>

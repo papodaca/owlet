@@ -125,6 +125,13 @@
                 <property name="subtitle" translatable="yes">Play a tone when recording starts and stops</property>
               </object>
             </child>
+            <property name="title" translatable="yes">Window</property>
+            <child>
+              <object class="AdwSwitchRow" id="close_to_tray_row">
+                <property name="title" translatable="yes">Close to tray</property>
+                <property name="subtitle" translatable="yes">Hide to the system tray instead of quitting. On GNOME, enable an AppIndicator extension.</property>
+              </object>
+            </child>
           </object>
         </child>
       </object>

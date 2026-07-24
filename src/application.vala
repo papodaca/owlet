@@ -21,6 +21,7 @@
 public class Kaki.Application : Adw.Application {
     private GLib.Settings? _settings = null;
     private Kaki.GlobalShortcuts? _shortcuts = null;
+    private Kaki.Tray? _tray = null;
     // Path to the pidfile written for the kaki-signal fallback helper.
     // Null when no pidfile was written (XDG_RUNTIME_DIR unwritable, or
     // the process is a transient forwarding instance). Cleared in
@@ -54,6 +55,8 @@ public class Kaki.Application : Adw.Application {
         settings.changed.connect ((changed_key) => {
             if (changed_key.has_prefix ("shortcut-"))
                 apply_shortcuts ();
+            else if (changed_key == "close-to-tray")
+                on_close_to_tray_changed ();
         });
     }
 
@@ -141,9 +144,18 @@ public class Kaki.Application : Adw.Application {
         });
 
         write_pidfile ();
+
+        // Tray is constructed once; shown only when close-to-tray hides
+        // the window. Recording state is cached even while hidden.
+        _tray = new Kaki.Tray ();
+        _tray.show_requested.connect (on_tray_show);
+        _tray.dictate_requested.connect (on_tray_dictate);
+        _tray.quit_requested.connect (() => { this.quit (); });
     }
 
     public override void shutdown () {
+        if (_tray != null)
+            _tray.hide ();
         remove_pidfile ();
         base.shutdown ();
     }
@@ -188,6 +200,48 @@ public class Kaki.Application : Adw.Application {
         (this.active_window as Kaki.Window)?.insert ();
     }
 
+    /* ----------------------------------------------------------------- */
+    /* Close-to-tray                                                      */
+    /* ----------------------------------------------------------------- */
+
+    // Called from Window.close_request after hide(). Exports the SNI
+    // tray icon (soft-fails if no StatusNotifierWatcher is present).
+    public void request_hide_to_tray () {
+        if (_tray != null)
+            _tray.show ();
+    }
+
+    // Window notifies whenever the mic recording flag flips. Safe to
+    // call while the tray is not visible — state is applied on show().
+    public void set_tray_recording (bool active) {
+        if (_tray != null)
+            _tray.set_recording (active);
+    }
+
+    private void on_tray_show () {
+        var win = this.active_window;
+        if (win != null)
+            win.present ();
+        if (_tray != null)
+            _tray.hide ();
+    }
+
+    private void on_tray_dictate () {
+        (this.active_window as Kaki.Window)?.toggle_dictation ();
+    }
+
+    // If the user turns close-to-tray off while the window is hidden,
+    // restore so they are not stuck without a UI restore path.
+    private void on_close_to_tray_changed () {
+        if (settings.get_boolean ("close-to-tray"))
+            return;
+        var win = this.active_window;
+        if (win != null && !win.visible)
+            win.present ();
+        if (_tray != null)
+            _tray.hide ();
+    }
+
     // Write $XDG_RUNTIME_DIR/kaki.pid (or /tmp/kaki.pid) so the
     // kaki-signal fallback helper can find this process. XDG_RUNTIME_DIR
     // is 0700 user-owned, so the pidfile isn't world-readable.
@@ -219,8 +273,17 @@ public class Kaki.Application : Adw.Application {
 
     public override void activate () {
         base.activate ();
-        var win = this.active_window ?? new Kaki.Window (this);
-        win.present ();
+        var win = this.active_window;
+        if (win != null) {
+            // Re-launch / D-Bus activate while tray-hidden: restore and
+            // tear down the tray icon.
+            win.present ();
+            if (_tray != null)
+                _tray.hide ();
+        } else {
+            win = new Kaki.Window (this);
+            win.present ();
+        }
     }
 
     private void on_about_action () {

@@ -163,6 +163,20 @@ public class Kaki.Window : Adw.ApplicationWindow {
         update_action_state ();
     }
 
+    public override bool close_request () {
+        // Pref off → destroy as today (last window quits the app).
+        // Pref on → hide, keep the Window alive for global shortcuts /
+        // dictation, and show the StatusNotifierItem tray.
+        if (settings.get_boolean ("close-to-tray")) {
+            this.hide ();
+            var app = this.application as Kaki.Application;
+            if (app != null)
+                app.request_hide_to_tray ();
+            return true;
+        }
+        return base.close_request ();
+    }
+
     /* ----------------------------------------------------------------- */
     /* Source dispatch + prepare                                          */
     /* ----------------------------------------------------------------- */
@@ -298,7 +312,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     }
 
     private void on_recording_started () {
-        recording = true;
+        set_recording_state (true);
         sound_feedback.play_start ();
 
         // Move the utterance-start mark to the end of the buffer so
@@ -345,7 +359,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         if (use_streaming ()) {
             source.stream_finalize.begin (null, (obj, res) => {
                 source.stream_finalize.end (res);
-                recording = false;
+                set_recording_state (false);
                 if (dictating) {
                     dictating = false;
                     dictate_btn.active = false;
@@ -378,7 +392,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         } catch (GLib.Error e) {
             warning ("Batch transcribe failed: %s", e.message);
         }
-        recording = false;
+        set_recording_state (false);
         if (dictating) {
             dictating = false;
             dictate_btn.active = false;
@@ -573,7 +587,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
 
     private void on_recorder_error (string message) {
         warning ("Recorder error: %s", message);
-        recording = false;
+        set_recording_state (false);
         if (dictating) {
             dictating = false;
             dictate_btn.active = false;
@@ -594,6 +608,15 @@ public class Kaki.Window : Adw.ApplicationWindow {
     /* ----------------------------------------------------------------- */
     /* Helpers                                                            */
     /* ----------------------------------------------------------------- */
+
+    // Flip the UI recording flag and push the same state to the tray
+    // (Application caches it even when the tray is not visible).
+    private void set_recording_state (bool active) {
+        recording = active;
+        var app = this.application as Kaki.Application;
+        if (app != null)
+            app.set_tray_recording (active);
+    }
 
     private bool use_streaming () {
         return settings.get_boolean ("use-streaming")
