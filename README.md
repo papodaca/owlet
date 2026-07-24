@@ -9,12 +9,12 @@ remote transcription APIs.
 
 ```bash
 git submodule update --init --recursive
-meson setup build                 # or -Dgpu_backend=cpu
-ninja -C build
-./build/src/kaki
+meson setup build                 # once (or -Dgpu_backend=cpu)
+ninja -C build run                # build + compile schemas + launch
 ```
 
-Uninstalled runs need a compiled schema dir (see `AGENTS.md`).
+`ninja -C build` alone still builds the binary and compiles schemas into
+`build/data/` for manual runs with `GSETTINGS_SCHEMA_DIR=build/data`.
 
 ## Tests
 

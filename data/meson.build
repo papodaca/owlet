@@ -28,7 +28,28 @@ install_data('org.kaki.app.gschema.xml',
   install_dir: get_option('datadir') / 'glib-2.0' / 'schemas'
 )
 
-compile_schemas = find_program('glib-compile-schemas', required: false, disabler: true)
+# Copy the schema into the builddir and compile it so uninstalled runs
+# (ninja -C build run) can set GSETTINGS_SCHEMA_DIR without a manual
+# /tmp/kaki-schemas dance. Install still uses gnome.post_install.
+gschema_file = configure_file(
+  input: 'org.kaki.app.gschema.xml',
+  output: 'org.kaki.app.gschema.xml',
+  copy: true,
+)
+
+compile_schemas = find_program('glib-compile-schemas', required: true)
+
+gschemas_compiled = custom_target(
+  'gschemas-compiled',
+  input: gschema_file,
+  output: 'gschemas.compiled',
+  command: [compile_schemas, meson.current_build_dir()],
+  build_by_default: true,
+)
+
+# Absolute builddir path consumed by src/meson.build's run_target.
+kaki_schema_dir = meson.current_build_dir()
+
 test('Validate schema file',
      compile_schemas,
      args: ['--strict', '--dry-run', meson.current_source_dir()])

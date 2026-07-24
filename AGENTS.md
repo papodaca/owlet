@@ -26,7 +26,7 @@ cd .worktrees/<branch>
 
 git submodule update --init --recursive   # worktrees do NOT inherit the checkout
 meson setup build                         # build/ is per-worktree; cold start
-ninja -C build
+ninja -C build run                        # build + schemas + launch
 ```
 
 Useful:
@@ -43,9 +43,8 @@ wt switch -x <cmd> …                      # run a tool after switch (needs she
 
 ```bash
 git submodule update --init --recursive   # required once (and in every new worktree)
-meson setup build                         # gpu_backend=auto (HIP→Vulkan→CPU)
-ninja -C build
-./build/src/kaki
+meson setup build                         # once; gpu_backend=auto (HIP→Vulkan→CPU)
+ninja -C build run                        # build + compile schemas + launch
 meson test -C build --print-errorlogs     # metadata + pytest suites
 meson test -C build --suite unit          # no Xvfb / keyring required
 ```
@@ -59,13 +58,12 @@ meson setup build -Dgpu_backend=cpu
 meson setup --reconfigure build …         # change options on existing builddir
 ```
 
-Uninstalled runs need a schema dir (GSettings otherwise fails):
+Uninstalled GSettings: `ninja -C build` compiles schemas into `build/data/`
+(via `data/meson.build`); `ninja -C build run` sets `GSETTINGS_SCHEMA_DIR`
+for you. Manual equivalent:
 
 ```bash
-mkdir -p /tmp/kaki-schemas
-cp data/org.kaki.app.gschema.xml /tmp/kaki-schemas/
-glib-compile-schemas /tmp/kaki-schemas/
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas ./build/src/kaki
+GSETTINGS_SCHEMA_DIR=build/data ./build/src/kaki
 ```
 
 Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.

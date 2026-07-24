@@ -83,13 +83,14 @@ GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
 
 ```bash
 meson setup --reconfigure build
-ninja -C build
+ninja -C build          # also compiles build/data/gschemas.compiled
+# day-to-day launch: ninja -C build run
 ```
 
 ### 3. App launches + preferences dialog opens (no criticals)
 
 ```bash
-export GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas
+export GSETTINGS_SCHEMA_DIR=build/data   # or /tmp/kaki-schemas from §1
 export GDK_BACKEND=x11
 xvfb-run -a -s "-screen 0 1280x1024x24" bash -c '
   build/src/kaki 2>&1 &

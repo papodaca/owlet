@@ -80,3 +80,12 @@ kaki = executable('kaki', kaki_sources,
   include_directories: kaki_inc,
        install: true,
 )
+
+# Day-to-day uninstalled launch: builds the binary + schemas, then runs
+# with GSETTINGS_SCHEMA_DIR pointed at build/data/.
+# Usage: ninja -C build run
+run_target('run',
+  command: [kaki],
+  depends: [gschemas_compiled],
+  env: {'GSETTINGS_SCHEMA_DIR': kaki_schema_dir},
+)
