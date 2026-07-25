@@ -147,3 +147,60 @@ tree's `AGENTS.md` (`uv run` for Python, pinned clang-format script,
 C ABI exception discipline). For normal Kaki work, treat the submodule
 as a pinned dependency (currently `v0.1.2`) and edit the Vala/VAPI
 side instead.
+
+## Cursor Cloud specific instructions
+
+The cloud VM (Ubuntu 24.04) snapshot already has all build/test deps
+(see the "Commands"/"Dependencies" sections). Configure with
+`meson setup build -Dgpu_backend=cpu` — there is no GPU, so `auto`
+resolves to `cpu` anyway. The startup update script only runs
+`git submodule update --init --recursive`.
+
+- **The main `kaki` GUI binary does NOT build here (repo/version
+  mismatch, not an env gap).** `src/application.vala:248` uses
+  `Adw.ShortcutsDialog`, which is libadwaita **1.8** API and needs
+  **GTK ≥ 4.19.4**. Ubuntu 24.04 ships libadwaita 1.5 / GTK 4.14 (no
+  apt/PPA upgrade), and Vala's bundled `libadwaita-1.vapi` (1.5) has no
+  such binding. `ninja -C build` therefore fails at that one file.
+  Everything else compiles: the `transcribe.cpp` static lib and the two
+  test-helper CLIs (`build/tests/helpers/kaki-download-cli`,
+  `kaki-remote-cli`) build cleanly. Making the GUI build would require a
+  full from-source GNOME/glib stack rebuild **and** regenerated Vala
+  bindings — don't attempt it as "env setup"; it's a code/dependency fix
+  (revert to `GtkShortcutsWindow` or bump the platform).
+- **`meson test` can't run the `unit`/`integration`/`ui` suites while
+  `kaki` fails to build**, because those tests `depend: [kaki]` and meson
+  builds all targets before running any test. Until the GUI builds, run
+  the suites directly and mirror the metadata validators by hand:
+  ```bash
+  export KAKI_SOURCE_ROOT="$PWD" \
+         KAKI_DOWNLOAD_CLI="$PWD/build/tests/helpers/kaki-download-cli" \
+         KAKI_REMOTE_CLI="$PWD/build/tests/helpers/kaki-remote-cli" \
+         KAKI_BIN="$PWD/build/src/kaki"
+  pytest -q tests/unit          # 1 skips (needs the kaki binary)
+  pytest -q -m network tests/network
+  # metadata (what data/meson.build tests do):
+  desktop-file-validate build/data/org.kaki.app.desktop
+  glib-compile-schemas --strict --dry-run data
+  appstreamcli validate --no-net build/data/org.kaki.app.metainfo.xml
+  ```
+- **Integration suite (`tests/integration`) needs a session bus + an
+  unlocked keyring**, else the libsecret test hangs on a
+  `SystemPrompter` prompt. Both `--unlock` and `--start` are required:
+  ```bash
+  dbus-run-session -- bash -c '
+    eval $(echo "" | gnome-keyring-daemon --unlock --components=secrets 2>/dev/null)
+    export $(echo "" | gnome-keyring-daemon --start --components=secrets 2>/dev/null)
+    pytest -q tests/integration'
+  ```
+- **`kaki-remote-cli ENDPOINT MODEL [KEY]`** drives the real
+  `RemoteOpenAISource` (libsoup multipart → parse transcript) and is the
+  quickest way to smoke-test transcription code without the GUI: point it
+  at a mock `/v1/audio/transcriptions` server returning
+  `{"text":"…"}` and it prints the transcript.
+- **Toolchain gotchas** (already provisioned in the snapshot, noted so a
+  future build failure isn't mysterious): `/usr/bin/c++` is clang and
+  selects the gcc-14 toolchain, so `libstdc++-14-dev` must be present or
+  the `transcribe.cpp` cmake step fails with `cannot find -lstdc++`;
+  `meson setup` needs `msgfmt` from `gettext` (missing from the upstream
+  CI apt list, which is why CI currently dies at configure).
