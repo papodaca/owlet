@@ -10,7 +10,7 @@ case "${_build_backend}" in
     return 1
     ;;
 esac
-pkgver=0.1.0.r31.0fb33a8
+pkgver=0.1.0
 pkgrel=1
 pkgdesc='Speech-to-text GNOME app using local transcribe.cpp (GTK4/libadwaita)'
 url='https://github.com/papodaca/owlet'
@@ -44,7 +44,7 @@ makedepends=(
 )
 
 if [[ ${_build_backend} == all || ${_build_backend} == vulkan ]]; then
-  makedepends+=(vulkan-headers shaderc)
+  makedepends+=(vulkan-headers shaderc spirv-headers)
 fi
 
 if [[ ${_build_backend} == all || ${_build_backend} == hip ]]; then

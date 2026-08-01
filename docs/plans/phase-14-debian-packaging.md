@@ -2,7 +2,7 @@
 
 > **Status:** complete (CPU + Vulkan + HIP `.deb` smoke green on
 > `ubuntu:26.04` via `packaging/debian/smoke-docker.sh` /
-> `test_deb_build.sh`)
+> `packaging/build.sh debian`)
 
 ## Goal
 

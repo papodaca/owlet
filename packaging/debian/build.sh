@@ -47,7 +47,7 @@ ROCm 6.4.3's /opt/rocm/lib/llvm/bin/lld is linked against libxml2.so.2
   sudo apt update
   sudo apt install libxml2
 
-Or use packaging/debian/smoke-docker.sh / test_deb_build.sh (sets this up).
+Or use packaging/debian/smoke-docker.sh / packaging/build.sh (sets this up).
 EOF
       exit 1
     fi
