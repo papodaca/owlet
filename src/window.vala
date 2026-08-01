@@ -18,8 +18,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-[GtkTemplate (ui = "/org/kaki/app/window.ui")]
-public class Kaki.Window : Adw.ApplicationWindow {
+[GtkTemplate (ui = "/im/apodaca/owlet/window.ui")]
+public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.Stack stack;
     [GtkChild] private unowned Gtk.TextView transcript_view;
     [GtkChild] private unowned Adw.ToastOverlay toast_overlay;
@@ -29,11 +29,11 @@ public class Kaki.Window : Adw.ApplicationWindow {
     private GLib.SimpleAction stop_action;
     private GLib.SimpleAction dictate_action;
 
-    private Kaki.Recorder recorder;
-    private Kaki.TranscriptionSource source;
-    private Kaki.Keystroke keystroke;
-    private Kaki.SoundFeedback sound_feedback;
-    private Kaki.DictationHud hud;
+    private Owlet.Recorder recorder;
+    private Owlet.TranscriptionSource source;
+    private Owlet.Keystroke keystroke;
+    private Owlet.SoundFeedback sound_feedback;
+    private Owlet.DictationHud hud;
 
     // How dictation was launched. FOREGROUND (in-window Dictate) keeps
     // the minimize + 250 ms delay and skips the HUD. BACKGROUND
@@ -61,7 +61,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
 
     // Dictation mode: when true, the streamed transcript is also
     // injected (via `keystroke`) into whatever window had focus before
-    // Kaki minimized. `last_typed` tracks the cumulative text already
+    // Owlet minimized. `last_typed` tracks the cumulative text already
     // sent so only the delta per partial is typed.
     private bool dictating = false;
     private string last_typed = "";
@@ -78,32 +78,32 @@ public class Kaki.Window : Adw.ApplicationWindow {
         Object (application: app);
 
         // Customizable accelerators (Record / Stop / Insert / Dictate)
-        // are read from GSettings and applied by Kaki.Application at
+        // are read from GSettings and applied by Owlet.Application at
         // startup and on every shortcut-* change (see
         // application.vala::apply_shortcuts). Only the non-customizable
         // copy / clear / test-keystroke bindings remain hardcoded here.
-        var kaki_app = (Kaki.Application) app;
-        kaki_app.set_accels_for_action ("win.copy",  {"<Control><Shift>C"});
-        kaki_app.set_accels_for_action ("win.clear", {"<Control>Delete"});
+        var owlet_app = (Owlet.Application) app;
+        owlet_app.set_accels_for_action ("win.copy",  {"<Control><Shift>C"});
+        owlet_app.set_accels_for_action ("win.clear", {"<Control>Delete"});
     }
 
     construct {
-        recorder = new Kaki.Recorder ();
-        keystroke = new Kaki.Keystroke ();
-        settings = new GLib.Settings ("org.kaki.app");
-        sound_feedback = new Kaki.SoundFeedback (settings);
-        hud = new Kaki.DictationHud ();
+        recorder = new Owlet.Recorder ();
+        keystroke = new Owlet.Keystroke ();
+        settings = new GLib.Settings ("im.apodaca.owlet");
+        sound_feedback = new Owlet.SoundFeedback (settings);
+        hud = new Owlet.DictationHud ();
 
         // Pick the keystroke backend from settings. auto|libei|ydotool|
         // xdotool map to the Keystroke.Backend enum; an unknown value
         // falls through to AUTO.
         string backend_name = settings.get_string ("keystroke-backend");
-        Kaki.Keystroke.Backend preferred;
+        Owlet.Keystroke.Backend preferred;
         switch (backend_name) {
-        case "libei":   preferred = Kaki.Keystroke.Backend.LIBEI;   break;
-        case "ydotool": preferred = Kaki.Keystroke.Backend.YDOTOOL; break;
-        case "xdotool": preferred = Kaki.Keystroke.Backend.XDOTOOL; break;
-        default:        preferred = Kaki.Keystroke.Backend.AUTO;     break;
+        case "libei":   preferred = Owlet.Keystroke.Backend.LIBEI;   break;
+        case "ydotool": preferred = Owlet.Keystroke.Backend.YDOTOOL; break;
+        case "xdotool": preferred = Owlet.Keystroke.Backend.XDOTOOL; break;
+        default:        preferred = Owlet.Keystroke.Backend.AUTO;     break;
         }
         keystroke.init (preferred);
 
@@ -137,7 +137,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         // win.insert: copy the transcript to the clipboard AND type it
         // into the previously focused window. Bound to the customizable
         // shortcut-insert GSettings key (default <Control>I) via
-        // Kaki.Application.apply_shortcuts ().
+        // Owlet.Application.apply_shortcuts ().
         var insert_action = new GLib.SimpleAction ("insert", null);
         insert_action.activate.connect (on_insert);
         add_action (insert_action);
@@ -179,7 +179,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         // dictation, and show the StatusNotifierItem tray.
         if (settings.get_boolean ("close-to-tray")) {
             this.hide ();
-            var app = this.application as Kaki.Application;
+            var app = this.application as Owlet.Application;
             if (app != null)
                 app.request_hide_to_tray ();
             return true;
@@ -205,14 +205,14 @@ public class Kaki.Window : Adw.ApplicationWindow {
     private async void prepare_source_async () {
         string src = settings.get_string ("transcription-source");
         if (src == "api") {
-            var remote = new Kaki.RemoteOpenAISource ();
+            var remote = new Owlet.RemoteOpenAISource ();
             remote.endpoint         = settings.get_string ("api-endpoint");
             remote.model            = settings.get_string ("api-model");
             remote.response_format  = settings.get_string ("api-response-format");
             remote.temperature      = settings.get_double ("api-temperature");
             remote.translate        = settings.get_boolean ("api-translate");
             try {
-                var secret = new Kaki.SecretStore ();
+                var secret = new Owlet.SecretStore ();
                 string? key = yield secret.get_api_key ();
                 remote.api_key = key ?? "";
             } catch (GLib.Error e) {
@@ -221,7 +221,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
             }
             source = remote;
         } else {
-            source = new Kaki.LocalSource ();
+            source = new Owlet.LocalSource ();
         }
 
         // Source signals fire on the main thread for both backends
@@ -256,7 +256,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         // keystroke backend is available; toggling it off must remain
         // possible mid-dictation, so it isn't gated on `!recording`.
         dictate_action.set_enabled (
-            on_active && keystroke.backend != Kaki.Keystroke.Backend.NONE);
+            on_active && keystroke.backend != Owlet.Keystroke.Backend.NONE);
     }
 
     /* ----------------------------------------------------------------- */
@@ -264,7 +264,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     /* ----------------------------------------------------------------- */
 
     // Public wrappers used by the global-shortcut handlers in
-    // Kaki.Application (portal Activated signal + Unix USR1/USR2/RTMIN+1
+    // Owlet.Application (portal Activated signal + Unix USR1/USR2/RTMIN+1
     // fallback). They delegate to the private activate handlers, which
     // already guard against re-entrant / no-op calls, so the action-
     // enabled gating (which depends on the in-window stack page being
@@ -286,7 +286,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
             dictate_btn.active = false;
             stop_dictation ();
         } else {
-            if (keystroke.backend == Kaki.Keystroke.Backend.NONE) {
+            if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
                 toast_overlay.add_toast (new Adw.Toast (
                     _("No keystroke backend available")));
                 return;
@@ -428,7 +428,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
             dictate_btn.active = false;
             stop_dictation ();
         } else {
-            if (keystroke.backend == Kaki.Keystroke.Backend.NONE) {
+            if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
                 toast_overlay.add_toast (new Adw.Toast (
                     _("No keystroke backend available")));
                 return;
@@ -457,7 +457,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         last_typed = "";
 
         if (mode == DictationLaunchMode.BACKGROUND) {
-            // Global/tray: Kaki is already backgrounded in the common
+            // Global/tray: Owlet is already backgrounded in the common
             // case — skip minimize, show the OSD, start immediately.
             maybe_show_dictation_hud ();
             try {
@@ -534,11 +534,11 @@ public class Kaki.Window : Adw.ApplicationWindow {
     }
 
     // Test button: types the current transcript buffer into whatever
-    // window had focus before Kaki minimized. Bypasses the
+    // window had focus before Owlet minimized. Bypasses the
     // recording/transcription pipeline so the keystroke backend can
     // be exercised in isolation.
     private void on_test_keystroke () {
-        if (keystroke.backend == Kaki.Keystroke.Backend.NONE) {
+        if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
             toast_overlay.add_toast (new Adw.Toast (
                 _("No keystroke backend available")));
             return;
@@ -561,7 +561,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     // shortcut-insert GSettings key (default <Control>I). Equivalent
     // to on_test_keystroke with the clipboard copy added.
     private void on_insert () {
-        if (keystroke.backend == Kaki.Keystroke.Backend.NONE) {
+        if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
             toast_overlay.add_toast (new Adw.Toast (
                 _("No keystroke backend available")));
             return;
@@ -669,7 +669,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
     // (Application caches it even when the tray is not visible).
     private void set_recording_state (bool active) {
         recording = active;
-        var app = this.application as Kaki.Application;
+        var app = this.application as Owlet.Application;
         if (app != null)
             app.set_tray_recording (active);
     }

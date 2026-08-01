@@ -2,7 +2,7 @@
  *
  * Minimal Vala binding for the libei-1.0 client (sender) C API.
  *
- * Only the subset Kaki's keystroke injection needs is bound: context
+ * Only the subset Owlet's keystroke injection needs is bound: context
  * setup, the seat/device event loop, keyboard key events, and (since
  * libei 1.6) UTF-8 text events. The receiver API and the
  * pointer/touch/scroll/button emitters are omitted.
@@ -17,7 +17,7 @@
  * The sentinel-terminated variadics ei_seat_bind_capabilities /
  * ei_seat_unbind_capabilities are not bindable directly in Vala; they
  * are wrapped by the C helpers in src/vapi/libei-shim.c
- * (kaki_ei_seat_bind_keyboard_text / kaki_ei_seat_unbind_keyboard_text),
+ * (owlet_ei_seat_bind_keyboard_text / owlet_ei_seat_unbind_keyboard_text),
  * which are declared here as plain methods on Seat.
  *
  * SPDX-License-Identifier: MIT
@@ -99,9 +99,9 @@ namespace Ei {
     [CCode (cname = "struct ei_seat", ref_function = "ei_seat_ref", unref_function = "ei_seat_unref")]
     [Compact]
     public class Seat {
-        [CCode (cname = "kaki_ei_seat_bind_keyboard_text")]
+        [CCode (cname = "owlet_ei_seat_bind_keyboard_text")]
         public void bind_keyboard_text ();
-        [CCode (cname = "kaki_ei_seat_unbind_keyboard_text")]
+        [CCode (cname = "owlet_ei_seat_unbind_keyboard_text")]
         public void unbind_keyboard_text ();
         [CCode (cname = "ei_seat_has_capability")]
         public bool has_capability (DeviceCapability cap);

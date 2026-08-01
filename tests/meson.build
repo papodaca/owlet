@@ -11,10 +11,10 @@ pytest = find_program(
 tests_dir = meson.current_source_dir()
 
 test_env = environment()
-test_env.set('KAKI_BIN', kaki.full_path())
-test_env.set('KAKI_SOURCE_ROOT', meson.project_source_root())
-test_env.set('KAKI_DOWNLOAD_CLI', download_cli.full_path())
-test_env.set('KAKI_REMOTE_CLI', remote_cli.full_path())
+test_env.set('OWLET_BIN', owlet.full_path())
+test_env.set('OWLET_SOURCE_ROOT', meson.project_source_root())
+test_env.set('OWLET_DOWNLOAD_CLI', download_cli.full_path())
+test_env.set('OWLET_REMOTE_CLI', remote_cli.full_path())
 # Ensure the venv (if any) wins for python imports when pytest spawns.
 venv_bin = meson.current_source_dir() / '.venv' / 'bin'
 test_env.prepend('PATH', venv_bin)
@@ -26,7 +26,7 @@ test('pytest-unit', pytest,
   env: test_env,
   suite: 'unit',
   workdir: meson.project_source_root(),
-  depends: [kaki],
+  depends: [owlet],
 )
 
 test('pytest-integration', pytest,
@@ -34,7 +34,7 @@ test('pytest-integration', pytest,
   env: test_env,
   suite: 'integration',
   workdir: meson.project_source_root(),
-  depends: [kaki, download_cli, remote_cli],
+  depends: [owlet, download_cli, remote_cli],
   is_parallel: false,
   timeout: 120,
 )
@@ -44,7 +44,7 @@ test('pytest-ui', pytest,
   env: test_env,
   suite: 'ui',
   workdir: meson.project_source_root(),
-  depends: [kaki],
+  depends: [owlet],
   is_parallel: false,
   timeout: 180,
 )

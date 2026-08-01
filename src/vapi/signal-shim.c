@@ -11,6 +11,6 @@
  */
 #include <signal.h>
 
-int kaki_sigrtmin (void) {
+int owlet_sigrtmin (void) {
     return SIGRTMIN;
 }

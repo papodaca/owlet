@@ -16,7 +16,7 @@ if have_libei
   add_project_arguments(['-D', 'HAVE_LIBEI'], language: 'vala')
 endif
 
-kaki_sources = [
+owlet_sources = [
   'main.vala',
   'application.vala',
   'window.vala',
@@ -54,7 +54,7 @@ dictation_hud_shim = static_library('dictation-hud-shim',
   include_directories: include_directories('vapi'),
 )
 
-kaki_deps = [
+owlet_deps = [
   config_dep,
   dependency('gtk4'),
   dependency('libadwaita-1', version: '>= 1.4'),
@@ -81,26 +81,26 @@ kaki_deps = [
 # upstream VAPI). The C shim wraps the sentinel-terminated variadic
 # ei_seat_bind_capabilities call.
 if have_libei
-  kaki_deps += [ libei_dep ]
-  kaki_sources += 'vapi/libei-shim.c'
+  owlet_deps += [ libei_dep ]
+  owlet_sources += 'vapi/libei-shim.c'
 endif
 
-kaki_sources += gnome.compile_resources('kaki-resources',
-  'kaki.gresource.xml',
-  c_name: 'kaki'
+owlet_sources += gnome.compile_resources('owlet-resources',
+  'owlet.gresource.xml',
+  c_name: 'owlet'
 )
 
 # Include src/vapi/ so the C compiled from keystroke.vala finds
 # libei-shim.h (referenced by the VAPI's cheader_filename for the
 # Seat shim methods), and so the signal-shim.h prototype is visible to
 # application.vala's generated C for the SIGRTMIN call.
-kaki_inc = [ config_inc, include_directories('vapi') ]
+owlet_inc = [ config_inc, include_directories('vapi') ]
 
 # Assigned so tests/meson.build can depend on the binary and pass
-# KAKI_BIN via kaki.full_path().
-kaki = executable('kaki', kaki_sources,
-  dependencies: kaki_deps,
-  include_directories: kaki_inc,
+# OWLET_BIN via owlet.full_path().
+owlet = executable('owlet', owlet_sources,
+  dependencies: owlet_deps,
+  include_directories: owlet_inc,
   link_with: dictation_hud_shim,
        install: true,
 )
@@ -109,7 +109,7 @@ kaki = executable('kaki', kaki_sources,
 # with GSETTINGS_SCHEMA_DIR pointed at build/data/.
 # Usage: ninja -C build run
 run_target('run',
-  command: [kaki],
+  command: [owlet],
   depends: [gschemas_compiled],
-  env: {'GSETTINGS_SCHEMA_DIR': kaki_schema_dir},
+  env: {'GSETTINGS_SCHEMA_DIR': owlet_schema_dir},
 )

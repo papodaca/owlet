@@ -24,6 +24,6 @@ int main (string[] args) {
     Intl.bind_textdomain_codeset (Config.GETTEXT_PACKAGE, "UTF-8");
     Intl.textdomain (Config.GETTEXT_PACKAGE);
 
-    var app = new Kaki.Application ();
+    var app = new Owlet.Application ();
     return app.run (args);
 }

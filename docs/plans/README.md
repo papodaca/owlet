@@ -1,4 +1,4 @@
-# Kaki — Implementation Plan
+# Owlet — Implementation Plan
 
 Speech-to-text GNOME app built with GTK4 + libadwaita in Vala, using
 [transcribe.cpp](https://github.com/handy-computer/transcribe.cpp) as the
@@ -26,7 +26,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 6 | [`phase-6-remote-openai-backend.md`](phase-6-remote-openai-backend.md) | OpenAI-compatible remote transcription backend |
 | 7 | [`phase-7-testing-framework.md`](phase-7-testing-framework.md) | pytest + meson integration suite (automate `docs/testing.md`) |
 | 8 | [`phase-8-shortcuts-dialog-sync.md`](phase-8-shortcuts-dialog-sync.md) | Expand Shortcuts dialog to match Preferences (+ Copy / Clear) |
-| 9 | [`phase-9-i18n.md`](phase-9-i18n.md) | Finish gettext/`po/` pipeline, string audit, commit `kaki.pot` |
+| 9 | [`phase-9-i18n.md`](phase-9-i18n.md) | Finish gettext/`po/` pipeline, string audit, commit `owlet.pot` |
 | 10 | [`phase-10-close-to-tray.md`](phase-10-close-to-tray.md) | Close-to-tray via GIO SNI; red record light while mic is open |
 | 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
 | 12 | [`phase-12-packaging.md`](phase-12-packaging.md) | Arch PKGBUILD: split CPU/Vulkan/HIP packages; static submodule link |
@@ -43,9 +43,9 @@ local inference engine and supporting OpenAI-compatible remote APIs.
   → `audioresample` → capsfilter (16 kHz mono F32LE) → `appsink`.
 - **Keystroke injection**: C1 — libei → ydotool → xdotool fallback chain,
   picked at startup, overridable in settings.
-- **API key**: libsecret (`Secret.Schema` named `kaki`, attribute
+- **API key**: libsecret (`Secret.Schema` named `im.apodaca.owlet`, attribute
   `type=api-key`).
-- **Models dir**: `~/.local/share/kaki/models/` (XDG_DATA_HOME), opened via
+- **Models dir**: `~/.local/share/owlet/models/` (XDG_DATA_HOME), opened via
   `Gtk.FileLauncher` → Nautilus.
 
 ## Final dependencies
@@ -70,7 +70,7 @@ External (runtime, optional): `rocminfo` (auto-detect), `ydotool`,
 
 ```
 meson setup build                                       # auto backend
-ninja -C build && ./build/src/kaki
+ninja -C build && ./build/src/owlet
 
 meson setup build -Dgpu_backend=hip -Damd_targets=gfx1100   # ROCm/HIP
 meson setup build -Dgpu_backend=vulkan                     # Vulkan
@@ -88,7 +88,7 @@ meson setup build -Dgpu_backend=cpu                        # CPU
 7. Phase 6 — OpenAI-compatible remote backend
 8. Phase 7 — testing / integration framework (`meson test` + pytest)
 9. Phase 8 — Shortcuts dialog coverage sync with Preferences
-10. Phase 9 — gettext i18n (`po/kaki.pot`, string audit, contributor docs)
+10. Phase 9 — gettext i18n (`po/owlet.pot`, string audit, contributor docs)
 11. Phase 10 — close to tray (GIO SNI + Preferences switch)
 12. Phase 11 — sound feedback (bundled start/stop tones + Preferences switch)
 13. Phase 13 — dictation HUD for global shortcut / tray (no minimize)

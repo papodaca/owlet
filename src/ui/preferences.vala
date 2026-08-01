@@ -11,14 +11,14 @@
  * widgets to GSettings, and wires the model downloader + secret store
  * + test-connection POST.
  *
- * The dialog takes a Kaki.Application so it can ask the app to re-apply
+ * The dialog takes a Owlet.Application so it can ask the app to re-apply
  * accelerators live when the user changes a shortcut (per plan §
  * Shortcuts page: "no restart required").
  */
 
-[GtkTemplate (ui = "/org/kaki/app/preferences.ui")]
-public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
-    public unowned Kaki.Application application { get; construct; }
+[GtkTemplate (ui = "/im/apodaca/owlet/preferences.ui")]
+public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
+    public unowned Owlet.Application application { get; construct; }
     // Adw.Dialog doesn't expose its host widget via the Vala binding,
     // so we carry the parent Gtk.Window in here and pass it to async
     // calls that need a transient parent (e.g. Gtk.FileLauncher).
@@ -41,7 +41,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
 
     // ----- Shortcuts page -----
     [GtkChild] unowned Adw.PreferencesGroup shortcuts_group;
-    // Global-shortcut row (portal + kaki-signal fallback). Buttons are
+    // Global-shortcut row (portal + owlet-signal fallback). Buttons are
     // added in code; the .ui only declares the row + subtitle.
     [GtkChild] unowned Adw.PreferencesGroup global_shortcut_group;
     [GtkChild] unowned Adw.ActionRow global_shortcut_row;
@@ -56,7 +56,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     [GtkChild] unowned Adw.SwitchRow translate_row;
 
     private GLib.Settings settings;
-    private Kaki.SecretStore secret;
+    private Owlet.SecretStore secret;
 
     // Index → code mappings for the static ComboRow StringLists. Keep
     // these in sync with the .ui file's <items> order.
@@ -88,18 +88,18 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     private string models_dir;
 
     // Active download state.
-    private Kaki.ModelDownloader downloader;
+    private Owlet.ModelDownloader downloader;
     private Cancellable? download_cancellable;
     private Adw.ActionRow active_progress_row;
 
-    public PreferencesDialog (Kaki.Application app, Gtk.Window parent) {
+    public PreferencesDialog (Owlet.Application app, Gtk.Window parent) {
         Object (application: app, parent_window: parent);
     }
 
     construct {
-        settings = new GLib.Settings ("org.kaki.app");
-        secret = new Kaki.SecretStore ();
-        downloader = new Kaki.ModelDownloader ();
+        settings = new GLib.Settings ("im.apodaca.owlet");
+        secret = new Owlet.SecretStore ();
+        downloader = new Owlet.ModelDownloader ();
 
         populate_general_page ();
         populate_models_page ();
@@ -188,7 +188,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         // GtkStringObject.string in the .ui file, so swapping models
         // Just Works.
         models_dir = GLib.Path.build_filename (
-            GLib.Environment.get_user_data_dir (), "kaki", "models");
+            GLib.Environment.get_user_data_dir (), "owlet", "models");
 
         installed_list = new Gtk.StringList (null);
         installed_list.append (_("(none)"));
@@ -232,7 +232,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         // alternative — replacing the group wholesale — isn't worth the
         // indirection.
         var models_dir_path = GLib.Path.build_filename (
-            GLib.Environment.get_user_data_dir (), "kaki", "models");
+            GLib.Environment.get_user_data_dir (), "owlet", "models");
         models_dir = models_dir_path;
 
         // Drop existing rows (keep going until get_row(0) returns null).
@@ -309,7 +309,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         // Ensure models dir exists. DirUtils.create_with_parents
         // returns the errno code (0 = success); it does not throw.
         models_dir = GLib.Path.build_filename (
-            GLib.Environment.get_user_data_dir (), "kaki", "models");
+            GLib.Environment.get_user_data_dir (), "owlet", "models");
         int rc = GLib.DirUtils.create_with_parents (models_dir, 0700);
         if (rc != 0) {
             add_toast (new Adw.Toast (
@@ -377,7 +377,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     [GtkCallback]
     private async void on_open_models_dir () {
         var dir_path = GLib.Path.build_filename (
-            GLib.Environment.get_user_data_dir (), "kaki", "models");
+            GLib.Environment.get_user_data_dir (), "owlet", "models");
         // Create the dir if missing so the file manager opens a real
         // path instead of erroring out. DirUtils.create_with_parents
         // returns the errno code (0 = success); it does not throw.
@@ -422,14 +422,14 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         };
 
         foreach (var e in entries) {
-            var row = new Kaki.ShortcutRow (e.label, e.action, e.key, settings);
+            var row = new Owlet.ShortcutRow (e.label, e.action, e.key, settings);
             row.shortcut_changed.connect (() => application.apply_shortcuts ());
             shortcuts_group.add (row);
         }
     }
 
     /* ----------------------------------------------------------------- */
-    /* Global shortcut row (portal + kaki-signal fallback)               */
+    /* Global shortcut row (portal + owlet-signal fallback)               */
     /* ----------------------------------------------------------------- */
 
     private Gtk.Button bind_portal_btn;
@@ -454,7 +454,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
             bind_portal_btn.set_visible (true);
         } else {
             global_shortcut_row.set_subtitle (_(
-                "Portal unavailable — install kaki-signal as a custom shortcut"));
+                "Portal unavailable — install owlet-signal as a custom shortcut"));
             bind_portal_btn.set_visible (false);
         }
     }
@@ -478,15 +478,15 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     }
 
     private async void install_helper_async () {
-        // Load the bundled kaki-signal.sh from the gresource (single
-        // source of truth: data/kaki-signal.sh).
+        // Load the bundled owlet-signal.sh from the gresource (single
+        // source of truth: data/owlet-signal.sh).
         GLib.Bytes script;
         try {
             script = GLib.resources_lookup_data (
-                "/org/kaki/app/kaki-signal.sh", 0);
+                "/im/apodaca/owlet/owlet-signal.sh", 0);
         } catch (GLib.Error e) {
             add_toast (new Adw.Toast (
-                _("Missing bundled kaki-signal.sh: %s").printf (e.message)));
+                _("Missing bundled owlet-signal.sh: %s").printf (e.message)));
             return;
         }
 
@@ -499,7 +499,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
                 _("Cannot create %s: errno %d").printf (local_bin, rc)));
             return;
         }
-        string dest = GLib.Path.build_filename (local_bin, "kaki-signal");
+        string dest = GLib.Path.build_filename (local_bin, "owlet-signal");
         // Pass the byte length explicitly: the gresource blob is NOT
         // null-terminated, so set_contents' default length=-1 would
         // strlen past the end into the next packed resource.
@@ -522,7 +522,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         }
 
         string installed_note;
-        if (command_on_path ("kaki-signal"))
+        if (command_on_path ("owlet-signal"))
             installed_note = _("Installed to %s. Already on PATH.")
                 .printf (GLib.Path.get_basename (dest));
         else
@@ -533,14 +533,14 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
     }
 
     // Pop up a small dialog with the GNOME custom-shortcut steps and a
-    // "Copy command" button that copies `kaki-signal toggle` to the
+    // "Copy command" button that copies `owlet-signal toggle` to the
     // clipboard so the user can paste it straight into GNOME Settings.
     private void show_gnome_shortcut_instructions (string installed_note) {
-        var dlg = new Adw.AlertDialog (_("Bind kaki-signal in GNOME"),
+        var dlg = new Adw.AlertDialog (_("Bind owlet-signal in GNOME"),
             installed_note + "\n\n" +
             _("Open Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts") + "\n" +
-            _("Name: Kaki Toggle Recording") + "\n" +
-            _("Command: kaki-signal toggle") + "\n" +
+            _("Name: Owlet Toggle Recording") + "\n" +
+            _("Command: owlet-signal toggle") + "\n" +
             _("Shortcut: (press your combo)"));
 
         dlg.add_response ("copy", _("Copy command"));
@@ -550,8 +550,8 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         dlg.response.connect ((resp) => {
             if (resp == "copy") {
                 var clipboard = Gdk.Display.get_default ().get_clipboard ();
-                clipboard.set_text ("kaki-signal toggle");
-                add_toast (new Adw.Toast (_("Copied “kaki-signal toggle”")));
+                clipboard.set_text ("owlet-signal toggle");
+                add_toast (new Adw.Toast (_("Copied “owlet-signal toggle”")));
             }
         });
         dlg.present (parent_window);
@@ -641,7 +641,7 @@ public class Kaki.PreferencesDialog : Adw.PreferencesDialog {
         GLib.Bytes sample;
         try {
             sample = GLib.resources_lookup_data (
-                "/org/kaki/app/test-sample.wav", 0);
+                "/im/apodaca/owlet/test-sample.wav", 0);
         } catch (GLib.Error e) {
             add_toast (new Adw.Toast (
                 _("Missing test-sample.wav resource: %s").printf (e.message)));
@@ -733,7 +733,7 @@ private struct ShortcutEntry {
 /* ShortcutRow — a custom widget per plan § Shortcuts page                */
 /* ----------------------------------------------------------------------- */
 
-public class Kaki.ShortcutRow : Adw.ActionRow {
+public class Owlet.ShortcutRow : Adw.ActionRow {
     public string action_name { get; construct set; }
     public string setting_key { get; construct set; }
     // Construct property: must be available when the `construct {}`

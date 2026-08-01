@@ -1,6 +1,6 @@
 # Testing
 
-Kaki's automated suite is registered under `meson test`. It covers schemas,
+Owlet's automated suite is registered under `meson test`. It covers schemas,
 gresources, secrets, HTTP contracts, and a headless preferences smoke —
 without live mic capture, GPU inference, portal UI binding, or real OpenAI /
 HuggingFace downloads (except the optional `network` suite).
@@ -40,7 +40,7 @@ Three tests in `data/meson.build` always run with `meson test`:
 
 | Test | Tool | What it catches |
 | --- | --- | --- |
-| `Validate desktop file` | `desktop-file-validate` | Malformed `org.kaki.app.desktop.in` |
+| `Validate desktop file` | `desktop-file-validate` | Malformed `im.apodaca.owlet.desktop.in` |
 | `Validate schema file`  | `glib-compile-schemas --strict --dry-run` | Bad GSettings keys/types/defaults |
 | `Validate appstream file` | `appstreamcli validate --no-net --explain` | Malformed metainfo XML |
 
@@ -55,11 +55,11 @@ Compile the schema into a throwaway dir (so the system dconf DB
 isn't polluted) and dump every key:
 
 ```bash
-mkdir -p /tmp/kaki-schemas
-cp data/org.kaki.app.gschema.xml /tmp/kaki-schemas/
-glib-compile-schemas /tmp/kaki-schemas/
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
-  gsettings list-recursively org.kaki.app
+mkdir -p /tmp/owlet-schemas
+cp data/im.apodaca.owlet.gschema.xml /tmp/owlet-schemas/
+glib-compile-schemas /tmp/owlet-schemas/
+GSETTINGS_SCHEMA_DIR=/tmp/owlet-schemas \
+  gsettings list-recursively im.apodaca.owlet
 ```
 
 All Phase 4+ keys appear with the right defaults
@@ -69,14 +69,14 @@ All Phase 4+ keys appear with the right defaults
 Round-trip a value to confirm setters, getters, and reset all work:
 
 ```bash
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
-  gsettings set org.kaki.app shortcut-record "<Control><Shift>R"
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
-  gsettings get   org.kaki.app shortcut-record   # → '<Control><Shift>R'
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
-  gsettings reset org.kaki.app shortcut-record
-GSETTINGS_SCHEMA_DIR=/tmp/kaki-schemas \
-  gsettings get   org.kaki.app shortcut-record   # → '<Control>R'
+GSETTINGS_SCHEMA_DIR=/tmp/owlet-schemas \
+  gsettings set im.apodaca.owlet shortcut-record "<Control><Shift>R"
+GSETTINGS_SCHEMA_DIR=/tmp/owlet-schemas \
+  gsettings get   im.apodaca.owlet shortcut-record   # → '<Control><Shift>R'
+GSETTINGS_SCHEMA_DIR=/tmp/owlet-schemas \
+  gsettings reset im.apodaca.owlet shortcut-record
+GSETTINGS_SCHEMA_DIR=/tmp/owlet-schemas \
+  gsettings get   im.apodaca.owlet shortcut-record   # → '<Control>R'
 ```
 
 ### 2. Build clean
@@ -90,10 +90,10 @@ ninja -C build          # also compiles build/data/gschemas.compiled
 ### 3. App launches + preferences dialog opens (no criticals)
 
 ```bash
-export GSETTINGS_SCHEMA_DIR=build/data   # or /tmp/kaki-schemas from §1
+export GSETTINGS_SCHEMA_DIR=build/data   # or /tmp/owlet-schemas from §1
 export GDK_BACKEND=x11
 xvfb-run -a -s "-screen 0 1280x1024x24" bash -c '
-  build/src/kaki 2>&1 &
+  build/src/owlet 2>&1 &
   APP_PID=$!
   sleep 3
   xdotool key ctrl+comma
@@ -109,7 +109,7 @@ Stderr must not contain `Gtk-CRITICAL` / `Adwaita-CRITICAL` / `GLib-CRITICAL`.
 
 ```python
 from PIL import Image
-img = Image.open('/tmp/kaki-shots/02-preferences.png').convert('RGB')
+img = Image.open('/tmp/owlet-shots/02-preferences.png').convert('RGB')
 print(img.size, len(set(img.getdata())))  # unique colors
 for x, y, name in [(50,50,'header'), (640,200,'title'), (640,400,'content')]:
     print(name, img.getpixel((x, y)))
@@ -132,11 +132,11 @@ done
 
 ### 6. libsecret round-trip via `secret-tool`
 
-Schema name `org.kaki.app`, attribute `type=api-key` (see `secret-store.vala`):
+Schema name `im.apodaca.owlet`, attribute `type=api-key` (see `secret-store.vala`):
 
 ```bash
 eval $(echo 'password' | gnome-keyring-daemon --start --components=secrets)
-echo 'password123' | secret-tool store --label='Kaki test' type api-key
+echo 'password123' | secret-tool store --label='Owlet test' type api-key
 secret-tool lookup type api-key                  # → password123
 secret-tool search --all type api-key
 secret-tool clear  type api-key
@@ -159,7 +159,7 @@ print(sum(1 for b in frames if b != 0))   # → 0
 
 Contract test (Python `requests` mirrors Preferences `on_test_connection`).
 The integration suite also drives `RemoteOpenAISource` via
-`kaki-remote-cli` against a mock server for the libsoup path.
+`owlet-remote-cli` against a mock server for the libsoup path.
 
 ```python
 import http.server, socketserver, threading, requests
@@ -194,16 +194,16 @@ print(r.status_code, len(r.content))   # → 200 16
 ### 9. gresource bundle contents
 
 ```bash
-strings build/src/kaki | grep -E '^/org/kaki/app/'
+strings build/src/owlet | grep -E '^/im/apodaca/owlet/'
 ```
 
 Must include:
 
 ```
-/org/kaki/app/preferences.ui
-/org/kaki/app/shortcuts-dialog.ui
-/org/kaki/app/test-sample.wav
-/org/kaki/app/window.ui
+/im/apodaca/owlet/preferences.ui
+/im/apodaca/owlet/shortcuts-dialog.ui
+/im/apodaca/owlet/test-sample.wav
+/im/apodaca/owlet/window.ui
 ```
 
 ## What is NOT tested
@@ -212,7 +212,7 @@ Must include:
   starts recording. GSettings round-trip + `apply_shortcuts` are covered;
   end-to-end keypress → recorder still needs a human session.
 - **Actual HuggingFace GGUF download**: the suite uses a tiny loopback payload
-  and exercises `.part` → rename via `kaki-download-cli`. Full ~77 MB pulls
+  and exercises `.part` → rename via `owlet-download-cli`. Full ~77 MB pulls
   stay manual / opt-in.
 - **Real OpenAI API call**: needs a live key. Multipart contract + mock
   `{"text":"hello"}` parsing cover the fragile bits.
@@ -233,9 +233,9 @@ meson test -C build --suite unit --print-errorlogs
 For a single manual recipe, the throwaway schema dir is still:
 
 ```bash
-mkdir -p /tmp/kaki-schemas
-cp data/org.kaki.app.gschema.xml /tmp/kaki-schemas/
-glib-compile-schemas /tmp/kaki-schemas
+mkdir -p /tmp/owlet-schemas
+cp data/im.apodaca.owlet.gschema.xml /tmp/owlet-schemas/
+glib-compile-schemas /tmp/owlet-schemas
 ```
 
 UI checks need `xvfb-run` + `xdotool` + ImageMagick `import`; libsecret needs

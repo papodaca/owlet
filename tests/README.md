@@ -1,4 +1,4 @@
-# Kaki tests
+# Owlet tests
 
 Pytest suites registered under `meson test`. They automate the recipes in
 [`docs/testing.md`](../docs/testing.md) without live mic capture, GPU
@@ -40,7 +40,7 @@ meson test -C build --suite network
 
 # Direct pytest during development
 tests/.venv/bin/pytest -q tests/unit
-KAKI_BIN=build/src/kaki tests/.venv/bin/pytest -q tests/ui -m ui
+OWLET_BIN=build/src/owlet tests/.venv/bin/pytest -q tests/ui -m ui
 ```
 
 Missing optional tools (Xvfb, keyring) make the corresponding tests **skip**,

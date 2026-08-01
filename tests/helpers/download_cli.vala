@@ -1,6 +1,6 @@
 /* download_cli.vala — thin CLI around ModelDownloader for integration tests.
  *
- * Usage: kaki-download-cli URL DEST
+ * Usage: owlet-download-cli URL DEST
  * Exit 0 on completed; non-zero on failed.
  */
 
@@ -13,7 +13,7 @@ int main (string[] args) {
     var loop = new MainLoop ();
     int exit_code = 1;
 
-    var dl = new Kaki.ModelDownloader ();
+    var dl = new Owlet.ModelDownloader ();
     dl.completed.connect ((path) => {
         stdout.printf ("%s\n", path);
         exit_code = 0;

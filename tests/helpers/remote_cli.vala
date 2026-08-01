@@ -1,6 +1,6 @@
 /* remote_cli.vala — drive RemoteOpenAISource against a mock endpoint.
  *
- * Usage: kaki-remote-cli ENDPOINT MODEL [API_KEY]
+ * Usage: owlet-remote-cli ENDPOINT MODEL [API_KEY]
  * POSTs 100 ms of silent F32LE audio; prints the parsed transcript.
  * Exit 0 on success; non-zero on error.
  */
@@ -11,7 +11,7 @@ int main (string[] args) {
         return 2;
     }
 
-    var src = new Kaki.RemoteOpenAISource ();
+    var src = new Owlet.RemoteOpenAISource ();
     src.endpoint = args[1];
     src.model = args[2];
     src.api_key = args.length > 3 ? args[3] : "";

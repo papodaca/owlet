@@ -18,11 +18,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-public class Kaki.Application : Adw.Application {
+public class Owlet.Application : Adw.Application {
     private GLib.Settings? _settings = null;
-    private Kaki.GlobalShortcuts? _shortcuts = null;
-    private Kaki.Tray? _tray = null;
-    // Path to the pidfile written for the kaki-signal fallback helper.
+    private Owlet.GlobalShortcuts? _shortcuts = null;
+    private Owlet.Tray? _tray = null;
+    // Path to the pidfile written for the owlet-signal fallback helper.
     // Null when no pidfile was written (XDG_RUNTIME_DIR unwritable, or
     // the process is a transient forwarding instance). Cleared in
     // shutdown.
@@ -30,9 +30,9 @@ public class Kaki.Application : Adw.Application {
 
     public Application () {
         Object (
-            application_id: "org.kaki.app",
+            application_id: "im.apodaca.owlet",
             flags: ApplicationFlags.DEFAULT_FLAGS,
-            resource_base_path: "/org/kaki/app"
+            resource_base_path: "/im/apodaca/owlet"
         );
     }
 
@@ -63,7 +63,7 @@ public class Kaki.Application : Adw.Application {
     public unowned GLib.Settings settings {
         get {
             if (_settings == null)
-                _settings = new GLib.Settings ("org.kaki.app");
+                _settings = new GLib.Settings ("im.apodaca.owlet");
             return _settings;
         }
     }
@@ -113,8 +113,8 @@ public class Kaki.Application : Adw.Application {
     // musl; posix.vapi has no binding. The shim in src/vapi/signal-shim.c
     // exposes it; the +1 offset is the first user-usable realtime
     // signal (glibc reserves SIGRTMIN itself).
-    [CCode (cname = "kaki_sigrtmin", cheader_filename = "signal-shim.h")]
-    private static extern int kaki_sigrtmin ();
+    [CCode (cname = "owlet_sigrtmin", cheader_filename = "signal-shim.h")]
+    private static extern int owlet_sigrtmin ();
 
     public override void startup () {
         base.startup ();
@@ -122,11 +122,11 @@ public class Kaki.Application : Adw.Application {
         // Preferred: xdg-desktop-portal GlobalShortcuts. init is async
         // and best-effort — available flips to false on any failure,
         // leaving the Unix-signal fallback as the active path.
-        _shortcuts = new Kaki.GlobalShortcuts ();
+        _shortcuts = new Owlet.GlobalShortcuts ();
         _shortcuts.shortcut_activated.connect (on_global_shortcut_activated);
         _shortcuts.init.begin ();
 
-        // Fallback: the kaki-signal helper sends these. Registered in
+        // Fallback: the owlet-signal helper sends these. Registered in
         // startup so they're live before the first window appears.
         // Source.CONTINUE keeps the source installed for the process
         // lifetime (a one-shot would miss later signals).
@@ -138,7 +138,7 @@ public class Kaki.Application : Adw.Application {
             on_global_stop ();
             return GLib.Source.CONTINUE;
         });
-        GLib.Unix.signal_add (kaki_sigrtmin () + 1, () => {
+        GLib.Unix.signal_add (owlet_sigrtmin () + 1, () => {
             on_global_insert ();
             return GLib.Source.CONTINUE;
         });
@@ -147,7 +147,7 @@ public class Kaki.Application : Adw.Application {
 
         // Tray is constructed once; shown only when close-to-tray hides
         // the window. Recording state is cached even while hidden.
-        _tray = new Kaki.Tray ();
+        _tray = new Owlet.Tray ();
         _tray.show_requested.connect (on_tray_show);
         _tray.dictate_requested.connect (on_tray_dictate);
         _tray.quit_requested.connect (() => { this.quit (); });
@@ -187,15 +187,15 @@ public class Kaki.Application : Adw.Application {
     // stream partial transcripts into the focused window; toggle off
     // stops recording, finalizes, and types the final text.
     private void on_global_toggle () {
-        (this.active_window as Kaki.Window)?.toggle_dictation_background ();
+        (this.active_window as Owlet.Window)?.toggle_dictation_background ();
     }
 
     private void on_global_stop () {
-        (this.active_window as Kaki.Window)?.stop ();
+        (this.active_window as Owlet.Window)?.stop ();
     }
 
     private void on_global_insert () {
-        (this.active_window as Kaki.Window)?.insert ();
+        (this.active_window as Owlet.Window)?.insert ();
     }
 
     /* ----------------------------------------------------------------- */
@@ -225,7 +225,7 @@ public class Kaki.Application : Adw.Application {
     }
 
     private void on_tray_dictate () {
-        (this.active_window as Kaki.Window)?.toggle_dictation_background ();
+        (this.active_window as Owlet.Window)?.toggle_dictation_background ();
     }
 
     // If the user turns close-to-tray off while the window is hidden,
@@ -240,14 +240,14 @@ public class Kaki.Application : Adw.Application {
             _tray.hide ();
     }
 
-    // Write $XDG_RUNTIME_DIR/kaki.pid (or /tmp/kaki.pid) so the
-    // kaki-signal fallback helper can find this process. XDG_RUNTIME_DIR
+    // Write $XDG_RUNTIME_DIR/owlet.pid (or /tmp/owlet.pid) so the
+    // owlet-signal fallback helper can find this process. XDG_RUNTIME_DIR
     // is 0700 user-owned, so the pidfile isn't world-readable.
     private void write_pidfile () {
         string runtime = GLib.Environment.get_variable ("XDG_RUNTIME_DIR");
         if (runtime == null || runtime == "")
             runtime = "/tmp";
-        _pidfile = runtime + "/kaki.pid";
+        _pidfile = runtime + "/owlet.pid";
         try {
             GLib.FileUtils.set_contents (_pidfile,
                 "%d".printf ((int) Posix.getpid ()));
@@ -279,7 +279,7 @@ public class Kaki.Application : Adw.Application {
             if (_tray != null)
                 _tray.hide ();
         } else {
-            win = new Kaki.Window (this);
+            win = new Owlet.Window (this);
             win.present ();
         }
     }
@@ -287,8 +287,8 @@ public class Kaki.Application : Adw.Application {
     private void on_about_action () {
         string[] developers = { "Ethan" };
         var about = new Adw.AboutDialog () {
-            application_name = "Kaki",
-            application_icon = "org.kaki.app",
+            application_name = "Owlet",
+            application_icon = "im.apodaca.owlet",
             developer_name = "Ethan",
             translator_credits = _("translator-credits"),
             version = "0.1.0",
@@ -300,12 +300,12 @@ public class Kaki.Application : Adw.Application {
     }
 
     private void on_preferences_action () {
-        var prefs = new Kaki.PreferencesDialog (this, this.active_window);
+        var prefs = new Owlet.PreferencesDialog (this, this.active_window);
         prefs.present (this.active_window);
     }
 
     private void on_shortcuts_action () {
-        var builder = new Gtk.Builder.from_resource ("/org/kaki/app/shortcuts-dialog.ui");
+        var builder = new Gtk.Builder.from_resource ("/im/apodaca/owlet/shortcuts-dialog.ui");
         var dialog = (Adw.ShortcutsDialog) builder.get_object ("shortcuts_dialog");
         dialog.present (this.active_window);
     }

@@ -12,7 +12,7 @@ pytestmark = pytest.mark.ui
 
 
 def test_preferences_render_pixel_sample(
-    kaki_bin, schema_dir, xdg_home, xvfb, tmp_path
+    owlet_bin, schema_dir, xdg_home, xvfb, tmp_path
 ):
     if shutil.which("import") is None:
         pytest.skip("ImageMagick import not installed")
@@ -33,7 +33,7 @@ def test_preferences_render_pixel_sample(
 
     script = f"""
 set -e
-{kaki_bin} > /dev/null 2>&1 &
+{owlet_bin} > /dev/null 2>&1 &
 APP_PID=$!
 sleep 3
 xdotool key ctrl+comma

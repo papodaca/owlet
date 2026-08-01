@@ -13,7 +13,7 @@
  * failure or cancellation.
  */
 
-public class Kaki.ModelDownloader : GLib.Object {
+public class Owlet.ModelDownloader : GLib.Object {
     public signal void progress (int64 downloaded, int64 total);
     public signal void completed (string local_path);
     public signal void failed (string message);

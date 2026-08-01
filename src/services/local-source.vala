@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Local TranscriptionSource backed by the Phase 1 transcribe.cpp
- * engine. Refactored in Phase 6 from the Phase 2 `Kaki.Transcriber`
- * class to implement the `Kaki.TranscriptionSource` interface so
+ * engine. Refactored in Phase 6 from the Phase 2 `Owlet.Transcriber`
+ * class to implement the `Owlet.TranscriptionSource` interface so
  * the window can dispatch between local and remote backends via
  * the `transcription-source` GSettings key.
  *
@@ -22,7 +22,7 @@
  * Reads the user-configured `model-path` GSettings key (set via the
  * Preferences → General → Default model combo, or the "Set as
  * default" button on the Models page). When empty, falls back to the
- * first *.gguf in ~/.local/share/kaki/models/. Loads the model on a
+ * first *.gguf in ~/.local/share/owlet/models/. Loads the model on a
  * worker thread and throws on failure — the caller (window.vala)
  * switches its stack to the "empty" page on error.
  *
@@ -42,7 +42,7 @@
  * directly.
  */
 
-public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
+public class Owlet.LocalSource : GLib.Object, TranscriptionSource {
     private Transcribe.Model? _model;
     public unowned Transcribe.Model? model {
         get { return _model; }
@@ -84,14 +84,14 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
         string path = resolve_model_path ();
         if (path == null || path == "") {
             throw new IOError.NOT_FOUND (
-                _("No model configured. Set a model in Preferences or place a .gguf in ~/.local/share/kaki/models/."));
+                _("No model configured. Set a model in Preferences or place a .gguf in ~/.local/share/owlet/models/."));
         }
 
         SourceFunc callback = prepare.callback;
         string local_path = path;
         LoadResult? result = null;
 
-        new Thread<void> ("kaki-load-model", () => {
+        new Thread<void> ("owlet-load-model", () => {
             result = load_model_sync (local_path);
             Idle.add ((owned) callback);
         });
@@ -111,16 +111,16 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
     // Read the user-configured model-path (Preferences → General →
     // Default model combo, or the "Set as default" button on the
     // Models page). When empty, fall back to the first *.gguf in
-    // ~/.local/share/kaki/models/ — the same scan the Phase 2
+    // ~/.local/share/owlet/models/ — the same scan the Phase 2
     // window.vala performed, moved here so prepare() is self-contained.
     private string resolve_model_path () {
-        var settings = new GLib.Settings ("org.kaki.app");
+        var settings = new GLib.Settings ("im.apodaca.owlet");
         string path = settings.get_string ("model-path");
         if (path != null && path != "") {
             return path;
         }
         string models_dir = GLib.Path.build_filename (
-            GLib.Environment.get_user_data_dir (), "kaki", "models");
+            GLib.Environment.get_user_data_dir (), "owlet", "models");
         try {
             var dir = GLib.Dir.open (models_dir, 0);
             string? name;
@@ -158,7 +158,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
         }
 
         var sp = Transcribe.SessionParams ();
-        var settings = new GLib.Settings ("org.kaki.app");
+        var settings = new GLib.Settings ("im.apodaca.owlet");
         sp.n_threads = settings.get_int ("cpu-threads");
         Transcribe.Session? s = null;
         var sst = Transcribe.Session.init (m, sp, out s);
@@ -175,7 +175,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
 
     private void build_run_params () {
         _run_params = Transcribe.RunParams ();
-        var settings = new GLib.Settings ("org.kaki.app");
+        var settings = new GLib.Settings ("im.apodaca.owlet");
         var lang = settings.get_string ("language");
         // Hold the string in _language_buf so the unowned pointer in
         // _run_params.language stays valid for every subsequent
@@ -212,7 +212,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
         GLib.Memory.copy (copy, samples, samples.length * sizeof (float));
         BatchResult? result = null;
 
-        new Thread<void> ("kaki-batch", () => {
+        new Thread<void> ("owlet-batch", () => {
             result = batch_sync (copy);
             Idle.add ((owned) callback);
         });
@@ -270,7 +270,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
         SourceFunc callback = stream_begin.callback;
         bool ok = false;
 
-        new Thread<void> ("kaki-stream-begin", () => {
+        new Thread<void> ("owlet-stream-begin", () => {
             ok = stream_begin_sync ();
             Idle.add ((owned) callback);
         });
@@ -303,7 +303,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
         var copy = new float[chunk.length];
         GLib.Memory.copy (copy, chunk, chunk.length * sizeof (float));
 
-        new Thread<void> ("kaki-stream-feed", () => {
+        new Thread<void> ("owlet-stream-feed", () => {
             stream_feed_sync (copy);
             Idle.add ((owned) callback);
         });
@@ -329,7 +329,7 @@ public class Kaki.LocalSource : GLib.Object, TranscriptionSource {
 
     public async void stream_finalize (Cancellable? cancellable = null) {
         SourceFunc callback = stream_finalize.callback;
-        new Thread<void> ("kaki-stream-finalize", () => {
+        new Thread<void> ("owlet-stream-finalize", () => {
             stream_finalize_sync ();
             Idle.add ((owned) callback);
         });

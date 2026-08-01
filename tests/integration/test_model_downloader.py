@@ -1,4 +1,4 @@
-"""ModelDownloader via kaki-download-cli: .part → rename, size match."""
+"""ModelDownloader via owlet-download-cli: .part → rename, size match."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def test_model_downloader_atomic_rename(http_server, download_cli, tmp_path):
-    payload = b"tiny-gguf-payload-for-kaki"
+    payload = b"tiny-gguf-payload-for-owlet"
     http_server.configure(get_body=payload)
 
     dest = tmp_path / "model.gguf"

@@ -38,9 +38,9 @@ def _unexpected_criticals(stderr: str) -> list[str]:
 
 
 def test_app_launch_preferences_no_criticals(
-    kaki_bin, schema_dir, xdg_home, xvfb, tmp_path
+    owlet_bin, schema_dir, xdg_home, xvfb, tmp_path
 ):
-    log_path = tmp_path / "kaki-stderr.log"
+    log_path = tmp_path / "owlet-stderr.log"
     env = os.environ.copy()
     env["GSETTINGS_SCHEMA_DIR"] = str(schema_dir)
     env["HOME"] = str(xdg_home)
@@ -51,7 +51,7 @@ def test_app_launch_preferences_no_criticals(
 
     script = f"""
 set -e
-{kaki_bin} > /dev/null 2>{log_path} &
+{owlet_bin} > /dev/null 2>{log_path} &
 APP_PID=$!
 sleep 3
 xdotool key ctrl+comma

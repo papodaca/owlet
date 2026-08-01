@@ -1,4 +1,4 @@
-# kaki
+# Owlet
 
 Speech-to-text GNOME app built with GTK4 + libadwaita in Vala. Uses
 [transcribe.cpp](https://github.com/handy-computer/transcribe.cpp) for
@@ -17,11 +17,11 @@ hand; `makepkg` installs the required build dependencies.
    sudo pacman -S --needed base-devel git
    ```
 
-2. Download Kaki and enter its directory:
+2. Download Owlet and enter its directory:
 
    ```bash
-   git clone https://github.com/papodaca/kaki.git
-   cd kaki
+   git clone https://github.com/papodaca/owlet.git
+   cd owlet
    ```
 
 3. Enter the packaging directory, then build and install **one**
@@ -35,19 +35,19 @@ hand; `makepkg` installs the required build dependencies.
 
    | Variant | Recommended for | Build and install command |
    | --- | --- | --- |
-   | CPU | Any computer; slowest but most compatible | `KAKI_BACKEND=cpu makepkg -si` |
-   | Vulkan | Most AMD, Intel, and NVIDIA GPUs | `KAKI_BACKEND=vulkan makepkg -si` |
-   | HIP | AMD GPUs with ROCm support | `KAKI_BACKEND=hip makepkg -si` |
+   | CPU | Any computer; slowest but most compatible | `OWLET_BACKEND=cpu makepkg -si` |
+   | Vulkan | Most AMD, Intel, and NVIDIA GPUs | `OWLET_BACKEND=vulkan makepkg -si` |
+   | HIP | AMD GPUs with ROCm support | `OWLET_BACKEND=hip makepkg -si` |
 
    The variants conflict with each other because GPU support is compiled
-   into Kaki. Installing another variant with `makepkg -si` will offer to
+   into Owlet. Installing another variant with `makepkg -si` will offer to
    replace the currently installed one.
 
-After installation, launch **Kaki** from the application menu. Speech
-models are downloaded from Kaki's Preferences window and are not bundled
+After installation, launch **Owlet** from the application menu. Speech
+models are downloaded from Owlet's Preferences window and are not bundled
 in the package.
 
-To update later, run `git pull` in the `kaki` directory and repeat
+To update later, run `git pull` in the `owlet` directory and repeat
 step 3. The generated package version includes the current Git revision,
 so it changes automatically when the project is updated.
 
@@ -96,7 +96,7 @@ Manual recipes that remain human-only (live rebind, real mic, etc.) are in
 
 ## Translations
 
-Kaki uses GNU gettext via Meson's `i18n` module (`po/`). English is the
+Owlet uses GNU gettext via Meson's `i18n` module (`po/`). English is the
 source language; other locales are contributed later.
 
 - **UI files** (`.ui`): mark user-visible properties with
@@ -108,12 +108,12 @@ source language; other locales are contributed later.
 - After changing strings, regenerate the template from the build dir:
 
   ```bash
-  ninja -C build kaki-pot
+  ninja -C build owlet-pot
   # when locales exist:
-  ninja -C build kaki-update-po
+  ninja -C build owlet-update-po
   ```
 
 - **Adding a language**: append the locale code to `po/LINGUAS`, run
-  `ninja -C build kaki-update-po`, translate `po/xx.po`, and commit.
+  `ninja -C build owlet-update-po`, translate `po/xx.po`, and commit.
 - **Testing a locale**: install to a prefix or use `meson devenv -C build`
-  so `LOCALEDIR` resolves, then run with `LANGUAGE=xx ./src/kaki`.
+  so `LOCALEDIR` resolves, then run with `LANGUAGE=xx ./src/owlet`.

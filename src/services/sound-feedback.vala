@@ -11,7 +11,7 @@
  * the tone short.
  */
 
-public class Kaki.SoundFeedback : GLib.Object {
+public class Owlet.SoundFeedback : GLib.Object {
     private GLib.Settings settings;
     // Strong ref to the in-flight MediaFile. Replaced on each play so
     // overlapping rapid toggles keep at most one tone alive (latest
@@ -23,11 +23,11 @@ public class Kaki.SoundFeedback : GLib.Object {
     }
 
     public void play_start () {
-        play ("/org/kaki/app/sounds/start.ogg");
+        play ("/im/apodaca/owlet/sounds/start.ogg");
     }
 
     public void play_stop () {
-        play ("/org/kaki/app/sounds/stop.ogg");
+        play ("/im/apodaca/owlet/sounds/stop.ogg");
     }
 
     private void play (string resource_path) {

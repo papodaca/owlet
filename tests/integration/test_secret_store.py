@@ -35,7 +35,7 @@ def test_secret_store_lookup_search_clear(keyring):
         keyring,
         "secret-tool",
         "store",
-        "--label=Kaki test",
+        "--label=Owlet test",
         "type",
         "api-key",
         input_text="password123\n",

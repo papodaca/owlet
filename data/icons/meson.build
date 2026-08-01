@@ -1,4 +1,4 @@
-application_id = 'org.kaki.app'
+application_id = 'im.apodaca.owlet'
 
 scalable_dir = 'hicolor' / 'scalable' / 'apps'
 install_data(

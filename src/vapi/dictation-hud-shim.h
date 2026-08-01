@@ -6,18 +6,18 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-#ifndef KAKI_DICTATION_HUD_SHIM_H
-#define KAKI_DICTATION_HUD_SHIM_H
+#ifndef OWLET_DICTATION_HUD_SHIM_H
+#define OWLET_DICTATION_HUD_SHIM_H
 
-typedef struct KakiDictationHudNative KakiDictationHudNative;
+typedef struct OwletDictationHudNative OwletDictationHudNative;
 
 /* Returns NULL if XOpenDisplay fails (no X11 / no XWayland). */
-KakiDictationHudNative *kaki_dictation_hud_native_new (void);
-void kaki_dictation_hud_native_free (KakiDictationHudNative *hud);
+OwletDictationHudNative *owlet_dictation_hud_native_new (void);
+void owlet_dictation_hud_native_free (OwletDictationHudNative *hud);
 
-void kaki_dictation_hud_native_show (KakiDictationHudNative *hud);
-void kaki_dictation_hud_native_hide (KakiDictationHudNative *hud);
-void kaki_dictation_hud_native_set_text (KakiDictationHudNative *hud,
+void owlet_dictation_hud_native_show (OwletDictationHudNative *hud);
+void owlet_dictation_hud_native_hide (OwletDictationHudNative *hud);
+void owlet_dictation_hud_native_set_text (OwletDictationHudNative *hud,
                                         const char *text);
 
-#endif /* KAKI_DICTATION_HUD_SHIM_H */
+#endif /* OWLET_DICTATION_HUD_SHIM_H */

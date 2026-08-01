@@ -4,7 +4,7 @@
 
 When dictation is started from the **global shortcut** or **tray Dictate**:
 
-1. **Do not minimize** Kaki (already backgrounded in the common case).
+1. **Do not minimize** Owlet (already backgrounded in the common case).
 2. Show an **always-on-top, non-focus-stealing OSD** that mirrors streaming
    transcript text as it arrives.
 3. Keep existing sinks unchanged: **transcript buffer** + **keystroke
@@ -14,7 +14,7 @@ In-window Dictate stays as today: **minimize + 250 ms delay, no HUD**.
 
 ## Motivation
 
-Global / tray activation is meant for dictating into another app while Kaki
+Global / tray activation is meant for dictating into another app while Owlet
 is already in the background (or hidden to tray). Minimizing is unnecessary
 and can be disruptive. Users still need a visible live transcript without
 bringing the main window forward.
@@ -43,7 +43,7 @@ new portal or helper process.
 
 ## Current behavior (baseline)
 
-- Global shortcut and tray both call `Kaki.Window.toggle_dictation()` →
+- Global shortcut and tray both call `Owlet.Window.toggle_dictation()` →
   `on_dictate_toggle()` → `start_dictation()` (`src/application.vala`,
   `src/window.vala`).
 - `start_dictation()` always calls `this.minimize()` then a 250 ms timeout
@@ -98,7 +98,7 @@ partial_text / final_text / batch final
 ### `src/services/dictation-hud.vala`
 
 ```vala
-public class Kaki.DictationHud : GLib.Object {
+public class Owlet.DictationHud : GLib.Object {
     public bool available { get; private set; }
 
     public void show ();
@@ -152,15 +152,15 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 
 - `on_global_toggle()` and `on_tray_dictate()` call
   `toggle_dictation_background()` instead of `toggle_dictation()`.
-- Update comments that still say the global toggle “minimizes Kaki”.
+- Update comments that still say the global toggle “minimizes Owlet”.
 
 ### `src/meson.build`
 
-- Add `dictation-hud.vala` to `kaki_sources`.
+- Add `dictation-hud.vala` to `owlet_sources`.
 - Build `dictation-hud-shim.c` as a **C static library** with deps
   `glib-2.0`, `x11`, `xext`, `pangocairo`, `cairo-xlib`, then
-  `link_with` it from `kaki`. Do **not** put those X11/Cairo pkgs on
-  `kaki_deps` — Meson would pass them as `--pkg` to `valac`, and there
+  `link_with` it from `owlet`. Do **not** put those X11/Cairo pkgs on
+  `owlet_deps` — Meson would pass them as `--pkg` to `valac`, and there
   is no system `xext.vapi` / `cairo-xlib.vapi`.
 - Expose the hand-written `dictation-hud-shim.vapi` via
   `valac.find_library('dictation-hud-shim', …)` only.
@@ -172,8 +172,8 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 
 ## Edge cases
 
-- **Kaki focused + global shortcut:** Still no minimize (locked). Keystrokes
-  may land in Kaki if it retains focus — acceptable for v1; a later
+- **Owlet focused + global shortcut:** Still no minimize (locked). Keystrokes
+  may land in Owlet if it retains focus — acceptable for v1; a later
   heuristic can minimize only when `is_active`.
 - **Close-to-tray (hidden window):** Background path is natural; HUD still
   shows; no minimize.
@@ -187,13 +187,13 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 - Separate X11 helper subprocess
 - Changing insert / test-keystroke minimize behavior
 - Multi-monitor placement beyond default/primary bottom-center
-- Auto-minimize when Kaki is focused during background launch
+- Auto-minimize when Owlet is focused during background launch
 
 ## Testing
 
 Automated coverage will be thin (display-server OSD). Manual checklist:
 
-1. Global shortcut start/stop with another app focused → no Kaki minimize;
+1. Global shortcut start/stop with another app focused → no Owlet minimize;
    HUD appears; text streams in HUD + target app + transcript.
 2. Tray Dictate → same as (1).
 3. In-window Dictate → still minimizes; no HUD.

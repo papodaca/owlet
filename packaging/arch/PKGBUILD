@@ -1,22 +1,22 @@
-pkgbase=kaki
-_build_backend=${KAKI_BACKEND:-all}
+pkgbase=owlet
+_build_backend=${OWLET_BACKEND:-all}
 case "${_build_backend}" in
-  all)    pkgname=('kaki' 'kaki-vulkan' 'kaki-hip') ;;
-  cpu)    pkgname=('kaki') ;;
-  vulkan) pkgname=('kaki-vulkan') ;;
-  hip)    pkgname=('kaki-hip') ;;
+  all)    pkgname=('owlet' 'owlet-vulkan' 'owlet-hip') ;;
+  cpu)    pkgname=('owlet') ;;
+  vulkan) pkgname=('owlet-vulkan') ;;
+  hip)    pkgname=('owlet-hip') ;;
   *)
-    error "KAKI_BACKEND must be one of: all, cpu, vulkan, hip"
+    error "OWLET_BACKEND must be one of: all, cpu, vulkan, hip"
     return 1
     ;;
 esac
-pkgver=0.1.0.r0.0000000
+pkgver=0.1.0.r31.0fb33a8
 pkgrel=1
 pkgdesc='Speech-to-text GNOME app using local transcribe.cpp (GTK4/libadwaita)'
-url='https://github.com/papodaca/kaki'
+url='https://github.com/papodaca/owlet'
 license=('GPL-3.0-or-later')
 arch=('x86_64')
-install=kaki.install
+install=owlet.install
 source=()
 sha256sums=()
 
@@ -75,7 +75,7 @@ _common_optdepends=(
   'ydotool: keystroke injection fallback'
   'xdotool: X11 keystroke injection fallback'
   'xdg-desktop-portal: GlobalShortcuts portal'
-  'libnotify: notifications from kaki-signal'
+  'libnotify: notifications from owlet-signal'
 )
 
 prepare() {
@@ -138,34 +138,34 @@ _install_licenses() {
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.transcribe.cpp"
 }
 
-package_kaki() {
+package_owlet() {
   depends=("${_common_depends[@]}")
   optdepends=("${_common_optdepends[@]}")
-  conflicts=('kaki-vulkan' 'kaki-hip')
+  conflicts=('owlet-vulkan' 'owlet-hip')
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-cpu
   _install_licenses
 }
 
-package_kaki-vulkan() {
+package_owlet-vulkan() {
   pkgdesc+=' (Vulkan backend)'
   depends=("${_common_depends[@]}" vulkan-icd-loader)
   optdepends=("${_common_optdepends[@]}")
-  provides=('kaki')
-  conflicts=('kaki')
+  provides=('owlet')
+  conflicts=('owlet')
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-vulkan
   _install_licenses
 }
 
-package_kaki-hip() {
+package_owlet-hip() {
   pkgdesc+=' (AMD HIP/ROCm backend)'
   depends=("${_common_depends[@]}" hip-runtime-amd hipblas rocblas)
   optdepends=("${_common_optdepends[@]}")
-  provides=('kaki')
-  conflicts=('kaki')
+  provides=('owlet')
+  conflicts=('owlet')
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-hip

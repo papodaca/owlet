@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Kaki
-Exec=kaki
-Icon=org.kaki.app
+Name=Owlet
+Exec=owlet
+Icon=im.apodaca.owlet
 Terminal=false
 Type=Application
 Categories=Utility;

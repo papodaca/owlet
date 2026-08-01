@@ -1,1 +1,1 @@
-i18n.gettext('kaki', preset: 'glib')
+i18n.gettext('owlet', preset: 'glib')

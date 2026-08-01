@@ -18,7 +18,7 @@
  *                      user assigns a trigger combo.
  *   3. Activated sig — portal fires Activated(session, id, ...) when the
  *                      user presses the combo anywhere; we re-emit
- *                      `shortcut_activated(id)`. Kaki.Application wires
+ *                      `shortcut_activated(id)`. Owlet.Application wires
  *                      that to the record/stop toggle.
  *
  * The async portal pattern (method returns a request handle, result
@@ -29,11 +29,11 @@
  * portal never responds.
  *
  * On any failure `available` flips to false and the fallback path
- * (kaki-signal + Unix signals, see application.vala) takes over.
+ * (owlet-signal + Unix signals, see application.vala) takes over.
  */
 
 [DBus (name = "org.freedesktop.portal.GlobalShortcuts")]
-private interface Kaki.PortalGlobalShortcuts : GLib.Object {
+private interface Owlet.PortalGlobalShortcuts : GLib.Object {
     public abstract async GLib.ObjectPath create_session (
         GLib.HashTable<string, GLib.Variant> options) throws GLib.Error;
     public abstract async GLib.ObjectPath bind_shortcuts (
@@ -56,7 +56,7 @@ private interface Kaki.PortalGlobalShortcuts : GLib.Object {
     public abstract uint version { owned get; }
 }
 
-public class Kaki.GlobalShortcuts : GLib.Object {
+public class Owlet.GlobalShortcuts : GLib.Object {
     public bool available { get; private set; default = false; }
 
     public signal void shortcut_activated (string id);
@@ -126,8 +126,8 @@ public class Kaki.GlobalShortcuts : GLib.Object {
 
         var cs_opts = new GLib.HashTable<string, GLib.Variant> (str_hash, str_equal);
         cs_opts.insert ("session_handle_token",
-                        new Variant.string ("kaki_session"));
-        string cs_token = "kaki_create_session_%u".printf (++_counter);
+                        new Variant.string ("owlet_session"));
+        string cs_token = "owlet_create_session_%u".printf (++_counter);
         cs_opts.insert ("handle_token", new Variant.string (cs_token));
         string cs_expected =
             @"$(_OBJECT_PATH)/request/$(_sender_segment ())/$(cs_token)";
@@ -198,7 +198,7 @@ public class Kaki.GlobalShortcuts : GLib.Object {
         bs_w.resume = bind.callback;
 
         var bs_opts = new GLib.HashTable<string, GLib.Variant> (str_hash, str_equal);
-        string bs_token = "kaki_bind_shortcuts_%u".printf (++_counter);
+        string bs_token = "owlet_bind_shortcuts_%u".printf (++_counter);
         bs_opts.insert ("handle_token", new Variant.string (bs_token));
         string bs_expected =
             @"$(_OBJECT_PATH)/request/$(_sender_segment ())/$(bs_token)";

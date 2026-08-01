@@ -1,4 +1,4 @@
-# Kaki — agent notes
+# Owlet — agent notes
 
 GTK4 + libadwaita speech-to-text app in **Vala**. Local inference via
 git submodule `subprojects/transcribe.cpp` (static link); optional
@@ -21,7 +21,7 @@ User config puts worktrees at `.worktrees/<branch>/` (see
 ```bash
 # from the main repo checkout
 wt switch --create <branch> --no-cd --format json -y
-# → {"path":".../Kaki/.worktrees/<branch>", ...}
+# → {"path":".../Owlet/.worktrees/<branch>", ...}
 cd .worktrees/<branch>
 
 git submodule update --init --recursive   # worktrees do NOT inherit the checkout
@@ -63,7 +63,7 @@ Uninstalled GSettings: `ninja -C build` compiles schemas into `build/data/`
 for you. Manual equivalent:
 
 ```bash
-GSETTINGS_SCHEMA_DIR=build/data ./build/src/kaki
+GSETTINGS_SCHEMA_DIR=build/data ./build/src/owlet
 ```
 
 Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
@@ -81,40 +81,39 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
   `pulsesrc` → else `pipewiresrc` → `audioconvert` → `audioresample` →
   caps (16 kHz mono F32LE) → `appsink`.
 - **Hand-written VAPIs** in `src/vapi/` (`transcribe.vapi`,
-  `libei-1.0.vapi` + C shims). They bind only the subset Kaki uses —
+  `libei-1.0.vapi` + C shims). They bind only the subset Owlet uses —
   extend the VAPI when calling new C API, do not regenerate from headers.
 - **`Config.GPU_BACKEND`** is compile-time (from meson option →
   `config.h` / `src/config.vapi`), not the runtime GSettings
   `gpu-backend` key.
 - **gresource aliases**: `src/ui/preferences.ui` and
-  `src/ui/test-sample.wav` are exposed as `/org/kaki/app/preferences.ui`
+  `src/ui/test-sample.wav` are exposed as `/im/apodaca/owlet/preferences.ui`
   and `…/test-sample.wav` (no `ui/` segment). `[GtkTemplate]` paths must
-  match the alias; see `src/kaki.gresource.xml`.
+  match the alias; see `src/owlet.gresource.xml`.
 - **Dictation keystrokes**: libei → ydotool → xdotool (`HAVE_LIBEI`
   optional compile-in; overridable in settings).
 - **Global shortcuts**: xdg-desktop-portal `GlobalShortcuts`, with
-  `data/kaki-signal.sh` (installed as `kaki-signal`) as the
+  `data/owlet-signal.sh` (installed as `owlet-signal`) as the
   portal-less fallback.
 - **Close-to-tray**: hand-rolled StatusNotifierItem + DBusMenu over
   GIO (`src/services/tray.vala`) — no ayatana dep. Pref
   `close-to-tray` hides (does not destroy) the window on close so
   global shortcuts keep working. Idle tray icon
-  `org.kaki.app-symbolic`; while the mic is recording, swaps to
-  `org.kaki.app-recording-symbolic` (record-light badge). Icons
+  `im.apodaca.owlet-symbolic`; while the mic is recording, swaps to
+  `im.apodaca.owlet-recording-symbolic` (record-light badge). Icons
   install via meson to `$datadir/icons/hicolor/…`; hosts resolve
   IconName from the installed theme (no gresource / IconPixmap
   fallback, so icons require an installed build). App / desktop
-  icon remains `org.kaki.app`. GNOME Shell needs an AppIndicator /
+  icon remains `im.apodaca.owlet`. GNOME Shell needs an AppIndicator /
   KStatusNotifierItem extension for the icon to appear.
-- **libsecret schema** is `org.kaki.app` with attribute `type=api-key`
-  (plans README saying schema name `kaki` is stale).
-- Models live under `$XDG_DATA_HOME/kaki/models/` (typically
-  `~/.local/share/kaki/models/`); Preferences opens that dir via
+- **libsecret schema** is `im.apodaca.owlet` with attribute `type=api-key`.
+- Models live under `$XDG_DATA_HOME/owlet/models/` (typically
+  `~/.local/share/owlet/models/`); Preferences opens that dir via
   `Gtk.FileLauncher`. Download catalog is Whisper Tiny/Base/Small `.en`
   Q8_0 GGUFs only for now.
-- App id / resource base: `org.kaki.app` / `/org/kaki/app`.
+- App id / resource base: `im.apodaca.owlet` / `/im/apodaca/owlet`.
 
-Transcription backends implement `Kaki.TranscriptionSource`
+Transcription backends implement `Owlet.TranscriptionSource`
 (`local-source.vala` / `remote-openai-source.vala`), selected by
 GSettings `transcription-source`. PCM contract at that boundary:
 F32LE / 16 kHz / mono.
@@ -137,7 +136,7 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | # | Goal |
 | --- | --- |
 | 8 | Expand `shortcuts-dialog.ui` to match Preferences (+ Copy / Clear) — dialog is still Quit/Show Shortcuts only |
-| 9 | Finish gettext/`po/` (`kaki.pot` not committed yet; `LINGUAS` empty) |
+| 9 | Finish gettext/`po/` (`owlet.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
 | 14 | Debian/Ubuntu packaging (`.deb` split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-14-debian-packaging.md` |
@@ -149,7 +148,7 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | `src/*.vala`, `src/ui/` | App + preferences UI |
 | `src/services/` | Recorder, local/remote transcription, keystroke, secrets, shortcuts, downloads, tray (SNI) |
 | `src/vapi/` | Hand-written bindings + shims |
-| `data/` | Desktop/AppStream/GSettings, `kaki-signal` helper |
+| `data/` | Desktop/AppStream/GSettings, `owlet-signal` helper |
 | `docs/plans/` | Phase plans — **may lag the code**; trust `meson.build` / `src/` |
 | `subprojects/transcribe.cpp/` | Upstream engine; its own `AGENTS.md` |
 
@@ -157,6 +156,6 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 
 Only when changing `subprojects/transcribe.cpp` itself: read that
 tree's `AGENTS.md` (`uv run` for Python, pinned clang-format script,
-C ABI exception discipline). For normal Kaki work, treat the submodule
+C ABI exception discipline). For normal Owlet work, treat the submodule
 as a pinned dependency (currently `v0.1.2`) and edit the Vala/VAPI
 side instead.

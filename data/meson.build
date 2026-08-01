@@ -1,6 +1,6 @@
 desktop_file = i18n.merge_file(
-        input: 'org.kaki.app.desktop.in',
-       output: 'org.kaki.app.desktop',
+        input: 'im.apodaca.owlet.desktop.in',
+       output: 'im.apodaca.owlet.desktop',
          type: 'desktop',
        po_dir: '../po',
       install: true,
@@ -13,8 +13,8 @@ if desktop_utils.found()
 endif
 
 appstream_file = i18n.merge_file(
-        input: 'org.kaki.app.metainfo.xml.in',
-       output: 'org.kaki.app.metainfo.xml',
+        input: 'im.apodaca.owlet.metainfo.xml.in',
+       output: 'im.apodaca.owlet.metainfo.xml',
        po_dir: '../po',
       install: true,
   install_dir: get_option('datadir') / 'metainfo'
@@ -24,16 +24,16 @@ appstreamcli = find_program('appstreamcli', required: false, disabler: true)
 test('Validate appstream file', appstreamcli,
      args: ['validate', '--no-net', '--explain', appstream_file])
 
-install_data('org.kaki.app.gschema.xml',
+install_data('im.apodaca.owlet.gschema.xml',
   install_dir: get_option('datadir') / 'glib-2.0' / 'schemas'
 )
 
 # Copy the schema into the builddir and compile it so uninstalled runs
 # (ninja -C build run) can set GSETTINGS_SCHEMA_DIR without a manual
-# /tmp/kaki-schemas dance. Install still uses gnome.post_install.
+# /tmp/owlet-schemas dance. Install still uses gnome.post_install.
 gschema_file = configure_file(
-  input: 'org.kaki.app.gschema.xml',
-  output: 'org.kaki.app.gschema.xml',
+  input: 'im.apodaca.owlet.gschema.xml',
+  output: 'im.apodaca.owlet.gschema.xml',
   copy: true,
 )
 
@@ -48,7 +48,7 @@ gschemas_compiled = custom_target(
 )
 
 # Absolute builddir path consumed by src/meson.build's run_target.
-kaki_schema_dir = meson.current_build_dir()
+owlet_schema_dir = meson.current_build_dir()
 
 test('Validate schema file',
      compile_schemas,
@@ -58,20 +58,20 @@ test('Validate schema file',
 service_conf = configuration_data()
 service_conf.set('bindir', get_option('prefix') / get_option('bindir'))
 configure_file(
-  input: 'org.kaki.app.service.in',
-  output: 'org.kaki.app.service',
+  input: 'im.apodaca.owlet.service.in',
+  output: 'im.apodaca.owlet.service',
   configuration: service_conf,
   install_dir: get_option('datadir') / 'dbus-1' / 'services'
 )
 
-# Phase 5: fallback global-shortcut helper. Installed next to the kaki
-# executable so users on portal-less desktops can bind `kaki-signal
+# Phase 5: fallback global-shortcut helper. Installed next to the owlet
+# executable so users on portal-less desktops can bind `owlet-signal
 # toggle` as a GNOME custom shortcut. The Preferences Shortcuts page
 # offers to copy the same script to ~/.local/bin for uninstalled builds.
-install_data('kaki-signal.sh',
+install_data('owlet-signal.sh',
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',
-  rename: 'kaki-signal'
+  rename: 'owlet-signal'
 )
 
 subdir('icons')

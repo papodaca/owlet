@@ -2,7 +2,7 @@
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="Adw" version="1.0"/>
-  <template class="KakiPreferencesDialog" parent="AdwPreferencesDialog">
+  <template class="OwletPreferencesDialog" parent="AdwPreferencesDialog">
     <property name="title" translatable="yes">Preferences</property>
     <property name="search-enabled">True</property>
 
@@ -159,7 +159,7 @@
         <child>
           <object class="AdwPreferencesGroup" id="installed_group">
             <property name="title" translatable="yes">Installed models</property>
-            <property name="description" translatable="yes">Files in ~/.local/share/kaki/models/</property>
+            <property name="description" translatable="yes">Files in ~/.local/share/owlet/models/</property>
           </object>
         </child>
 

@@ -18,7 +18,7 @@
 
 using Gst;
 
-public class Kaki.Recorder : GLib.Object {
+public class Owlet.Recorder : GLib.Object {
     public bool is_recording { get; private set; default = false; }
 
     public signal void chunk_ready (float[] samples);
@@ -49,7 +49,7 @@ public class Kaki.Recorder : GLib.Object {
 
         ensure_gst_init ();
 
-        var pipeline = new Pipeline ("kaki-recorder");
+        var pipeline = new Pipeline ("owlet-recorder");
         _pipeline = pipeline;
 
         // Source: prefer pulsessrc, fall back to pipewiresrc.

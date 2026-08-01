@@ -28,7 +28,7 @@
  * the device is not yet resumed is flushed on DEVICE_RESUMED.
  */
 
-public class Kaki.Keystroke : GLib.Object {
+public class Owlet.Keystroke : GLib.Object {
     public enum Backend {
         AUTO,
         LIBEI,
@@ -60,7 +60,7 @@ public class Kaki.Keystroke : GLib.Object {
     /* ----------------------------------------------------------------- */
 
     public bool init (Backend preferred) {
-        _settings = new GLib.Settings ("org.kaki.app");
+        _settings = new GLib.Settings ("im.apodaca.owlet");
 
         Backend chosen = select_backend (preferred);
 
@@ -229,7 +229,7 @@ public class Kaki.Keystroke : GLib.Object {
 #if HAVE_LIBEI
     private bool setup_libei () {
         _ei = new Ei.Context ();
-        _ei.configure_name ("kaki");
+        _ei.configure_name ("owlet");
 
         int r = _ei.setup_backend_socket (null);
         if (r < 0) {

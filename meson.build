@@ -1,4 +1,4 @@
-project('kaki', ['c', 'vala'],
+project('owlet', ['c', 'vala'],
           version: '0.1.0',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=2', 'werror=false', ],
@@ -19,7 +19,7 @@ srcdir = meson.project_source_root() / 'src'
 
 config_h = configuration_data()
 config_h.set_quoted('PACKAGE_VERSION', meson.project_version ())
-config_h.set_quoted('GETTEXT_PACKAGE', 'kaki')
+config_h.set_quoted('GETTEXT_PACKAGE', 'owlet')
 config_h.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
 # GPU_BACKEND is filled in below, after the auto-detect block has
 # finalised the resolved backend. Config.vapi exposes it read-only.
@@ -89,9 +89,9 @@ cmake_args = [
   '-DTRANSCRIBE_INSTALL=OFF',
 ]
 
-# Public defines propagated to kaki's C compile so transcribe.h sees the
+# Public defines propagated to owlet's C compile so transcribe.h sees the
 # static-contract decoration. Backend-specific GGML_USE_* are also added
-# so any GGML headers kaki touches pick the right backend guards.
+# so any GGML headers owlet touches pick the right backend guards.
 transcribe_compile_defs = ['-DTRANSCRIBE_STATIC']
 extra_archives = []           # backend-specific ggml archive, appended to link_args
 path_prefix = ''              # HIP prepends /opt/rocm/bin here; empty for others
@@ -211,7 +211,7 @@ sidecar_script = path_prefix + configure_cmd + ' && ' + build_cmd + ' && ' + tou
 
 transcribe_build = custom_target(
   'transcribe-build',
-  output: 'kaki-transcribe-stamp',
+  output: 'owlet-transcribe-stamp',
   command: [find_program('sh'), '-c', sidecar_script],
   build_by_default: true,
   console: true,

@@ -1,6 +1,6 @@
-# Kaki — Porting Report: Windows and macOS
+# Owlet — Porting Report: Windows and macOS
 
-Assessment of what it would take to port Kaki (currently a
+Assessment of what it would take to port Owlet (currently a
 GNOME/GTK4/libadwaita Vala app targeting Linux) to **Windows** and
 **macOS**, measured against the seven-phase implementation plan in
 [`README.md`](README.md) and the per-phase docs in this directory.
@@ -73,7 +73,7 @@ Sources consulted (grounding):
 | `xdg-desktop-portal` GlobalShortcuts | Yes | **No** | **No** | [flatpak/xdg-desktop-portal](https://github.com/flatpak/xdg-desktop-portal) is Linux-desktop-only. |
 | `rocminfo` / HIP | Yes | **No** (ROCm is Linux-only) | **No** | [transcribe.cpp README](https://github.com/handy-computer/transcribe.cpp/). |
 | transcribe.cpp / ggml GPU backend | HIP / Vulkan / CPU | **CUDA / Vulkan / CPU** | **Metal** (auto on Apple Silicon) / Vulkan-via-MoltenVK / CPU | [transcribe.cpp README](https://github.com/handy-computer/transcribe.cpp/), [whisper.cpp cross-platform](https://deepwiki.com/ggml-org/whisper.cpp/4.2-cross-platform-support). Metal is auto-enabled on Apple Silicon. CUDA requires the CUDA toolkit on Windows. Vulkan on macOS needs `brew install vulkan-loader shaderc molten-vk`. |
-| `Unix.signal_add` / `kaki-signal.sh` (Phase 5 fallback) | Yes | **No** (no POSIX signals) | Partial (POSIX exists, but not idiomatic and no `XDG_RUNTIME_DIR` convention) | Phase 5 plan; needs a Windows-specific IPC path. |
+| `Unix.signal_add` / `owlet-signal.sh` (Phase 5 fallback) | Yes | **No** (no POSIX signals) | Partial (POSIX exists, but not idiomatic and no `XDG_RUNTIME_DIR` convention) | Phase 5 plan; needs a Windows-specific IPC path. |
 | `.desktop` / `gnome.post_install` | Yes | N/A (.app / .lnk / installer) | N/A (.app bundle + Info.plist) | `meson.build` line 30. |
 
 ## 3. Per-phase porting analysis
@@ -130,9 +130,9 @@ probe (`Gst.Registry` feature lookup).
 The `Transcriber` Vala class is a pure async wrapper over the VAPI —
 fully portable.
 
-The models directory path (`~/.local/share/kaki/models/`) is
+The models directory path (`~/.local/share/owlet/models/`) is
 **hardcoded Linux** and should be
-`GLib.Environment.get_user_data_dir() + "/kaki/models/"`. This is also
+`GLib.Environment.get_user_data_dir() + "/owlet/models/"`. This is also
 a latent bug on Linux (it ignores `XDG_DATA_HOME`). On Windows that
 resolves to `%LOCALAPPDATA%`; on macOS to `~/Library/Application Support`.
 
@@ -168,7 +168,7 @@ The `Adw.PreferencesDialog` UI itself is portable. The four pages:
 
 - **General**: portable, except `gpu-backend` ComboRow needs the new
   `cuda`/`metal` choices from §3 Phase 1.
-- **Models**: `~/.local/share/kaki/models/` needs the
+- **Models**: `~/.local/share/owlet/models/` needs the
   `get_user_data_dir()` fix. `Gtk.FileLauncher` → Nautilus is
   Linux-specific; on Windows it opens Explorer, on macOS it opens
   Finder via the same `Gtk.FileLauncher` API (portable).
@@ -213,14 +213,14 @@ Two paths, both Linux-only:
    - macOS hotkey delivery requires Accessibility permission
      (same TCC grant as Phase 3).
 
-2. **`kaki-signal` shell script + SIGUSR1**:
+2. **`owlet-signal` shell script + SIGUSR1**:
    - Linux: works as written.
    - macOS: POSIX signals work, but `XDG_RUNTIME_DIR` is not a
-     macOS convention. Use `/tmp/kaki.pid` directly, or better a
-     per-user `~/Library/Application Support/kaki/kaki.pid`.
+     macOS convention. Use `/tmp/owlet.pid` directly, or better a
+     per-user `~/Library/Application Support/owlet/owlet.pid`.
    - Windows: **no POSIX signals.** Replace with a **named pipe**
-     (`\\.\pipe\kaki`) or a local TCP socket the app listens on,
-     and a small `kaki-signal.exe` that writes a single byte.
+     (`\\.\pipe\owlet`) or a local TCP socket the app listens on,
+     and a small `owlet-signal.exe` that writes a single byte.
 
 The `Unix.signal_add` calls in `application.vala` (Phase 5 plan)
 need to be gated to non-Windows builds, with the Windows path using
@@ -252,7 +252,7 @@ GTK4 upstream actively supports both MSVC and MinGW. Tradeoff:
 **Recommendation for first port**: MSYS2 UCRT64 MinGW. The Vala +
 VAPI + pkg-config story is identical to Linux, so the porting
 diff stays minimal. MSVC is a viable stretch goal for users who
-want to embed Kaki into an existing MSVC-based product, but it
+want to embed Owlet into an existing MSVC-based product, but it
 doubles the build-maintenance burden.
 
 ### Windows ARM64
@@ -283,17 +283,17 @@ matrix row for `windows-arm64` building with
 - **Secret store**: `Advapi32` `CredWrite`/`CredRead` with
   `CRED_TYPE_GENERIC`. 512-byte payload limit per item.
 - **IPC (replacing SIGUSR1)**: named pipe
-  `\\.\pipe\kaki\control` with a 1-byte command protocol. Or a
+  `\\.\pipe\owlet\control` with a 1-byte command protocol. Or a
   local TCP listener on 127.0.0.1 with an ephemeral port written
-  to `%LOCALAPPDATA%\kaki\port`.
-- **Models dir**: `%LOCALAPPDATA%\kaki\models\` via
+  to `%LOCALAPPDATA%\owlet\port`.
+- **Models dir**: `%LOCALAPPDATA%\owlet\models\` via
   `g_get_user_data_dir()`.
 
 ### Distribution & packaging on Windows
 
 - **MSYS2 is not user-friendly.** Ship a self-contained installer.
 - Build with MinGW, then bundle:
-  - `kaki.exe`
+  - `owlet.exe`
   - GTK4, libadwaita, GLib, Pango, HarfBuzz, cairo, gdk-pixbuf,
     librsvg, graphene, fribidi, ICU, libffi, gettext-runtime
     DLLs (≈50–80 MB)
@@ -306,13 +306,13 @@ matrix row for `windows-arm64` building with
     shipped or expected from the GPU driver
   - Adwaita icon theme (curated subset: `scalable/actions` +
     `symbolic`)
-  - `gschemas.compiled` for Kaki's own GSchema
+  - `gschemas.compiled` for Owlet's own GSchema
 - Installer options: **NSIS** (script-based, lightweight),
   **MSIX** (modern, sandboxed, Store-compatible but Store is
   optional), **WiX** (enterprise-friendly). MSIX is the
   recommended target for Windows 10/11; NSIS for older systems.
 - `meson --wrap-db` or `gvsbuild` produces the DLL tree; the
-  installer script copies it next to `kaki.exe`.
+  installer script copies it next to `owlet.exe`.
 
 ## 5. macOS deep-dive
 
@@ -349,7 +349,7 @@ This is the most consequential macOS decision:
 | Notarization | Required (handled by App Store) | Required (manual via `notarytool`) |
 | User experience | One-click install | DMG drag-to-Applications |
 
-**Conclusion: the Mac App Store is not viable for the full Kaki
+**Conclusion: the Mac App Store is not viable for the full Owlet
 feature set.** Dictation mode (Phase 3) requires Accessibility,
 which the sandbox blocks. The minimum-viable Mac App Store build
 would have to disable dictation mode entirely — leaving only
@@ -370,21 +370,21 @@ recommended recipe, following the [swift-adwaita Xcode
 example](https://github.com/makoni/swift-adwaita/commit/7c5d86da0bbf8f83817944d0f53ed4819afa537f):
 
 1. **Build the binary** with meson + Homebrew deps.
-2. **Vendor the dylibs** into `Kaki.app/Contents/Frameworks/`
+2. **Vendor the dylibs** into `Owlet.app/Contents/Frameworks/`
    and rewrite install names:
    ```bash
    brew install dylibbundler
-   dylibbundler -od -b -x Kaki.app/Contents/MacOS/kaki \
-     -d Kaki.app/Contents/Frameworks/ -p @rpath/
+   dylibbundler -od -b -x Owlet.app/Contents/MacOS/owlet \
+     -d Owlet.app/Contents/Frameworks/ -p @rpath/
    ```
 3. **Bundle GSettings schemas**: copy
    `/opt/homebrew/share/glib-2.0/schemas/gschemas.compiled` and
-   Kaki's own compiled schema into
-   `Kaki.app/Contents/Resources/glib-2.0/schemas/`. Set
+   Owlet's own compiled schema into
+   `Owlet.app/Contents/Resources/glib-2.0/schemas/`. Set
    `XDG_DATA_DIRS` via `Info.plist` `LSEnvironment` to
    `@executable_path/../Resources` so libadwaita finds the
    schemas when launched via Finder/Launch Services (direct
-   `./Kaki.app/Contents/MacOS/kaki` exec from a terminal will
+   `./Owlet.app/Contents/MacOS/owlet` exec from a terminal will
    not pick up `LSEnvironment` — document this).
 4. **Bundle GdkPixbuf loaders, Pango modules, GTK media
    backends** + set `GDK_PIXBUF_MODULE_FILE`, `GTK_PATH` via
@@ -396,13 +396,13 @@ example](https://github.com/makoni/swift-adwaita/commit/7c5d86da0bbf8f83817944d0
 7. **Code-sign + notarize**:
    ```bash
    codesign --deep --options runtime \
-     --sign "Developer ID Application: <you>" Kaki.app
-   xcrun notarytool submit Kaki.zip --apple-id <you> \
+     --sign "Developer ID Application: <you>" Owlet.app
+   xcrun notarytool submit Owlet.zip --apple-id <you> \
      --team-id <id> --wait
-   xcrun stapler staple Kaki.app
+   xcrun stapler staple Owlet.app
    ```
-8. **Wrap in a DMG** with `hdiutil create -volname Kaki
-   -srcfolder Kaki.app -ov -format UDZO Kaki.dmg`.
+8. **Wrap in a DMG** with `hdiutil create -volname Owlet
+   -srcfolder Owlet.app -ov -format UDZO Owlet.dmg`.
 
 Bundle size: **~80–100 MB** (GTK4 alone is ~78 MB).
 
@@ -425,10 +425,10 @@ Bundle size: **~80–100 MB** (GTK4 alone is ~78 MB).
   `SecItemCopyMatching` with `kSecClassGenericPassword`. Item
   access controlled by ACL; signed apps can be added to the
   ACL automatically on first use.
-- **IPC (Phase 5 fallback)**: keep `kaki-signal` as a shell
-  script, but use `~/Library/Application Support/kaki/kaki.pid`
+- **IPC (Phase 5 fallback)**: keep `owlet-signal` as a shell
+  script, but use `~/Library/Application Support/owlet/owlet.pid`
   instead of `XDG_RUNTIME_DIR`. POSIX signals work on macOS.
-- **Models dir**: `~/Library/Application Support/kaki/models/`
+- **Models dir**: `~/Library/Application Support/owlet/models/`
   via `g_get_user_data_dir()`.
 
 ## 6. Recommended architecture changes
@@ -486,13 +486,13 @@ the interfaces and leave the backend selection to meson.
 
 ### 6.3 Models directory path
 
-Replace every hardcoded `~/.local/share/kaki/models/` with:
+Replace every hardcoded `~/.local/share/owlet/models/` with:
 
 ```vala
 string models_dir = Path.build_path (
     Path.DIR_SEPARATOR_S,
     Environment.get_user_data_dir (),
-    "kaki", "models"
+    "owlet", "models"
 );
 ```
 
@@ -517,15 +517,15 @@ throughout to get correct macOS behavior for free.
 
 ### 6.5 Phase 5 IPC abstraction
 
-The `kaki-signal` SIGUSR1 fallback should be abstracted:
+The `owlet-signal` SIGUSR1 fallback should be abstracted:
 
-- **Linux**: `XDG_RUNTIME_DIR/kaki.pid` + SIGUSR1/USR2/RTMIN+1
+- **Linux**: `XDG_RUNTIME_DIR/owlet.pid` + SIGUSR1/USR2/RTMIN+1
   (as written).
-- **macOS**: `~/Library/Application Support/kaki/kaki.pid` +
+- **macOS**: `~/Library/Application Support/owlet/owlet.pid` +
   SIGUSR1/USR2 (RT signals may behave differently; test).
-- **Windows**: named pipe `\\.\pipe\kaki\control` with a
-  1-byte command, no signals. The `kaki-signal` script becomes
-  `kaki-signal.exe` (or a PowerShell script).
+- **Windows**: named pipe `\\.\pipe\owlet\control` with a
+  1-byte command, no signals. The `owlet-signal` script becomes
+  `owlet-signal.exe` (or a PowerShell script).
 
 ## 7. Distribution & packaging summary
 
@@ -534,7 +534,7 @@ The `kaki-signal` SIGUSR1 fallback should be abstracted:
 | Build deps source | distro packages | MSYS2 (build only) | Homebrew (build only) |
 | Binary format | ELF executable | `.exe` + DLLs | `.app` bundle |
 | Installer | meson install / distro packaging | NSIS / MSIX / WiX | DMG (drag-to-Applications) |
-| Runtime bundling | none (system libs) | ~80 MB DLL tree vendored next to `kaki.exe` | ~80–100 MB dylibs + schemas + icons vendored in `.app` |
+| Runtime bundling | none (system libs) | ~80 MB DLL tree vendored next to `owlet.exe` | ~80–100 MB dylibs + schemas + icons vendored in `.app` |
 | Code signing | optional | optional (SmartScreen warning otherwise) | **required** (notarization for Gatekeeper) |
 | Sandboxing | none | MSIX optional | App Sandbox blocks dictation — **do not sandbox** |
 | Auto-update | distro packager | MSIX handles it; Sparkle for NSIS | Sparkle (de-facto for non-App-Store Mac apps) |
@@ -573,7 +573,7 @@ Phase 3 + Phase 5 + packaging on each platform.
 
 2. **MSVC build as a stretch goal?** MinGW via MSYS2 is the
    recommended first Windows target. MSVC doubles the build
-   maintenance and is only worth it if Kaki needs to embed in
+   maintenance and is only worth it if Owlet needs to embed in
    an MSVC product. Defer indefinitely unless requested.
 
 3. **Mac App Store "lite" build?** A sandboxed App Store

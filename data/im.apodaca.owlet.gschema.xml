@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schemalist gettext-domain="kaki">
-	<schema id="org.kaki.app" path="/org/kaki/app/">
+<schemalist gettext-domain="owlet">
+	<schema id="im.apodaca.owlet" path="/im/apodaca/owlet/">
 		<key name="model-path" type="s">
 			<default>""</default>
 			<summary>Path to the GGUF model file used for local transcription</summary>
-			<description>Absolute path to a Whisper-compatible GGUF model. When empty, Kaki scans ~/.local/share/kaki/models/ for the first *.gguf at startup.</description>
+			<description>Absolute path to a Whisper-compatible GGUF model. When empty, Owlet scans ~/.local/share/owlet/models/ for the first *.gguf at startup.</description>
 		</key>
 		<key name="use-streaming" type="b">
 			<default>true</default>
@@ -24,7 +24,7 @@
 		<key name="dictation-auto-type" type="b">
 			<default>true</default>
 			<summary>Auto-type streamed text into focused window during dictation</summary>
-			<description>When true, the streamed transcript is injected via the keystroke backend into whatever window has keyboard focus while Kaki is minimized. When false, dictation records and transcribes but does not inject keystrokes.</description>
+			<description>When true, the streamed transcript is injected via the keystroke backend into whatever window has keyboard focus while Owlet is minimized. When false, dictation records and transcribes but does not inject keystrokes.</description>
 		</key>
 		<key name="dictation-key-delay-ms" type="i">
 			<default>0</default>
@@ -49,7 +49,7 @@
 		<key name="close-to-tray" type="b">
 			<default>false</default>
 			<summary>Hide to system tray on window close</summary>
-			<description>When true, closing the main window hides Kaki to a StatusNotifierItem tray icon instead of quitting. Use Quit (Ctrl+Q) or the tray Quit item to exit. On GNOME Shell, an AppIndicator / KStatusNotifierItem extension is required for the icon to appear.</description>
+			<description>When true, closing the main window hides Owlet to a StatusNotifierItem tray icon instead of quitting. Use Quit (Ctrl+Q) or the tray Quit item to exit. On GNOME Shell, an AppIndicator / KStatusNotifierItem extension is required for the icon to appear.</description>
 		</key>
 		<key name="keystroke-backend" type="s">
 			<default>"auto"</default>
@@ -130,7 +130,7 @@
 		<key name="shortcut-quit" type="s">
 			<default>"&lt;Control&gt;Q"</default>
 			<summary>Accelerator for app.quit</summary>
-			<description>GTK accelerator string. Quits Kaki.</description>
+			<description>GTK accelerator string. Quits Owlet.</description>
 		</key>
 	</schema>
 </schemalist>

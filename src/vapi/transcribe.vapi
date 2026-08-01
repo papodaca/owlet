@@ -1,7 +1,7 @@
 /* transcribe.vapi
  *
  * Hand-written Vala binding for the public C API of transcribe.cpp
- * (subprojects/transcribe.cpp, v0.1.2). Bindings cover the subset Kaki
+ * (subprojects/transcribe.cpp, v0.1.2). Bindings cover the subset Owlet
  * needs through Phase 2-4: status, version, logging, model load/free,
  * session init/free, run, single-result accessors, per-row segment /
  * word / token copy-out, capabilities, and the feature probe.

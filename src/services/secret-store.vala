@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Thin wrapper over libsecret for the OpenAI-compatible transcription
- * API key. The schema is "org.kaki.app" with a single STRING attribute
+ * API key. The schema is "im.apodaca.owlet" with a single STRING attribute
  * "type" pinned to "api-key", so `secret-tool search --all 'type=api-key'`
  * surfaces it under that schema (per Phase 4 verification step 6).
  *
@@ -13,7 +13,7 @@
  * and surface libsecret failures to the caller via throws.
  */
 
-public class Kaki.SecretStore : GLib.Object {
+public class Owlet.SecretStore : GLib.Object {
     // Single shared schema instance. Schema is reference-counted in
     // libsecret; holding one static ref for the process lifetime is
     // simpler than ref/unref around every call.
@@ -26,7 +26,7 @@ public class Kaki.SecretStore : GLib.Object {
             // so the attribute list is unambiguous and language-level.
             var attrs = new GLib.HashTable<string, Secret.SchemaAttributeType> (str_hash, str_equal);
             attrs.insert ("type", Secret.SchemaAttributeType.STRING);
-            _schema = new Secret.Schema.newv ("org.kaki.app",
+            _schema = new Secret.Schema.newv ("im.apodaca.owlet",
                                                Secret.SchemaFlags.NONE,
                                                (owned) attrs);
         }
@@ -57,7 +57,7 @@ public class Kaki.SecretStore : GLib.Object {
         yield Secret.password_storev (_schema,
                                        (owned) attrs,
                                        null, // default collection
-                                       _("Kaki API key"),
+                                       _("Owlet API key"),
                                        key,
                                        cancellable);
     }

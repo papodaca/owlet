@@ -1,4 +1,4 @@
-"""Shared fixtures for Kaki pytest suites."""
+"""Shared fixtures for Owlet pytest suites."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 SOURCE_ROOT = Path(
-    os.environ.get("KAKI_SOURCE_ROOT", Path(__file__).resolve().parents[1])
+    os.environ.get("OWLET_SOURCE_ROOT", Path(__file__).resolve().parents[1])
 )
 
 
@@ -30,45 +30,45 @@ def source_root() -> Path:
 
 
 @pytest.fixture(scope="session")
-def kaki_bin() -> Path:
-    env = os.environ.get("KAKI_BIN")
+def owlet_bin() -> Path:
+    env = os.environ.get("OWLET_BIN")
     if env:
         path = Path(env)
     else:
-        path = SOURCE_ROOT / "build" / "src" / "kaki"
+        path = SOURCE_ROOT / "build" / "src" / "owlet"
     if not path.is_file():
-        pytest.skip(f"kaki binary not found at {path}")
+        pytest.skip(f"owlet binary not found at {path}")
     return path
 
 
 @pytest.fixture(scope="session")
 def download_cli() -> Path:
-    env = os.environ.get("KAKI_DOWNLOAD_CLI")
+    env = os.environ.get("OWLET_DOWNLOAD_CLI")
     if env:
         path = Path(env)
     else:
-        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "kaki-download-cli"
+        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "owlet-download-cli"
     if not path.is_file():
-        pytest.skip(f"kaki-download-cli not found at {path}")
+        pytest.skip(f"owlet-download-cli not found at {path}")
     return path
 
 
 @pytest.fixture(scope="session")
 def remote_cli() -> Path:
-    env = os.environ.get("KAKI_REMOTE_CLI")
+    env = os.environ.get("OWLET_REMOTE_CLI")
     if env:
         path = Path(env)
     else:
-        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "kaki-remote-cli"
+        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "owlet-remote-cli"
     if not path.is_file():
-        pytest.skip(f"kaki-remote-cli not found at {path}")
+        pytest.skip(f"owlet-remote-cli not found at {path}")
     return path
 
 
 @pytest.fixture
 def schema_dir(tmp_path: Path, source_root: Path) -> Path:
-    """Compile org.kaki.app.gschema.xml into a throwaway dir."""
-    schema_src = source_root / "data" / "org.kaki.app.gschema.xml"
+    """Compile im.apodaca.owlet.gschema.xml into a throwaway dir."""
+    schema_src = source_root / "data" / "im.apodaca.owlet.gschema.xml"
     dest = tmp_path / "schemas"
     dest.mkdir()
     shutil.copy(schema_src, dest / schema_src.name)
@@ -178,7 +178,7 @@ def keyring():
     if shutil.which("gnome-keyring-daemon") is None or shutil.which("secret-tool") is None:
         pytest.skip("gnome-keyring-daemon / secret-tool not installed")
 
-    runtime = tempfile.mkdtemp(prefix="kaki-keyring-")
+    runtime = tempfile.mkdtemp(prefix="owlet-keyring-")
     env = os.environ.copy()
     env["XDG_RUNTIME_DIR"] = runtime
     env["HOME"] = runtime

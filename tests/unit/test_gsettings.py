@@ -59,10 +59,10 @@ def _run_isolated(schema_dir, script: str) -> str:
 
 
 def test_list_recursively_contains_expected_keys(schema_dir):
-    out = _run_isolated(schema_dir, "gsettings list-recursively org.kaki.app")
+    out = _run_isolated(schema_dir, "gsettings list-recursively im.apodaca.owlet")
     lines = {line for line in out.splitlines() if line.strip()}
     for key, default in EXPECTED_DEFAULTS.items():
-        needle = f"org.kaki.app {key} {default}"
+        needle = f"im.apodaca.owlet {key} {default}"
         assert any(line == needle for line in lines), (
             f"missing or wrong default for {key}: expected {needle!r} in:\n{out}"
         )
@@ -73,12 +73,12 @@ def test_shortcut_record_round_trip(schema_dir):
     script = textwrap.dedent(
         """\
         set -e
-        gsettings set org.kaki.app shortcut-record '<Control><Shift>R'
+        gsettings set im.apodaca.owlet shortcut-record '<Control><Shift>R'
         echo -n "after-set="
-        gsettings get org.kaki.app shortcut-record
-        gsettings reset org.kaki.app shortcut-record
+        gsettings get im.apodaca.owlet shortcut-record
+        gsettings reset im.apodaca.owlet shortcut-record
         echo -n "after-reset="
-        gsettings get org.kaki.app shortcut-record
+        gsettings get im.apodaca.owlet shortcut-record
         """
     )
     out = _run_isolated(schema_dir, script)

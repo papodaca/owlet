@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/org/kaki/app">
+  <gresource prefix="/im/apodaca/owlet">
     <file preprocess="xml-stripblanks">window.ui</file>
     <file preprocess="xml-stripblanks">shortcuts-dialog.ui</file>
     <!-- The .ui file lives under src/ui/ per the plan but is exposed at
-         /org/kaki/app/preferences.ui (no `ui/` segment) so the
-         [GtkTemplate (ui = "/org/kaki/app/preferences.ui")] attribute
+         /im/apodaca/owlet/preferences.ui (no `ui/` segment) so the
+         [GtkTemplate (ui = "/im/apodaca/owlet/preferences.ui")] attribute
          in preferences.vala matches the path used by window.ui /
          shortcuts-dialog.ui. -->
     <file preprocess="xml-stripblanks" alias="preferences.ui">ui/preferences.ui</file>
@@ -16,8 +16,8 @@
     <!-- Phase 5: the fallback helper script is also installed to bindir
          by data/meson.build, but for uninstalled/flatpak builds the
          Preferences "Install helper script" button writes this copy to
-         ~/.local/bin/kaki-signal so it's on PATH. Single source of
-         truth: data/kaki-signal.sh. -->
-    <file alias="kaki-signal.sh">../data/kaki-signal.sh</file>
+         ~/.local/bin/owlet-signal so it's on PATH. Single source of
+         truth: data/owlet-signal.sh. -->
+    <file alias="owlet-signal.sh">../data/owlet-signal.sh</file>
   </gresource>
 </gresources>

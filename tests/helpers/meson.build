@@ -2,7 +2,7 @@
 src_dir = meson.project_source_root() / 'src'
 
 download_cli = executable(
-  'kaki-download-cli',
+  'owlet-download-cli',
   files('download_cli.vala', src_dir / 'services' / 'model-downloader.vala'),
   dependencies: [
     dependency('glib-2.0'),
@@ -14,7 +14,7 @@ download_cli = executable(
 )
 
 remote_cli = executable(
-  'kaki-remote-cli',
+  'owlet-remote-cli',
   files(
     'remote_cli.vala',
     src_dir / 'services' / 'transcription-source.vala',

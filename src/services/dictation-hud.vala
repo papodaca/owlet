@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-public class Kaki.DictationHud : GLib.Object {
+public class Owlet.DictationHud : GLib.Object {
     public bool available { get; private set; }
     public bool visible { get; private set; }
 
-    private Kaki.DictationHudShim.Native? native_hud;
+    private Owlet.DictationHudShim.Native? native_hud;
 
     public DictationHud () {
-        native_hud = Kaki.DictationHudShim.Native.create ();
+        native_hud = Owlet.DictationHudShim.Native.create ();
         available = native_hud != null;
         if (!available)
             warning ("Dictation HUD unavailable (no X11/XWayland DISPLAY)");

@@ -9,7 +9,7 @@
  * XFCE, Cinnamon, Waybar, and GNOME with an AppIndicator extension.
  *
  * Conceptually follows libsni-exporter / blueman SNI exporters; kept
- * minimal for Kaki (flat Show / Dictate / Quit menu, theme IconName
+ * minimal for Owlet (flat Show / Dictate / Quit menu, theme IconName
  * swap for the recording indicator).
  *
  * Tray hosts resolve IconName from the installed icon theme in their
@@ -21,7 +21,7 @@
  * form of register_object is not bound).
  */
 
-public class Kaki.Tray : GLib.Object {
+public class Owlet.Tray : GLib.Object {
     public signal void show_requested ();
     public signal void dictate_requested ();
     public signal void quit_requested ();
@@ -29,7 +29,7 @@ public class Kaki.Tray : GLib.Object {
     public bool visible { get; private set; default = false; }
 
     // Manual getter — a `recording { get; private set; }` property would
-    // generate kaki_tray_set_recording and collide with set_recording().
+    // generate owlet_tray_set_recording and collide with set_recording().
     private bool _recording = false;
     public bool recording { get { return _recording; } }
 
@@ -38,9 +38,9 @@ public class Kaki.Tray : GLib.Object {
     private const string WATCHER_IFACE = "org.kde.StatusNotifierWatcher";
     private const string ITEM_PATH = "/StatusNotifierItem";
     private const string MENU_PATH = "/MenuBar";
-    private const string IDLE_ICON = "org.kaki.app-symbolic";
+    private const string IDLE_ICON = "im.apodaca.owlet-symbolic";
     // Must end in -symbolic so hosts/GTK apply the same recoloring as idle.
-    private const string RECORDING_ICON = "org.kaki.app-recording-symbolic";
+    private const string RECORDING_ICON = "im.apodaca.owlet-recording-symbolic";
 
     // Flat menu ids (root is always 0; children start at 1).
     private const int MENU_SHOW = 1;
@@ -55,7 +55,7 @@ public class Kaki.Tray : GLib.Object {
     private uint watcher_watch_id = 0;
     private uint menu_revision = 1;
     private string icon_name = IDLE_ICON;
-    private string tooltip_title = "Kaki";
+    private string tooltip_title = "Owlet";
 
     public void show () {
         if (visible)
@@ -107,10 +107,10 @@ public class Kaki.Tray : GLib.Object {
     private void apply_recording_visuals () {
         if (_recording) {
             icon_name = RECORDING_ICON;
-            tooltip_title = _("Kaki — Recording");
+            tooltip_title = _("Owlet — Recording");
         } else {
             icon_name = IDLE_ICON;
-            tooltip_title = _("Kaki");
+            tooltip_title = _("Owlet");
         }
     }
 
@@ -278,10 +278,10 @@ public class Kaki.Tray : GLib.Object {
         public string category { owned get { return "ApplicationStatus"; } }
 
         [DBus (name = "Id")]
-        public string id { owned get { return "org.kaki.app"; } }
+        public string id { owned get { return "im.apodaca.owlet"; } }
 
         [DBus (name = "Title")]
-        public string title { owned get { return "Kaki"; } }
+        public string title { owned get { return "Owlet"; } }
 
         [DBus (name = "Status")]
         public string status { owned get { return "Active"; } }

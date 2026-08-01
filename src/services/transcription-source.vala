@@ -30,7 +30,7 @@
  * ---------
  * Uniform async initialization called once after construction and
  * property setup. LocalSource reads the user-configured model-path
- * (with a ~/.local/share/kaki/models/ fallback scan) and loads the
+ * (with a ~/.local/share/owlet/models/ fallback scan) and loads the
  * model; RemoteOpenAISource validates endpoint + model. Throws on
  * failure — the caller switches its UI to an error/empty state.
  *
@@ -43,7 +43,7 @@
  * the interface renames it for symmetry across backends).
  */
 
-public interface Kaki.TranscriptionSource : GLib.Object {
+public interface Owlet.TranscriptionSource : GLib.Object {
     public abstract bool can_stream { get; }
 
     public signal void partial_text (string text);

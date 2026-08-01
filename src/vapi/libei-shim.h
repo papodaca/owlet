@@ -11,5 +11,5 @@
 
 #include <libei.h>
 
-void kaki_ei_seat_bind_keyboard_text(struct ei_seat *seat);
-void kaki_ei_seat_unbind_keyboard_text(struct ei_seat *seat);
+void owlet_ei_seat_bind_keyboard_text(struct ei_seat *seat);
+void owlet_ei_seat_unbind_keyboard_text(struct ei_seat *seat);

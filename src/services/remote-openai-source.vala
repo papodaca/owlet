@@ -34,7 +34,7 @@
  * wire format.
  */
 
-public class Kaki.RemoteOpenAISource : GLib.Object, TranscriptionSource {
+public class Owlet.RemoteOpenAISource : GLib.Object, TranscriptionSource {
     public bool can_stream { get { return false; } }
 
     // Configured by the window from GSettings before prepare() runs.

@@ -32,7 +32,7 @@
 #define HUD_MAX_LINES        3
 #define HUD_FONT             "Sans 12"
 
-struct KakiDictationHudNative {
+struct OwletDictationHudNative {
     Display *dpy;
     int screen;
     Window root;
@@ -50,7 +50,7 @@ struct KakiDictationHudNative {
 };
 
 static void
-ensure_window (KakiDictationHudNative *hud)
+ensure_window (OwletDictationHudNative *hud)
 {
     XSetWindowAttributes attrs;
     XVisualInfo vinfo;
@@ -108,7 +108,7 @@ ensure_window (KakiDictationHudNative *hud)
     XChangeProperty (hud->dpy, hud->win, net_wm_window_type, XA_ATOM, 32,
                      PropModeReplace, (unsigned char *) atoms, 1);
 
-    XStoreName (hud->dpy, hud->win, "Kaki Dictation");
+    XStoreName (hud->dpy, hud->win, "Owlet Dictation");
     hud->created = 1;
 }
 
@@ -152,7 +152,7 @@ measure_and_layout (cairo_t *cr,
 }
 
 static void
-redraw (KakiDictationHudNative *hud)
+redraw (OwletDictationHudNative *hud)
 {
     cairo_surface_t *surface;
     cairo_t *cr;
@@ -260,17 +260,17 @@ redraw (KakiDictationHudNative *hud)
     XFlush (hud->dpy);
 }
 
-KakiDictationHudNative *
-kaki_dictation_hud_native_new (void)
+OwletDictationHudNative *
+owlet_dictation_hud_native_new (void)
 {
-    KakiDictationHudNative *hud;
+    OwletDictationHudNative *hud;
     Display *dpy;
 
     dpy = XOpenDisplay (NULL);
     if (dpy == NULL)
         return NULL;
 
-    hud = g_new0 (KakiDictationHudNative, 1);
+    hud = g_new0 (OwletDictationHudNative, 1);
     hud->dpy = dpy;
     hud->screen = DefaultScreen (dpy);
     hud->root = RootWindow (dpy, hud->screen);
@@ -281,7 +281,7 @@ kaki_dictation_hud_native_new (void)
 }
 
 void
-kaki_dictation_hud_native_free (KakiDictationHudNative *hud)
+owlet_dictation_hud_native_free (OwletDictationHudNative *hud)
 {
     if (hud == NULL)
         return;
@@ -298,7 +298,7 @@ kaki_dictation_hud_native_free (KakiDictationHudNative *hud)
 }
 
 void
-kaki_dictation_hud_native_show (KakiDictationHudNative *hud)
+owlet_dictation_hud_native_show (OwletDictationHudNative *hud)
 {
     int x;
     int y;
@@ -317,7 +317,7 @@ kaki_dictation_hud_native_show (KakiDictationHudNative *hud)
 }
 
 void
-kaki_dictation_hud_native_hide (KakiDictationHudNative *hud)
+owlet_dictation_hud_native_hide (OwletDictationHudNative *hud)
 {
     if (hud == NULL || !hud->created)
         return;
@@ -332,7 +332,7 @@ kaki_dictation_hud_native_hide (KakiDictationHudNative *hud)
 }
 
 void
-kaki_dictation_hud_native_set_text (KakiDictationHudNative *hud,
+owlet_dictation_hud_native_set_text (OwletDictationHudNative *hud,
                                     const char *text)
 {
     if (hud == NULL)
