@@ -29,6 +29,7 @@ owlet_sources = [
   'services/secret-store.vala',
   'services/global-shortcuts.vala',
   'services/sound-feedback.vala',
+  'services/silence-detector.vala',
   'services/tray.vala',
   'services/dictation-hud.vala',
   'ui/preferences.vala',

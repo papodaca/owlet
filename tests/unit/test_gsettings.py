@@ -17,6 +17,8 @@ EXPECTED_DEFAULTS = {
     "use-streaming": "true",
     "language": "'auto'",
     "cpu-threads": "4",
+    "dictation-auto-stop": "false",
+    "dictation-auto-stop-pause-ms": "1200",
 }
 
 

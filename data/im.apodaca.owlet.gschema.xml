@@ -46,6 +46,16 @@
 			<summary>Show overlay HUD for global shortcut / tray dictation</summary>
 			<description>When true, background dictation (global shortcut or tray Dictate) shows an always-on-top live transcript overlay. When false, background dictation still runs without the overlay. In-window Dictate never shows the HUD.</description>
 		</key>
+		<key name="dictation-auto-stop" type="b">
+			<default>false</default>
+			<summary>Stop dictation after a pause in speech</summary>
+			<description>When true, dictation ends automatically after dictation-auto-stop-pause-ms of silence (including if the user never speaks). Record mode is unaffected. When false, dictation stops only via toggle, Stop, or shortcut.</description>
+		</key>
+		<key name="dictation-auto-stop-pause-ms" type="i">
+			<default>1200</default>
+			<summary>Silence duration before dictation auto-stops (ms)</summary>
+			<description>How long speech must stay below the internal energy threshold before dictation stops. Intended range 500–5000. Only used when dictation-auto-stop is true.</description>
+		</key>
 		<key name="close-to-tray" type="b">
 			<default>false</default>
 			<summary>Hide to system tray on window close</summary>
