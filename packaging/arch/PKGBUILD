@@ -41,8 +41,6 @@ makedepends=(
   libei
   blas
   cblas
-  transcribe-cpp
-  python-pytest
 )
 
 if [[ ${_build_backend} == all || ${_build_backend} == vulkan ]]; then
@@ -80,6 +78,11 @@ _common_optdepends=(
   'libnotify: notifications from kaki-signal'
 )
 
+prepare() {
+  cd "${startdir}/../.."
+  git submodule update --init --recursive
+}
+
 pkgver() {
   cd "${startdir}/../.."
   printf '0.1.0.r%s.%s' \
@@ -92,7 +95,6 @@ build() {
   local common=(
     --prefix=/usr
     --buildtype=plain
-    -Dtranscribe_dir=/usr/src/transcribe.cpp
   )
   local backends=()
 
@@ -104,6 +106,7 @@ build() {
 
   local backend
   for backend in "${backends[@]}"; do
+    rm -rf "build-${backend}"
     if [[ ${backend} == hip ]]; then
       meson setup build-hip "${common[@]}" -Dgpu_backend=hip \
         '-Damd_targets=gfx1100;gfx1030;gfx906;gfx90a;gfx1200;gfx1201'
@@ -129,6 +132,12 @@ check() {
     'Validate schema file'
 }
 
+_install_licenses() {
+  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+  install -Dm644 subprojects/transcribe.cpp/LICENSE \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.transcribe.cpp"
+}
+
 package_kaki() {
   depends=("${_common_depends[@]}")
   optdepends=("${_common_optdepends[@]}")
@@ -136,7 +145,7 @@ package_kaki() {
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-cpu
-  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+  _install_licenses
 }
 
 package_kaki-vulkan() {
@@ -148,7 +157,7 @@ package_kaki-vulkan() {
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-vulkan
-  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+  _install_licenses
 }
 
 package_kaki-hip() {
@@ -160,5 +169,5 @@ package_kaki-hip() {
 
   cd "${startdir}/../.."
   DESTDIR="${pkgdir}" meson install -C build-hip
-  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+  _install_licenses
 }

@@ -24,20 +24,13 @@ hand; `makepkg` installs the required build dependencies.
    cd kaki
    ```
 
-3. Build and install the `transcribe.cpp` source package required by
-   Kaki:
+3. Enter the packaging directory, then build and install **one**
+   variant. `makepkg` initializes the `transcribe.cpp` submodule and
+   statically links it into the app. The other variants and their GPU
+   dependencies will not be built or installed.
 
    ```bash
-   cd packaging/arch-transcribe-cpp
-   makepkg -si
-   ```
-
-4. Enter the Kaki packaging directory, then build and install **one**
-   variant. The other variants and their GPU dependencies will not be
-   built or installed.
-
-   ```bash
-   cd ../arch
+   cd packaging/arch
    ```
 
    | Variant | Recommended for | Build and install command |
@@ -54,9 +47,9 @@ After installation, launch **Kaki** from the application menu. Speech
 models are downloaded from Kaki's Preferences window and are not bundled
 in the package.
 
-To update later, run `git pull` in the `kaki` directory and repeat steps
-3–4. The generated package version includes the current Git revision, so
-it changes automatically when the project is updated.
+To update later, run `git pull` in the `kaki` directory and repeat
+step 3. The generated package version includes the current Git revision,
+so it changes automatically when the project is updated.
 
 ## Build & run from source
 

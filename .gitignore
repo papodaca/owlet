@@ -35,3 +35,9 @@ compile_commands.json
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+# Arch makepkg artifacts (midscroll-style in-tree packaging)
+/packaging/**/*.pkg.tar.zst
+/packaging/**/pkg/
+/packaging/**/src/
+/packaging/**/*.log
