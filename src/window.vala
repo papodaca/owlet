@@ -33,6 +33,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private Owlet.TranscriptionSource source;
     private Owlet.Keystroke keystroke;
     private Owlet.SoundFeedback sound_feedback;
+    private Owlet.SilenceDetector silence_detector;
     private Owlet.DictationHud hud;
 
     // How dictation was launched. FOREGROUND (in-window Dictate) keeps
@@ -92,6 +93,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         keystroke = new Owlet.Keystroke ();
         settings = new GLib.Settings ("im.apodaca.owlet");
         sound_feedback = new Owlet.SoundFeedback (settings);
+        silence_detector = new Owlet.SilenceDetector ();
         hud = new Owlet.DictationHud ();
 
         // Pick the keystroke backend from settings. auto|libei|ydotool|
@@ -366,6 +368,23 @@ public class Owlet.Window : Adw.ApplicationWindow {
                 batch_buf[old_len + i] = samples[i];
             }
         }
+
+        // Dictation silence auto-stop (opt-in). Observe on the GST
+        // thread; schedule stop_dictation on the main loop.
+        if (!dictating || !settings.get_boolean ("dictation-auto-stop"))
+            return;
+        int pause = settings.get_int ("dictation-auto-stop-pause-ms");
+        if (pause < 500)
+            pause = 500;
+        else if (pause > 5000)
+            pause = 5000;
+        silence_detector.pause_ms = pause;
+        if (silence_detector.observe (samples)) {
+            GLib.Idle.add (() => {
+                stop_dictation ();
+                return false;
+            });
+        }
     }
 
     private void on_stop () {
@@ -445,6 +464,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             // In-window path: no HUD. Background path: show OSD.
             dictating = true;
             last_typed = "";
+            reset_silence_detector ();
             if (mode == DictationLaunchMode.BACKGROUND)
                 maybe_show_dictation_hud ();
             return;
@@ -455,6 +475,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         }
         dictating = true;
         last_typed = "";
+        reset_silence_detector ();
 
         if (mode == DictationLaunchMode.BACKGROUND) {
             // Global/tray: Owlet is already backgrounded in the common
@@ -522,7 +543,18 @@ public class Owlet.Window : Adw.ApplicationWindow {
         dictating = false;
         dictate_btn.active = false;
         last_typed = "";
+        silence_detector.reset ();
         hud.hide ();
+    }
+
+    private void reset_silence_detector () {
+        int pause = settings.get_int ("dictation-auto-stop-pause-ms");
+        if (pause < 500)
+            pause = 500;
+        else if (pause > 5000)
+            pause = 5000;
+        silence_detector.pause_ms = pause;
+        silence_detector.reset ();
     }
 
     // Background dictation OSD, gated by the dictation-hud GSettings
