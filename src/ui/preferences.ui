@@ -131,6 +131,26 @@
                 <property name="subtitle" translatable="yes">Show a live transcript overlay when dictating from the global shortcut or tray</property>
               </object>
             </child>
+            <child>
+              <object class="AdwSwitchRow" id="dictation_auto_stop_row">
+                <property name="title" translatable="yes">Auto-stop after pause</property>
+                <property name="subtitle" translatable="yes">End dictation when you stop speaking for a while</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwSpinRow" id="dictation_auto_stop_pause_row">
+                <property name="title" translatable="yes">Pause duration</property>
+                <property name="subtitle" translatable="yes">Milliseconds of silence before dictation stops</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">500</property>
+                    <property name="upper">5000</property>
+                    <property name="step-increment">100</property>
+                    <property name="page-increment">500</property>
+                  </object>
+                </property>
+              </object>
+            </child>
           </object>
         </child>
         <child>

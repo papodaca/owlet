@@ -33,6 +33,8 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
     [GtkChild] unowned Adw.SwitchRow streaming_row;
     [GtkChild] unowned Adw.SwitchRow sound_feedback_row;
     [GtkChild] unowned Adw.SwitchRow dictation_hud_row;
+    [GtkChild] unowned Adw.SwitchRow dictation_auto_stop_row;
+    [GtkChild] unowned Adw.SpinRow dictation_auto_stop_pause_row;
     [GtkChild] unowned Adw.SwitchRow close_to_tray_row;
 
     // ----- Models page -----
@@ -178,6 +180,22 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
                        GLib.SettingsBindFlags.DEFAULT);
         settings.bind ("dictation-hud", dictation_hud_row, "active",
                        GLib.SettingsBindFlags.DEFAULT);
+        settings.bind ("dictation-auto-stop", dictation_auto_stop_row, "active",
+                       GLib.SettingsBindFlags.DEFAULT);
+
+        // Pause duration (GSettings int <-> SpinRow double), clamped to
+        // the SpinRow range. Sensitive only while auto-stop is enabled.
+        dictation_auto_stop_pause_row.set_value (
+            (double) settings.get_int ("dictation-auto-stop-pause-ms"));
+        dictation_auto_stop_pause_row.notify["value"].connect (() => {
+            settings.set_int ("dictation-auto-stop-pause-ms",
+                (int) dictation_auto_stop_pause_row.get_value ());
+        });
+        dictation_auto_stop_pause_row.sensitive = dictation_auto_stop_row.active;
+        dictation_auto_stop_row.notify["active"].connect (() => {
+            dictation_auto_stop_pause_row.sensitive = dictation_auto_stop_row.active;
+        });
+
         settings.bind ("close-to-tray", close_to_tray_row, "active",
                        GLib.SettingsBindFlags.DEFAULT);
     }
