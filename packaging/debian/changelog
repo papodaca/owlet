@@ -1,0 +1,5 @@
+owlet (0.1.0+git33.ec81dc6-1) UNRELEASED; urgency=medium
+
+  * Initial Debian packaging (CPU / Vulkan / HIP split packages).
+
+ -- Ethan Apodaca <papodaca@gmail.com>  Sat, 01 Aug 2026 21:14:14 +0000

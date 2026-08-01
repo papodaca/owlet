@@ -57,7 +57,7 @@ dictation_hud_shim = static_library('dictation-hud-shim',
 owlet_deps = [
   config_dep,
   dependency('gtk4'),
-  dependency('libadwaita-1', version: '>= 1.4'),
+  dependency('libadwaita-1', version: '>= 1.8'),
   transcribe_dep,
   valac.find_library('transcribe', dirs: meson.current_source_dir() / 'vapi'),
   dependency('gstreamer-1.0'),

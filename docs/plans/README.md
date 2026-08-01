@@ -31,7 +31,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
 | 12 | [`phase-12-packaging.md`](phase-12-packaging.md) | Arch PKGBUILD: split CPU/Vulkan/HIP packages; static submodule link |
 | 13 | [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md) | Global/tray dictation HUD (Xlib OSD, no minimize) |
-| 14 | [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md) | Debian/Ubuntu `.deb`: split CPU/Vulkan/HIP; static submodule link |
+| 14 | [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md) | Debian/Ubuntu `.deb`: split CPU/Vulkan/HIP; GitHub release `.deb` artifacts |
 | 15 | [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md) | Full rename to Owlet / `im.apodaca.owlet` |
 
 ## Architectural decisions
@@ -114,7 +114,8 @@ meson setup build -Dgpu_backend=cpu                        # CPU
    in-window Dictate unchanged (see
    [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md)).
 9. Phase 14: Debian/Ubuntu packaging (`packaging/debian/`, split
-   CPU/Vulkan/HIP `.deb`s; see
-   [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md)).
+   CPU/Vulkan/HIP `.deb`s + release workflow artifacts; see
+   [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md)) —
+   **complete** (CPU/Vulkan/HIP smoke green on `ubuntu:26.04`).
 10. Phase 15: full identity rename to Owlet / `im.apodaca.owlet` (see
     [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md)).

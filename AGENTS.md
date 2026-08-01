@@ -77,6 +77,10 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
 - **HIP**: sidecar cmake gets `PATH` prepended with ROCm's `bin/` (often
   `/opt/rocm/bin`) so `enable_language(HIP)` finds clang; the user shell
   is left alone. Empty `-Damd_targets=` autodetects via `rocminfo`.
+  Debian PIE links need HIP objects built with `-fPIC`: meson passes
+  typed `-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON` and
+  `-DCMAKE_HIP_FLAGS:STRING=-fPIC` (plus `CMAKE_HIP_FLAGS_INIT`) —
+  untyped `-D` cache entries can be wiped by `enable_language(HIP)`.
 - **Audio capture** (`recorder.vala`): GStreamer
   `pulsesrc` → else `pipewiresrc` → `audioconvert` → `audioresample` →
   caps (16 kHz mono F32LE) → `appsink`.
@@ -120,12 +124,19 @@ F32LE / 16 kHz / mono.
 
 ## Dependencies
 
-pkg-config: `gtk4`, `libadwaita-1 >= 1.4`, `gstreamer-1.0`,
+pkg-config: `gtk4`, `libadwaita-1 >= 1.8`, `gstreamer-1.0`,
 `gstreamer-base-1.0`, `gstreamer-app-1.0`, `gstreamer-audio-1.0`,
 `libsecret-1`, `libsoup-3.0`, `json-glib-1.0`, plus optional
-`libei-1.0`. Runtime optional: `rocminfo`, `ydotool`, `xdotool`,
-`xdg-desktop-portal`. C++ toolchain required to link the transcribe
-static lib. Submodule must be initialized.
+`libei-1.0` (≥ 1.6 for TEXT path; else ydotool/xdotool). Runtime
+optional: `rocminfo`, `ydotool`, `xdotool`, `xdg-desktop-portal`. C++
+toolchain required to link the transcribe static lib. Submodule must
+be initialized. Packaging: Arch under `packaging/arch/`; Debian/Ubuntu
+(`.deb`, Ubuntu 26.04 / Debian sid) under `packaging/debian/`. HIP
+`.deb` builds also need noble's `libxml2` (`libxml2.so.2`) because ROCm
+6.4.3's `lld` is not built against distro `libxml2-16` — see README /
+`smoke-docker-inner.sh`. HIP `dh_shlibdeps` needs
+`-l/opt/rocm/lib --ignore-missing-info` (ROCm libs outside multiarch;
+ROCm .debs often lack shlibs/symbols).
 
 ## Plans status
 
@@ -139,7 +150,6 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | 9 | Finish gettext/`po/` (`owlet.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
-| 14 | Debian/Ubuntu packaging (`.deb` split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-14-debian-packaging.md` |
 
 ## Layout
 

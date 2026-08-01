@@ -1,0 +1,114 @@
+Source: owlet
+Section: sound
+Priority: optional
+Maintainer: Ethan Apodaca <papodaca@gmail.com>
+Rules-Requires-Root: no
+Standards-Version: 4.7.0
+Homepage: https://github.com/papodaca/owlet
+Vcs-Git: https://github.com/papodaca/owlet.git
+Vcs-Browser: https://github.com/papodaca/owlet
+Build-Depends:
+ debhelper-compat (= 13),
+ meson,
+ ninja-build,
+ valac,
+ pkg-config,
+ cmake,
+ g++,
+ git,
+ appstream,
+ desktop-file-utils,
+ libglib2.0-bin,
+ python3-pytest,
+ libgtk-4-dev,
+ libadwaita-1-dev (>= 1.8),
+ libgstreamer1.0-dev,
+ libgstreamer-plugins-base1.0-dev,
+ libsoup-3.0-dev,
+ libsecret-1-dev,
+ libjson-glib-dev,
+ libei-dev,
+ libx11-dev,
+ libxext-dev,
+ libcairo2-dev,
+ libpango1.0-dev,
+ libblas-dev,
+ libvulkan-dev <!nouvulkan>,
+ glslc <!nouvulkan>,
+ spirv-headers <!nouvulkan>,
+ hip-dev <!nohip>,
+ rocm-device-libs <!nohip>,
+ hipblas <!nohip>,
+ hipblas-dev <!nohip>,
+ rocblas <!nohip>,
+ rocblas-dev <!nohip>,
+ rocminfo <!nohip>,
+ rccl <!nohip>,
+
+Package: owlet
+Architecture: amd64
+Build-Profiles: <!nocpu>
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ gstreamer1.0-plugins-good,
+ gstreamer1.0-pipewire,
+Conflicts: owlet-vulkan, owlet-hip
+# libei ≥ 1.6 enables Owlet's TEXT path at build time; Ubuntu 26.04 /
+# Debian sid still ship 1.5, so meson skips linking and ${shlibs:Depends}
+# will not pull libei1. Keep it as a Recommends for hosts that do have it.
+Recommends: libnotify-bin, xdg-desktop-portal, libei1
+Suggests: ydotool, xdotool
+Description: Speech-to-text GNOME app (CPU backend)
+ Owlet is a GTK4 + libadwaita speech-to-text app. Local inference uses
+ the bundled transcribe.cpp engine (statically linked). This package
+ builds the CPU ggml backend.
+ .
+ GPU backends are separate packages (owlet-vulkan, owlet-hip); only one
+ variant can be installed at a time. Speech models are downloaded at
+ runtime and are not bundled.
+
+Package: owlet-vulkan
+Architecture: amd64
+Build-Profiles: <!nouvulkan>
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ gstreamer1.0-plugins-good,
+ gstreamer1.0-pipewire,
+ libvulkan1,
+Provides: owlet
+Conflicts: owlet
+Recommends: libnotify-bin, xdg-desktop-portal, libei1
+Suggests: ydotool, xdotool
+Description: Speech-to-text GNOME app (Vulkan backend)
+ Owlet is a GTK4 + libadwaita speech-to-text app. Local inference uses
+ the bundled transcribe.cpp engine (statically linked). This package
+ builds the Vulkan ggml backend.
+ .
+ Mutually exclusive with owlet (CPU) and owlet-hip. Speech models are
+ downloaded at runtime and are not bundled.
+
+Package: owlet-hip
+Architecture: amd64
+Build-Profiles: <!nohip>
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ gstreamer1.0-plugins-good,
+ gstreamer1.0-pipewire,
+ rocm-hip-runtime | hip-runtime-amd,
+ hipblas,
+ rocblas,
+Provides: owlet
+Conflicts: owlet
+Recommends: libnotify-bin, xdg-desktop-portal, libei1
+Suggests: ydotool, xdotool
+Description: Speech-to-text GNOME app (AMD HIP/ROCm backend)
+ Owlet is a GTK4 + libadwaita speech-to-text app. Local inference uses
+ the bundled transcribe.cpp engine (statically linked). This package
+ builds the HIP/ROCm ggml backend.
+ .
+ Requires AMD's ROCm apt repository (repo.radeon.com) for runtime
+ libraries. Mutually exclusive with owlet (CPU) and owlet-vulkan.
+ Speech models are downloaded at runtime and are not bundled.

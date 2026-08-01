@@ -5,10 +5,10 @@
  * the KEYBOARD + TEXT (since libei 1.6) capabilities are bound, which
  * is all Owlet's dictation mode needs.
  *
- * TEXT (EI_DEVICE_CAP_TEXT = 1 << 6) was added in libei 1.6. On older
- * libei the value is unknown to the EIS implementation and
- * ei_seat_bind_capabilities treats unknown caps as a no-op, so this
- * shim is safe to compile against any libei-1.0.
+ * TEXT (EI_DEVICE_CAP_TEXT) and ei_device_text_utf8* were added in
+ * libei 1.6. Meson only compiles this shim when EI_DEVICE_CAP_TEXT is
+ * present in libei.h; older distro libei (e.g. 1.5) is treated as
+ * unavailable and dictation falls back to ydotool / xdotool.
  *
  * SPDX-License-Identifier: MIT
  */

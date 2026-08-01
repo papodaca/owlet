@@ -1,9 +1,31 @@
 subdir('helpers')
 
-# Prefer a local tests/.venv when present (see tests/README.md); else PATH.
+# Prefer a local tests/.venv when it is runnable on this host (see
+# tests/README.md). A bind-mounted foreign venv (e.g. Arch paths inside
+# an Ubuntu packaging container) fails its shebang — fall back to PATH
+# pytest in that case (python3-pytest Build-Depends).
+fs = import('fs')
+venv_pytest = meson.current_source_dir() / '.venv' / 'bin' / 'pytest'
+pytest_dirs = []
+if fs.exists(venv_pytest)
+  # Probe via sh so a foreign shebang (ENOENT interpreter) is a normal
+  # non-zero exit under check: false, not a Meson hard error.
+  venv_probe = run_command(
+    'sh', '-c', '"$@" --version >/dev/null 2>&1',
+    'pytest-probe',
+    venv_pytest,
+    check: false,
+  )
+  if venv_probe.returncode() == 0
+    pytest_dirs += [meson.current_source_dir() / '.venv' / 'bin']
+  else
+    message('tests/.venv pytest is not runnable here; using system pytest')
+  endif
+endif
+
 pytest = find_program(
   'pytest',
-  dirs: [meson.current_source_dir() / '.venv' / 'bin'],
+  dirs: pytest_dirs,
   required: false,
   disabler: true,
 )
@@ -15,9 +37,11 @@ test_env.set('OWLET_BIN', owlet.full_path())
 test_env.set('OWLET_SOURCE_ROOT', meson.project_source_root())
 test_env.set('OWLET_DOWNLOAD_CLI', download_cli.full_path())
 test_env.set('OWLET_REMOTE_CLI', remote_cli.full_path())
-# Ensure the venv (if any) wins for python imports when pytest spawns.
-venv_bin = meson.current_source_dir() / '.venv' / 'bin'
-test_env.prepend('PATH', venv_bin)
+# Only prepend the venv when we accepted it above; a broken foreign
+# venv on PATH would shadow system pytest at test runtime too.
+if pytest_dirs.length() > 0
+  test_env.prepend('PATH', meson.current_source_dir() / '.venv' / 'bin')
+endif
 
 pytest_args = ['-q', '--tb=short']
 

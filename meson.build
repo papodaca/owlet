@@ -34,14 +34,21 @@ add_project_arguments('-DGETTEXT_PACKAGE="' + meson.project_name () + '"', langu
 
 # --------------------------------------------------------------------------- #
 # Optional libei-1.0 dependency for keystroke injection (dictation mode).    #
-# When found, HAVE_LIBEI is propagated as a Vala preprocessor symbol so the   #
-# libei backend in src/services/keystroke.vala compiles in. When absent,      #
-# dictation falls back to ydotool / xdotool.                                  #
+# Owlet's libei path needs EI_DEVICE_CAP_TEXT / ei_device_text_utf8* (libei   #
+# ≥ 1.6). Older distro libei (e.g. 1.5 on Ubuntu 26.04 / Debian sid) is       #
+# treated as unavailable so the build still succeeds and dictation falls      #
+# back to ydotool / xdotool.                                                  #
 # --------------------------------------------------------------------------- #
 libei_dep = dependency('libei-1.0', required: false)
-have_libei = libei_dep.found()
-if have_libei
-  message('libei-1.0 found: enabling libei keystroke backend')
+have_libei = false
+if libei_dep.found()
+  if cc.has_header_symbol('libei.h', 'EI_DEVICE_CAP_TEXT',
+                          dependencies: libei_dep)
+    have_libei = true
+    message('libei-1.0 with TEXT (≥ 1.6): enabling libei keystroke backend')
+  else
+    message('libei-1.0 found but lacks EI_DEVICE_CAP_TEXT (< 1.6): dictation will use ydotool/xdotool')
+  endif
 else
   message('libei-1.0 not found: dictation will use ydotool/xdotool')
 endif
@@ -82,6 +89,13 @@ cmake_args = [
   '-S', transcribe_src,
   '-B', transcribe_builddir,
   '-DCMAKE_BUILD_TYPE=Release',
+  # Static ggml/transcribe archives are linked into the PIE owlet
+  # binary (Debian hardening=+all; also typical on Arch). Without PIC,
+  # HIP objects in particular fail at final link with R_X86_64_32
+  # relocations — CMAKE_HIP_FLAGS does not inherit dpkg CXXFLAGS.
+  # Typed BOOL so enable_language(HIP) cannot treat this as UNINITIALIZED
+  # and drop it from the cache.
+  '-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON',
   '-DTRANSCRIBE_BUILD_SHARED=OFF',
   '-DTRANSCRIBE_BUILD_TESTS=OFF',
   '-DTRANSCRIBE_BUILD_EXAMPLES=OFF',
@@ -160,6 +174,13 @@ if gpu_backend == 'hip'
     '-DGGML_HIP=ON',
     '-DAMDGPU_TARGETS=' + cmake_amd_targets,
     '-DCMAKE_HIP_ARCHITECTURES=' + cmake_amd_targets,
+    # HIP language flags are separate from CXXFLAGS; force -fPIC so
+    # libggml-hip.a can link into a PIE owlet (see POSITION_INDEPENDENT
+    # note on cmake_args above). FLAGS_INIT seeds enable_language(HIP);
+    # typed STRING CMAKE_HIP_FLAGS keeps -fPIC if the language module
+    # would otherwise reset an UNINITIALIZED -D value to empty.
+    '-DCMAKE_HIP_FLAGS_INIT=-fPIC',
+    '-DCMAKE_HIP_FLAGS:STRING=-fPIC',
   ]
   # CMake's enable_language(HIP) needs to find hipcc and clang on PATH
   # (CMAKE_HIP_COMPILER rejects the hipcc wrapper — it wants clang

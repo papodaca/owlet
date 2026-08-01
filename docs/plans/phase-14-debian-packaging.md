@@ -1,5 +1,9 @@
 # Phase 14 — Debian / Ubuntu packaging (`.deb`)
 
+> **Status:** complete (CPU + Vulkan + HIP `.deb` smoke green on
+> `ubuntu:26.04` via `packaging/debian/smoke-docker.sh` /
+> `test_deb_build.sh`)
+
 ## Goal
 
 Ship in-tree Debian packaging so `dpkg-buildpackage` (via a thin
@@ -33,12 +37,12 @@ mutually exclusive binary packages are the idiomatic answer.
 | License packaging | `debian/copyright` covers GPL-3.0-or-later (Owlet) + MIT (transcribe.cpp submodule); also install license texts under `/usr/share/doc/<pkg>/` |
 | HIP amd_targets | Explicit list (no rocminfo autodetect): `gfx1100;gfx1030;gfx906;gfx90a;gfx1200;gfx1201` |
 | HIP deps source | **AMD ROCm apt repo** (`repo.radeon.com`) — distro universe ROCm alone is too old/incomplete for these targets |
-| Target releases | **Ubuntu 24.04 (noble)** and **Debian 13 (trixie)** — document both; note any package-name diffs |
-| libei | Hard `Depends` / `Build-Depends` (compile-in when found; better dictation UX than ydotool-only) |
+| Target releases | **Ubuntu 26.04 (resolute)** and **Debian sid** — require libadwaita ≥ 1.8 (`Adw.ShortcutsDialog`); Ubuntu 24.04 / Debian 13 are too old |
+| libei | Soft: `libei-dev` Build-Depends (compile-in only when `EI_DEVICE_CAP_TEXT` exists, libei ≥ 1.6); runtime `libei1` is `Recommends` (Ubuntu 26.04 / Debian sid ship 1.5 → ydotool/xdotool fallback). `${shlibs:Depends}` pulls `libei1` automatically when linked |
 | Models | Not packaged — downloaded at runtime to `$XDG_DATA_HOME/owlet/models/` |
 | Test helpers | `download_cli` / `remote_cli` stay `install: false` — not packaged |
 | Tests in package build | Metadata validators + `meson test --suite unit` only (CPU build when `all`) |
-| Delivery (first pass) | In-tree build docs only — no Launchpad PPA, no OBS, no CI `.deb` artifacts |
+| Delivery (first pass) | In-tree build docs + GitHub Release `.deb` artifacts (Ubuntu 26.04 CI); no Launchpad PPA / OBS |
 | Maintainer scripts | Prefer dpkg triggers (`libglib2.0`, gtk icon cache, desktop DB) over custom `postinst`; add scripts only if triggers prove insufficient |
 
 ## Current build facts (shared with phase 12)
@@ -66,13 +70,13 @@ the same caches when packages are installed or removed.
 
 ### Required pkg-config deps → Debian/Ubuntu packages
 
-Confirm exact names on noble and trixie during implementation
+Confirm exact names on Ubuntu 26.04 and Debian sid during implementation
 (`apt-cache search` / `dpkg -S`). Expected mapping:
 
 | pkg-config / need | Debian / Ubuntu package (expected) |
 | --- | --- |
 | `gtk4` | `libgtk-4-dev` (build), `libgtk-4-1` (runtime) |
-| `libadwaita-1` ≥ 1.4 | `libadwaita-1-dev`, `libadwaita-1-0` |
+| `libadwaita-1` ≥ 1.8 | `libadwaita-1-dev (>= 1.8)`, `libadwaita-1-0` |
 | `gstreamer-1.0` / `-base` / `-app` / `-audio` | `libgstreamer1.0-dev`, `libgstreamer-plugins-base1.0-dev`, … |
 | `libsoup-3.0` | `libsoup-3.0-dev`, `libsoup-3.0-0` |
 | `libsecret-1` | `libsecret-1-dev`, `libsecret-1-0` |
@@ -81,7 +85,9 @@ Confirm exact names on noble and trixie during implementation
 | `x11` / `xext` / cairo / pangocairo | `libx11-dev`, `libxext-dev`, `libcairo2-dev`, `libpangocairo-1.0-dev` |
 | `cblas` / `blas` / `stdc++` | `libblas-dev` (+ cblas as needed), `libstdc++6` |
 | toolchain | `meson`, `ninja-build`, `valac`, `pkg-config`, `cmake`, `g++`, `git` |
+| Vulkan ggml | `libvulkan-dev`, `glslc`, **`spirv-headers`** (CMake `find_package(SPIRV-Headers CONFIG)`) |
 | validators | `appstream` / `appstream-util`, `desktop-file-utils`, `libglib2.0-bin` |
+| unit tests | `python3-pytest` (prefer over a host Arch `.venv` bind-mounted into Docker) |
 
 ### Runtime plugin / tool deps
 
@@ -101,16 +107,27 @@ KStatusNotifierItem extension (document only).
 
 | Role | Packages (expected) |
 | --- | --- |
-| Build-Depends | `libvulkan-dev`, `glslc` (shaderc) |
+| Build-Depends | `libvulkan-dev`, `glslc` (shaderc), `spirv-headers` (ggml-vulkan `find_package(SPIRV-Headers)`) |
 | Depends | `libvulkan1` (often transitive via gtk4) |
 
 ### HIP (AMD ROCm apt repo)
 
 Document enabling AMD’s Ubuntu/Debian ROCm apt source before building or
 installing `owlet-hip`. Prefer meta / concrete packages from that repo
-(e.g. `hipcc` / `hip-dev`, `hipblas` / `-dev`, `rocblas` / `-dev`,
+(e.g. `hipcc` / `hip-dev`, `rocm-device-libs` — only a Recommends of
+`rocm-llvm`, required for clang HIP compiler tests when using
+`--no-install-recommends` — `hipblas` / `-dev`, `rocblas` / `-dev`,
 `rocminfo`, runtime libs such as `libamdhip64` / `hip-runtime-amd`) —
-**pin exact names** after checking noble + current ROCm release notes.
+**pin exact names** after checking current ROCm release notes. AMD ROCm
+apt currently publishes jammy/noble only — pin the **noble** suite on
+Ubuntu 26.04 / Debian sid until a newer suite exists.
+
+Also install noble's **`libxml2`** (pulls `libicu74`): ROCm 6.4.3's
+`/opt/rocm/lib/llvm/bin/lld` is linked against `libxml2.so.2`, while
+Ubuntu 26.04 / Debian sid only ship `libxml2.so.16` (`libxml2-16`). Do
+**not** put `libxml2` in `debian/control` Build-Depends (package name
+absent on resolute/sid); smoke-docker / README add a noble pin instead.
+`build.sh` preflights for `libxml2.so.2` on HIP builds.
 
 `meson.build` links `amdhip64`, `hipblas`, `rocblas`, `rccl` when found.
 Binary will not load without the ROCm shared libs.
@@ -119,6 +136,18 @@ Binary will not load without the ROCm shared libs.
 `/opt/rocm/bin`) so `enable_language(HIP)` finds clang; the user shell
 is left alone. Packaging should ensure that path is visible during the
 package build (env in `debian/rules` if needed).
+
+HIP objects must be built with **`-fPIC`**: Debian
+`DEB_BUILD_MAINT_OPTIONS=hardening=+all` links a PIE `owlet`, and
+`CMAKE_HIP_FLAGS` does not inherit dpkg `CXXFLAGS`. `meson.build`
+passes `-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON`,
+`-DCMAKE_HIP_FLAGS_INIT=-fPIC`, and `-DCMAKE_HIP_FLAGS:STRING=-fPIC`
+(typed cache entries — untyped `-D` values are `UNINITIALIZED` and
+`enable_language(HIP)` can wipe them).
+
+`dh_shlibdeps` needs `-l/opt/rocm/lib --ignore-missing-info` when
+building HIP: ROCm libs are outside multiarch paths, and ROCm .debs
+often lack shlibs/symbols. Explicit `Depends` cover the runtime.
 
 If a packager’s ROCm is &lt; 6.4, drop `gfx1200` / `gfx1201` from
 `amd_targets` (same note as Arch).
@@ -173,12 +202,14 @@ Arch). Override `dh_auto_configure` / `build` / `test` / `install` /
   it; prefer matching Arch semantics).
 - `owlet-vulkan` / `owlet-hip`: `Provides: owlet`, `Conflicts: owlet`,
   plus backend-specific Depends.
-- `Suggests` / `Recommends` for ydotool, xdotool, xdg-desktop-portal,
-  libnotify-bin.
-- Optional: build-profiles or conditional binary packages so
-  `OWLET_BACKEND=cpu` does not require Vulkan/HIP build-deps — implement
-  via `debian/rules` filtering `dh_listpackages` / env, same as Arch
-  conditional `pkgname`.
+- `Recommends` for libei1, xdg-desktop-portal, libnotify-bin;
+  `Suggests` for ydotool, xdotool (dictation fallbacks when libei
+  < 1.6 / TEXT unavailable).
+- Optional: build-profiles so `OWLET_BACKEND=cpu|vulkan|hip` skips both
+  unused Build-Depends **and** binary packages — use `nocpu` /
+  `nouvulkan` / `nohip` with `Build-Profiles: <!nocpu>` (etc.) on each
+  `Package:` stanza. Without `nocpu`, a vulkan-only build still emits an
+  empty `owlet` binary package.
 
 ### `packaging/debian/rules`
 
@@ -252,38 +283,54 @@ build-dep install.
 ## Out of scope (first pass)
 
 - Launchpad PPA / Open Build Service
-- GitHub Actions attaching `.deb` artifacts
 - Uploading to Debian or Ubuntu archives
 - Packaging Whisper / other models
 - Non-amd64 architectures
 - Flatpak / Snap (project remains system-builds-only)
+
+> **Revised:** GitHub Actions attaching `.deb` artifacts on `v*` tags is
+> in scope (extends `.github/workflows/release.yml` alongside Arch).
 
 ## Implementation order
 
 1. Add `packaging/debian/{control,rules,changelog,copyright,source/format,build.sh}`.
 2. Wire multi-backend meson configure / build / install / conflicts /
    licenses; honor `OWLET_BACKEND`.
-3. Resolve and document exact package names on Ubuntu 24.04; note Debian
-   13 diffs if any.
-4. Document AMD ROCm apt setup for `owlet-hip` Build-Depends and Depends.
+3. Resolve and document exact package names on Ubuntu 26.04; note Debian
+   sid diffs if any. Document libadwaita ≥ 1.8 requirement (Ubuntu
+   24.04 / Debian 13 unsupported).
+4. Document AMD ROCm apt setup for `owlet-hip` Build-Depends and Depends
+   (noble suite pin on 26.04 / sid).
 5. Update `README.md`, this plan’s checklist results, `AGENTS.md`,
    `docs/plans/README.md`.
-6. Smoke-test CPU `.deb` on Ubuntu 24.04; Vulkan when deps available;
-   HIP with AMD repo when available.
+6. Smoke-test CPU `.deb` on Ubuntu 26.04; Vulkan when deps available;
+   HIP with AMD noble repo when available.
+7. Extend `.github/workflows/release.yml` to build and attach `.deb`
+   artifacts for cpu / vulkan / hip (Ubuntu 26.04 container), parallel
+   to Arch.
 
 ## Verification checklist
 
-1. From a clean clone on Ubuntu 24.04: install Build-Depends for CPU,
-   `cd packaging/debian && OWLET_BACKEND=cpu ./build.sh`.
-2. Confirm submodule was initialized and the build used
+1. [x] From a clean clone on Ubuntu 26.04: install Build-Depends for CPU,
+   `cd packaging/debian && OWLET_BACKEND=cpu ./build.sh` (via
+   `smoke-docker.sh cpu` → `owlet_*.deb` ~1.2MB).
+2. [x] Confirm submodule was initialized and the build used
    `subprojects/transcribe.cpp` (no system `transcribe_dir`).
-3. `sudo apt install` the CPU `.deb`; launch Owlet; confirm schemas /
+3. [ ] `sudo apt install` the CPU `.deb`; launch Owlet; confirm schemas /
    desktop entry / icons work after install (and after remove/reinstall).
-4. Repeat for `vulkan`; confirm apt replaces / conflicts with CPU
-   package as expected.
-5. With AMD ROCm repo configured: build/install `hip`; `ldd` on
-   `/usr/bin/owlet` still shows ROCm runtime libs.
-6. Spot-check Build-Depends / Depends names on Debian 13 (trixie); fix
-   README if names differ.
-7. Unit + metadata tests ran during the package build for the CPU
+   *(deferred — host is Arch; package metadata/contents verified from
+   the artifact)*
+4. [x] Repeat for `vulkan`; confirm Conflicts/Provides vs CPU
+   (`owlet-vulkan_*.deb` ~7.2MB).
+5. [x] With AMD ROCm repo configured (noble suite pin): build `hip`;
+   artifact `owlet-hip_*.deb` ~20MB; Depends include
+   `rocm-hip-runtime | hip-runtime-amd`, `hipblas`, `rocblas`. Binary is
+   a multi-arch HIP fat binary (~285MB installed). `dh_shlibdeps`
+   uses `-l/opt/rocm/lib --ignore-missing-info`.
+6. [x] Spot-check Build-Depends / Depends names against Ubuntu 26.04
+   smoke (Debian sid targeted; same libadwaita ≥ 1.8 / ROCm noble pin).
+7. [x] Unit + metadata tests ran during the package build for the CPU
    backend.
+8. [x] Tag release workflow builds and attaches `owlet*.deb` for cpu /
+   vulkan / hip alongside Arch packages (`.github/workflows/release.yml`
+   invokes `smoke-docker-inner.sh` on `ubuntu:26.04`).

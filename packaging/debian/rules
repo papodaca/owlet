@@ -1,0 +1,103 @@
+#!/usr/bin/make -f
+# Debian rules for Owlet — multi-backend meson builds (CPU / Vulkan / HIP).
+# OWLET_BACKEND=all|cpu|vulkan|hip (default all). Build profiles nocpu /
+# nouvulkan / nohip are set by packaging/debian/build.sh to match.
+
+export DH_VERBOSE = 1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+OWLET_BACKEND ?= all
+
+ifeq ($(OWLET_BACKEND),all)
+BACKENDS = cpu vulkan hip
+else ifeq ($(OWLET_BACKEND),cpu)
+BACKENDS = cpu
+else ifeq ($(OWLET_BACKEND),vulkan)
+BACKENDS = vulkan
+else ifeq ($(OWLET_BACKEND),hip)
+BACKENDS = hip
+else
+$(error OWLET_BACKEND must be one of: all, cpu, vulkan, hip)
+endif
+
+# HIP cmake sidecar needs hipcc / clang on PATH (usually /opt/rocm/bin).
+export PATH := /opt/rocm/bin:$(PATH)
+
+MESON_COMMON = --prefix=/usr --buildtype=plain
+HIP_AMD_TARGETS = gfx1100;gfx1030;gfx906;gfx90a;gfx1200;gfx1201
+
+%:
+	dh $@ --buildsystem=none
+
+override_dh_auto_clean:
+	rm -rf build-cpu build-vulkan build-hip
+	dh_auto_clean --buildsystem=none
+
+override_dh_auto_configure:
+	git config --global --add safe.directory $(CURDIR) || true
+	git config --global --add safe.directory '*' || true
+	git submodule update --init --recursive
+	set -e; for backend in $(BACKENDS); do \
+		rm -rf build-$$backend; \
+		if [ "$$backend" = hip ]; then \
+			meson setup build-hip $(MESON_COMMON) \
+				-Dgpu_backend=hip \
+				'-Damd_targets=$(HIP_AMD_TARGETS)'; \
+		else \
+			meson setup build-$$backend $(MESON_COMMON) \
+				-Dgpu_backend=$$backend; \
+		fi; \
+	done
+
+override_dh_auto_build:
+	set -e; for backend in $(BACKENDS); do \
+		ninja -C build-$$backend; \
+	done
+
+override_dh_auto_test:
+	set -e; \
+	check_backend="$(OWLET_BACKEND)"; \
+	if [ "$$check_backend" = all ]; then check_backend=cpu; fi; \
+	if [ ! -d build-$$check_backend ]; then \
+		echo "skipping tests: no build-$$check_backend"; \
+		exit 0; \
+	fi; \
+	meson test -C build-$$check_backend --print-errorlogs --suite unit; \
+	meson test -C build-$$check_backend --print-errorlogs \
+		'Validate desktop file' \
+		'Validate appstream file' \
+		'Validate schema file'
+
+override_dh_auto_install:
+	set -e; \
+	for backend in $(BACKENDS); do \
+		case $$backend in \
+			cpu) pkg=owlet ;; \
+			vulkan) pkg=owlet-vulkan ;; \
+			hip) pkg=owlet-hip ;; \
+		esac; \
+		DESTDIR=$(CURDIR)/debian/$$pkg meson install -C build-$$backend; \
+		install -d $(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg; \
+		install -m644 COPYING \
+			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-GPL-3.0; \
+		install -m644 subprojects/transcribe.cpp/LICENSE \
+			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-transcribe.cpp; \
+	done
+
+# ROCm shared libs live under /opt/rocm/lib (not a Debian multiarch
+# path). Without -l, dpkg-shlibdeps cannot resolve libamdhip64 /
+# libhipblas and aborts. ROCm .debs often ship no shlibs/symbols file,
+# so --ignore-missing-info is required; runtime coverage comes from the
+# explicit Depends on rocm-hip-runtime|hip-runtime-amd, hipblas, rocblas
+# in debian/control.
+override_dh_shlibdeps:
+ifneq (,$(filter hip,$(BACKENDS)))
+	dh_shlibdeps -- -l/opt/rocm/lib --ignore-missing-info
+else
+	dh_shlibdeps
+endif
+
+# Keep .deb on the volume (packaging/debian/), not the parent of the
+# source tree — parent is often "/" or outside the bind mount in CI.
+override_dh_builddeb:
+	dh_builddeb --destdir=$(CURDIR)/packaging/debian

@@ -41,3 +41,18 @@ __pycache__/
 /packaging/**/pkg/
 /packaging/**/src/
 /packaging/**/*.log
+
+# Debian dpkg-buildpackage artifacts (packaging/debian/build.sh)
+/packaging/debian/*.deb
+/packaging/debian/*.ddeb
+/packaging/debian/*.buildinfo
+/packaging/debian/*.changes
+/packaging/debian/files
+/packaging/debian/*.substvars
+/packaging/debian/*.debhelper.log
+/packaging/debian/debhelper-build-stamp
+/packaging/debian/.debhelper/
+/packaging/debian/owlet/
+/packaging/debian/owlet-vulkan/
+/packaging/debian/owlet-hip/
+/debian

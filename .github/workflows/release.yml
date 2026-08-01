@@ -60,26 +60,81 @@ jobs:
           path: packaging/arch/*.pkg.tar.zst
           if-no-files-found: error
 
+  debian:
+    name: Debian (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [cpu, vulkan, hip]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Free disk space
+        if: matrix.backend == 'hip'
+        run: |
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /usr/local/share/boost \
+            /usr/lib/jvm \
+            /opt/hostedtoolcache/CodeQL || true
+          df -h
+
+      - name: Build package
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          docker run --rm \
+            -e BACKEND \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            ubuntu:26.04 \
+            bash -euo pipefail /workspace/packaging/debian/smoke-docker-inner.sh
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-${{ matrix.backend }}
+          path: packaging/debian/*.deb
+          if-no-files-found: error
+
   publish:
     name: Publish GitHub Release
-    needs: arch
+    needs: [arch, debian]
     runs-on: ubuntu-latest
     steps:
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: arch-*
+          pattern: '{arch,debian}-*'
           merge-multiple: true
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.pkg.tar.zst
+          files: |
+            dist/*.pkg.tar.zst
+            dist/*.deb
           generate_release_notes: true
           fail_on_unmatched_files: true
           body: |
-            Arch Linux packages for this release (`x86_64`):
+            Packages for this release (`x86_64` / `amd64`):
+
+            ### Arch Linux (`.pkg.tar.zst`)
+
+            | Package | Backend |
+            | --- | --- |
+            | `owlet` | CPU |
+            | `owlet-vulkan` | Vulkan |
+            | `owlet-hip` | AMD HIP/ROCm |
+
+            ### Debian / Ubuntu (`.deb`, built on Ubuntu 26.04; also for Debian sid)
 
             | Package | Backend |
             | --- | --- |
@@ -88,4 +143,6 @@ jobs:
             | `owlet-hip` | AMD HIP/ROCm |
 
             Install one variant only — they conflict with each other.
-            Models are downloaded from Preferences and are not bundled.
+            The HIP `.deb` needs AMD's ROCm apt repository for runtime
+            libraries. Models are downloaded from Preferences and are not
+            bundled.
