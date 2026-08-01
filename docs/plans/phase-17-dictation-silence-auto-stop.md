@@ -267,16 +267,18 @@ the pref mid-session does not require restart.
 
 ## Acceptance criteria
 
-- [ ] Pref default off — dictation behavior unchanged until enabled
+- [x] Pref default off — dictation behavior unchanged until enabled
 - [ ] Pref on + Dictate + silence ≥ pause → session ends like manual
       Dictate off (tone if sound-feedback on, text typed, HUD hidden,
-      idle)
-- [ ] Pref on + Dictate + never speak → stops after same pause
-- [ ] Brief pauses shorter than configured duration do not stop
-- [ ] Pure Record never auto-stops
-- [ ] Pause SpinRow clamped 500–5000; sensitive only when switch on
-- [ ] Changing pause / enabling mid-session takes effect without restart
-- [ ] No crash / GTK-from-wrong-thread warnings on auto-stop
+      idle) — **manual**
+- [ ] Pref on + Dictate + never speak → stops after same pause — **manual**
+- [ ] Brief pauses shorter than configured duration do not stop — **manual**
+- [x] Pure Record never auto-stops (code path gated on `dictating`)
+- [x] Pause SpinRow clamped 500–5000; sensitive only when switch on
+- [x] Changing pause / enabling mid-session takes effect without restart
+      (live GSettings reads in `on_chunk`)
+- [x] No crash / GTK-from-wrong-thread warnings on auto-stop
+      (`Idle.add` → `stop_dictation()`)
 - [ ] `meson test -C build --suite unit` passes (schema defaults)
 
 ## Manual test notes

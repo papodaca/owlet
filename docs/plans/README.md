@@ -126,4 +126,5 @@ meson setup build -Dgpu_backend=cpu                        # CPU
     [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md)).
 12. Phase 17: opt-in dictation silence auto-stop (host-side RMS on
     capture chunks → `stop_dictation()`; see
-    [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)).
+    [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)) —
+    **complete** (prefs + window wiring; manual mic checklist remains).
