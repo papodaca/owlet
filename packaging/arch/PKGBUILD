@@ -85,9 +85,15 @@ prepare() {
 
 pkgver() {
   cd "${startdir}/../.."
-  printf '0.1.0.r%s.%s' \
-    "$(git rev-list --count HEAD)" \
-    "$(git rev-parse --short HEAD)"
+  local tag
+  tag=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+  if [[ ${tag} =~ ^v([0-9][^[:space:]]*)$ ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  else
+    printf '0.1.0.r%s.%s' \
+      "$(git rev-list --count HEAD)" \
+      "$(git rev-parse --short HEAD)"
+  fi
 }
 
 build() {
