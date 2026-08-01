@@ -29,7 +29,7 @@ bringing the main window forward.
 | GNOME Wayland | XWayland override-redirect via **in-process Xlib HUD** |
 | Backend | In-process Xlib + Cairo/Pango (not Gtk.Window, not subprocess, not gtk4-layer-shell) |
 | HUD UX | Bottom-center translucent OSD, red recording dot, streaming text (show **tail** if long), click-through, hide when dictation ends |
-| Prefs toggle | **None** in v1 |
+| Prefs toggle | Feedback → “Dictation overlay” (`dictation-hud`, default **on**) |
 | X11 unavailable | Soft-fail: warn, continue dictation without HUD |
 
 ## Why not Gtk.Window / layer-shell
@@ -81,8 +81,8 @@ partial_text / final_text / batch final
 
 | Entry point | Minimize? | HUD? | Transcript + keystrokes |
 | --- | --- | --- | --- |
-| Global shortcut | No | Yes | Yes |
-| Tray → Dictate | No | Yes | Yes |
+| Global shortcut | No | Yes (if prefs on) | Yes |
+| Tray → Dictate | No | Yes (if prefs on) | Yes |
 | In-window Dictate | Yes (250 ms) | No | Yes |
 
 | Event | HUD |
@@ -134,12 +134,19 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 - Refactor `start_dictation()` to take a launch mode (foreground vs
   background):
   - **Foreground:** minimize + 250 ms timeout (today).
-  - **Background:** no minimize; `hud.show()`; start recorder **immediately**.
+  - **Background:** no minimize; `maybe_show_dictation_hud()` (respects
+    `dictation-hud` GSettings); start recorder **immediately**.
 - In `on_partial_text` / `on_final_text` / batch dictation success: if HUD
   active, `hud.set_text(text)` after existing buffer/type updates.
 - Hide HUD whenever dictation clears (stop, finalize, batch done, start
   failure, recorder error, dispose).
 - Construct/own a `DictationHud` beside `keystroke` / `sound_feedback`.
+
+### GSettings + Preferences
+
+- Schema key `dictation-hud` (boolean, default `true`).
+- Feedback page switch “Dictation overlay” bound to the key.
+- When false: background dictation still runs; no OSD.
 
 ### `src/application.vala`
 
@@ -176,7 +183,6 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 
 ## Out of scope (v1)
 
-- Preferences toggle for the HUD
 - gtk4-layer-shell / wlr-layer-shell path
 - Separate X11 helper subprocess
 - Changing insert / test-keystroke minimize behavior
@@ -196,6 +202,8 @@ Automated coverage will be thin (display-server OSD). Manual checklist:
 6. Clicks pass through the HUD onto the app below.
 7. Soft-fail path: break X11 (`DISPLAY=` unset in a nested test if
    practical) → warning + dictation without HUD.
+8. Preferences → Feedback → turn off “Dictation overlay” → global/tray
+   dictation runs with no HUD; turn back on → HUD returns.
 
 ## Commit sequence
 

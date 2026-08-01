@@ -125,6 +125,16 @@
                 <property name="subtitle" translatable="yes">Play a tone when recording starts and stops</property>
               </object>
             </child>
+            <child>
+              <object class="AdwSwitchRow" id="dictation_hud_row">
+                <property name="title" translatable="yes">Dictation overlay</property>
+                <property name="subtitle" translatable="yes">Show a live transcript overlay when dictating from the global shortcut or tray</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
             <property name="title" translatable="yes">Window</property>
             <child>
               <object class="AdwSwitchRow" id="close_to_tray_row">

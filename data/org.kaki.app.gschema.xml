@@ -41,6 +41,11 @@
 			<summary>Play sounds when recording starts and stops</summary>
 			<description>When true, short tones play after the microphone starts and when the user stops recording or dictation.</description>
 		</key>
+		<key name="dictation-hud" type="b">
+			<default>true</default>
+			<summary>Show overlay HUD for global shortcut / tray dictation</summary>
+			<description>When true, background dictation (global shortcut or tray Dictate) shows an always-on-top live transcript overlay. When false, background dictation still runs without the overlay. In-window Dictate never shows the HUD.</description>
+		</key>
 		<key name="close-to-tray" type="b">
 			<default>false</default>
 			<summary>Hide to system tray on window close</summary>

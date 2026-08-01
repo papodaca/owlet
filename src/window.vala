@@ -446,7 +446,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
             dictating = true;
             last_typed = "";
             if (mode == DictationLaunchMode.BACKGROUND)
-                hud.show ();
+                maybe_show_dictation_hud ();
             return;
         }
         if (source == null) {
@@ -459,7 +459,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         if (mode == DictationLaunchMode.BACKGROUND) {
             // Global/tray: Kaki is already backgrounded in the common
             // case — skip minimize, show the OSD, start immediately.
-            hud.show ();
+            maybe_show_dictation_hud ();
             try {
                 recorder.start ();
             } catch (GLib.Error e) {
@@ -523,6 +523,14 @@ public class Kaki.Window : Adw.ApplicationWindow {
         dictate_btn.active = false;
         last_typed = "";
         hud.hide ();
+    }
+
+    // Background dictation OSD, gated by the dictation-hud GSettings
+    // key (default true). When disabled, global/tray dictation still
+    // runs; set_text is already a no-op unless the HUD was shown.
+    private void maybe_show_dictation_hud () {
+        if (settings.get_boolean ("dictation-hud"))
+            hud.show ();
     }
 
     // Test button: types the current transcript buffer into whatever
