@@ -140,6 +140,7 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | 9 | Finish gettext/`po/` (`kaki.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
+| 14 | Debian/Ubuntu packaging (`.deb` split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-14-debian-packaging.md` |
 
 ## Layout
 

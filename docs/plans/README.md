@@ -31,6 +31,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
 | 12 | [`phase-12-packaging.md`](phase-12-packaging.md) | Arch PKGBUILD: split CPU/Vulkan/HIP packages; static submodule link |
 | 13 | [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md) | Global/tray dictation HUD (Xlib OSD, no minimize) |
+| 14 | [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md) | Debian/Ubuntu `.deb`: split CPU/Vulkan/HIP; static submodule link |
 
 ## Architectural decisions
 
@@ -111,3 +112,6 @@ meson setup build -Dgpu_backend=cpu                        # CPU
 8. Phase 13: global/tray dictation HUD (in-process Xlib OSD, no minimize);
    in-window Dictate unchanged (see
    [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md)).
+9. Phase 14: Debian/Ubuntu packaging (`packaging/debian/`, split
+   CPU/Vulkan/HIP `.deb`s; see
+   [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md)).
