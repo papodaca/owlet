@@ -33,6 +33,15 @@ public class Kaki.Window : Adw.ApplicationWindow {
     private Kaki.TranscriptionSource source;
     private Kaki.Keystroke keystroke;
     private Kaki.SoundFeedback sound_feedback;
+    private Kaki.DictationHud hud;
+
+    // How dictation was launched. FOREGROUND (in-window Dictate) keeps
+    // the minimize + 250 ms delay and skips the HUD. BACKGROUND
+    // (global shortcut / tray) shows the OSD and starts immediately.
+    private enum DictationLaunchMode {
+        FOREGROUND,
+        BACKGROUND
+    }
 
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
@@ -83,6 +92,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         keystroke = new Kaki.Keystroke ();
         settings = new GLib.Settings ("org.kaki.app");
         sound_feedback = new Kaki.SoundFeedback (settings);
+        hud = new Kaki.DictationHud ();
 
         // Pick the keystroke backend from settings. auto|libei|ydotool|
         // xdotool map to the Keystroke.Backend enum; an unknown value
@@ -265,15 +275,26 @@ public class Kaki.Window : Adw.ApplicationWindow {
     public void record () { on_record (); }
     public void stop ()   { on_stop (); }
 
-    // Global-shortcut entry point: drive the full dictation flow.
-    // Toggle on: minimize Kaki, capture the previously focused window,
-    // start recording, and stream partial transcripts into that
-    // window via the keystroke backend. Toggle off: stop recording,
-    // finalize, and type the final text. Reuses on_dictate_toggle
-    // verbatim so the in-window Dictate button and the global shortcut
-    // stay in sync (dictate_btn.active, dictating, last_typed all flip
-    // through the same path).
+    // In-window Dictate entry point: minimize + 250 ms delay, no HUD.
     public void toggle_dictation () { on_dictate_toggle (); }
+
+    // Global-shortcut / tray entry point: no minimize; show the
+    // dictation HUD OSD and start the recorder immediately. Toggle
+    // off shares the same finalize path as in-window Dictate.
+    public void toggle_dictation_background () {
+        if (dictating) {
+            dictate_btn.active = false;
+            stop_dictation ();
+        } else {
+            if (keystroke.backend == Kaki.Keystroke.Backend.NONE) {
+                toast_overlay.add_toast (new Adw.Toast (
+                    _("No keystroke backend available")));
+                return;
+            }
+            dictate_btn.active = true;
+            start_dictation (DictationLaunchMode.BACKGROUND);
+        }
+    }
 
     // Refuse the global "insert" shortcut while dictation is streaming
     // typed partials: on_insert() types the buffer via the keystroke
@@ -360,10 +381,8 @@ public class Kaki.Window : Adw.ApplicationWindow {
             source.stream_finalize.begin (null, (obj, res) => {
                 source.stream_finalize.end (res);
                 set_recording_state (false);
-                if (dictating) {
-                    dictating = false;
-                    dictate_btn.active = false;
-                }
+                if (dictating)
+                    clear_dictation_state ();
                 update_action_state ();
             });
         } else {
@@ -389,14 +408,14 @@ public class Kaki.Window : Adw.ApplicationWindow {
             if (dictating && auto_type_enabled ()) {
                 type_dictation (text, true);
             }
+            if (dictating)
+                hud.set_text (text);
         } catch (GLib.Error e) {
             warning ("Batch transcribe failed: %s", e.message);
         }
         set_recording_state (false);
-        if (dictating) {
-            dictating = false;
-            dictate_btn.active = false;
-        }
+        if (dictating)
+            clear_dictation_state ();
         update_action_state ();
     }
 
@@ -415,16 +434,19 @@ public class Kaki.Window : Adw.ApplicationWindow {
                 return;
             }
             dictate_btn.active = true;
-            start_dictation ();
+            start_dictation (DictationLaunchMode.FOREGROUND);
         }
     }
 
-    private void start_dictation () {
+    private void start_dictation (DictationLaunchMode mode) {
         if (recording) {
             // Record was already started via the Record button; just
             // mark dictation so the partials also get typed out.
+            // In-window path: no HUD. Background path: show OSD.
             dictating = true;
             last_typed = "";
+            if (mode == DictationLaunchMode.BACKGROUND)
+                hud.show ();
             return;
         }
         if (source == null) {
@@ -434,9 +456,26 @@ public class Kaki.Window : Adw.ApplicationWindow {
         dictating = true;
         last_typed = "";
 
-        // Minimize so the previously focused window receives the
-        // injected keystrokes. A short delay lets the WM hand focus
-        // back before the recorder starts capturing.
+        if (mode == DictationLaunchMode.BACKGROUND) {
+            // Global/tray: Kaki is already backgrounded in the common
+            // case — skip minimize, show the OSD, start immediately.
+            hud.show ();
+            try {
+                recorder.start ();
+            } catch (GLib.Error e) {
+                warning ("Recorder start failed: %s", e.message);
+                clear_dictation_state ();
+                this.present ();
+                toast_overlay.add_toast (new Adw.Toast (
+                    _("Recorder start failed: %s").printf (e.message)));
+                update_action_state ();
+            }
+            return;
+        }
+
+        // Foreground (in-window Dictate): minimize so the previously
+        // focused window receives the injected keystrokes. A short
+        // delay lets the WM hand focus back before capture starts.
         this.minimize ();
         start_timeout_id = GLib.Timeout.add (250, () => {
             start_timeout_id = 0;
@@ -446,8 +485,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
                 recorder.start ();
             } catch (GLib.Error e) {
                 warning ("Recorder start failed: %s", e.message);
-                dictating = false;
-                dictate_btn.active = false;
+                clear_dictation_state ();
                 this.present ();
                 toast_overlay.add_toast (new Adw.Toast (
                     _("Recorder start failed: %s").printf (e.message)));
@@ -465,19 +503,26 @@ public class Kaki.Window : Adw.ApplicationWindow {
             recorder.stop ();
             // recording_stopped drives the finalize path; dictating is
             // cleared in on_recording_stopped / transcribe_batch_async
-            // once the final transcript has been typed out.
+            // once the final transcript has been typed out. HUD stays
+            // up until clear_dictation_state() so finals can render.
         } else {
             // Recording hasn't started yet (e.g. the user toggled
             // Dictate off during the 250 ms minimize delay). Clear
             // dictation now; the pending Timeout will see !dictating
             // and skip recorder.start().
-            dictating = false;
-            last_typed = "";
             if (start_timeout_id != 0) {
                 GLib.Source.remove (start_timeout_id);
                 start_timeout_id = 0;
             }
+            clear_dictation_state ();
         }
+    }
+
+    private void clear_dictation_state () {
+        dictating = false;
+        dictate_btn.active = false;
+        last_typed = "";
+        hud.hide ();
     }
 
     // Test button: types the current transcript buffer into whatever
@@ -544,6 +589,8 @@ public class Kaki.Window : Adw.ApplicationWindow {
 
         if (dictating && auto_type_enabled ())
             type_dictation (text, false);
+        if (dictating)
+            hud.set_text (text);
     }
 
     private void on_final_text (string text) {
@@ -562,6 +609,8 @@ public class Kaki.Window : Adw.ApplicationWindow {
 
         if (dictating && auto_type_enabled ())
             type_dictation (text, true);
+        if (dictating)
+            hud.set_text (text);
     }
 
     /* ----------------------------------------------------------------- */
@@ -589,8 +638,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
         warning ("Recorder error: %s", message);
         set_recording_state (false);
         if (dictating) {
-            dictating = false;
-            dictate_btn.active = false;
+            clear_dictation_state ();
             this.present ();
             toast_overlay.add_toast (new Adw.Toast (
                 _("Recorder error: %s").printf (message)));
@@ -661,6 +709,7 @@ public class Kaki.Window : Adw.ApplicationWindow {
             GLib.Source.remove (start_timeout_id);
             start_timeout_id = 0;
         }
+        hud.hide ();
         base.dispose ();
     }
 }

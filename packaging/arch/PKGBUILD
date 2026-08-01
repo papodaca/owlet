@@ -65,6 +65,8 @@ _common_depends=(
   libsecret
   json-glib
   libei
+  libx11
+  libxext
   blas
   cblas
   gcc-libs

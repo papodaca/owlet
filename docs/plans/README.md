@@ -30,6 +30,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 10 | [`phase-10-close-to-tray.md`](phase-10-close-to-tray.md) | Close-to-tray via GIO SNI; red record light while mic is open |
 | 11 | [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md) | Start/stop recording tones + Preferences disable switch |
 | 12 | [`phase-12-packaging.md`](phase-12-packaging.md) | Arch PKGBUILD: split CPU/Vulkan/HIP packages + transcribe-cpp |
+| 13 | [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md) | Global/tray dictation HUD (Xlib OSD, no minimize) |
 
 ## Architectural decisions
 
@@ -55,12 +56,13 @@ New:
 - `libsecret-1`
 - `libsoup-3.0`
 - `libei-1.0` (optional; falls back to `ydotool` / `xdotool`)
+- `libx11`, `libxext` (phase 13 dictation HUD; soft-fail without X11/XWayland)
 
 Subproject: `transcribe.cpp` (git submodule) — cmake static lib pulling
 ggml (HIP/Vulkan/CPU).
 
 External (runtime, optional): `rocminfo` (auto-detect), `ydotool`,
-`xdotool`, `xdg-desktop-portal`.
+`xdotool`, `xdg-desktop-portal`. HUD needs X11 or XWayland at runtime.
 
 ## Build/run
 
@@ -87,6 +89,7 @@ meson setup build -Dgpu_backend=cpu                        # CPU
 10. Phase 9 — gettext i18n (`po/kaki.pot`, string audit, contributor docs)
 11. Phase 10 — close to tray (GIO SNI + Preferences switch)
 12. Phase 11 — sound feedback (bundled start/stop tones + Preferences switch)
+13. Phase 13 — dictation HUD for global shortcut / tray (no minimize)
 
 ## Open follow-ups
 
@@ -105,3 +108,6 @@ meson setup build -Dgpu_backend=cpu                        # CPU
    GNOME needs an AppIndicator extension for the icon (see plan).
 7. Phase 11: sound feedback for Record/Dictate start/stop; disable via
    Preferences (see [`phase-11-sound-feedback.md`](phase-11-sound-feedback.md)).
+8. Phase 13: global/tray dictation HUD (in-process Xlib OSD, no minimize);
+   in-window Dictate unchanged (see
+   [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md)).

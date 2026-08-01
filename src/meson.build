@@ -30,11 +30,29 @@ kaki_sources = [
   'services/global-shortcuts.vala',
   'services/sound-feedback.vala',
   'services/tray.vala',
+  'services/dictation-hud.vala',
   'ui/preferences.vala',
   # Phase 5: portable SIGRTMIN (glibc exposes it as a function-based
   # macro, musl as a constant; posix.vapi has no binding).
   'vapi/signal-shim.c',
 ]
+
+# Phase 13: in-process X11/XWayland override-redirect dictation OSD
+# (Shape click-through + ARGB colormap). Built as a C static library so
+# x11/xext/cairo-xlib never become `--pkg` arguments to valac — there is
+# no system xext.vapi / cairo-xlib.vapi. Vala only consumes the hand-
+# written dictation-hud-shim.vapi below.
+dictation_hud_shim = static_library('dictation-hud-shim',
+  'vapi/dictation-hud-shim.c',
+  dependencies: [
+    dependency('glib-2.0'),
+    dependency('x11'),
+    dependency('xext'),
+    dependency('pangocairo'),
+    dependency('cairo-xlib'),
+  ],
+  include_directories: include_directories('vapi'),
+)
 
 kaki_deps = [
   config_dep,
@@ -52,6 +70,9 @@ kaki_deps = [
   # Phase 6: JSON parsing for the OpenAI-compatible /v1/audio/transcriptions
   # response ({"text": "..."} for json / verbose_json).
   dependency('json-glib-1.0'),
+  # Phase 13: Vala bindings only (C X11 deps stay on the static lib above).
+  valac.find_library('dictation-hud-shim',
+                      dirs: meson.current_source_dir () / 'vapi'),
 ]
 
 # Optional libei-1.0 backend (dictation mode keystroke injection).
@@ -80,6 +101,7 @@ kaki_inc = [ config_inc, include_directories('vapi') ]
 kaki = executable('kaki', kaki_sources,
   dependencies: kaki_deps,
   include_directories: kaki_inc,
+  link_with: dictation_hud_shim,
        install: true,
 )
 

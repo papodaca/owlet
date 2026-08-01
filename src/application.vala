@@ -183,13 +183,11 @@ public class Kaki.Application : Adw.Application {
             on_global_toggle ();
     }
 
-    // Drive the full dictation flow: toggle on minimizes Kaki and
-    // streams partial transcripts into the previously focused window;
-    // toggle off stops recording, finalizes, and types the final
-    // text. Reuses Kaki.Window.toggle_dictation (the same path as
-    // the in-window Dictate button) so the two stay in sync.
+    // Drive background dictation: no minimize, show the HUD OSD, and
+    // stream partial transcripts into the focused window; toggle off
+    // stops recording, finalizes, and types the final text.
     private void on_global_toggle () {
-        (this.active_window as Kaki.Window)?.toggle_dictation ();
+        (this.active_window as Kaki.Window)?.toggle_dictation_background ();
     }
 
     private void on_global_stop () {
@@ -227,7 +225,7 @@ public class Kaki.Application : Adw.Application {
     }
 
     private void on_tray_dictate () {
-        (this.active_window as Kaki.Window)?.toggle_dictation ();
+        (this.active_window as Kaki.Window)?.toggle_dictation_background ();
     }
 
     // If the user turns close-to-tray off while the window is hidden,

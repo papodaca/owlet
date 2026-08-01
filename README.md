@@ -69,6 +69,10 @@ ninja -C build run                # build + compile schemas + launch
 `ninja -C build` alone still builds the binary and compiles schemas into
 `build/data/` for manual runs with `GSETTINGS_SCHEMA_DIR=build/data`.
 
+Global-shortcut / tray dictation shows an always-on-top OSD that needs
+X11 or XWayland (`libx11` / `libxext`). Without `DISPLAY`, dictation still
+runs and the HUD soft-fails with a warning.
+
 ## Tests
 
 ```bash
