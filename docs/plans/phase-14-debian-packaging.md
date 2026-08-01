@@ -82,7 +82,7 @@ Confirm exact names on Ubuntu 26.04 and Debian sid during implementation
 | `libsecret-1` | `libsecret-1-dev`, `libsecret-1-0` |
 | `json-glib-1.0` | `libjson-glib-dev`, `libjson-glib-1.0-0` |
 | `libei-1.0` | `libei-dev`, `libei1` (or current SONAME package) |
-| `x11` / `xext` / cairo / pangocairo | `libx11-dev`, `libxext-dev`, `libcairo2-dev`, `libpangocairo-1.0-dev` |
+| `x11` / `xext` / `xrandr` / cairo / pangocairo | `libx11-dev`, `libxext-dev`, `libxrandr-dev`, `libcairo2-dev`, `libpangocairo-1.0-dev` |
 | `cblas` / `blas` / `stdc++` | `libblas-dev` (+ cblas as needed), `libstdc++6` |
 | toolchain | `meson`, `ninja-build`, `valac`, `pkg-config`, `cmake`, `g++`, `git` |
 | Vulkan ggml | `libvulkan-dev`, `glslc`, **`spirv-headers`** (CMake `find_package(SPIRV-Headers CONFIG)`) |

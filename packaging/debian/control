@@ -30,6 +30,7 @@ Build-Depends:
  libei-dev,
  libx11-dev,
  libxext-dev,
+ libxrandr-dev,
  libcairo2-dev,
  libpango1.0-dev,
  libblas-dev,

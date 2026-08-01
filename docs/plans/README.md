@@ -58,7 +58,7 @@ New:
 - `libsecret-1`
 - `libsoup-3.0`
 - `libei-1.0` (optional; falls back to `ydotool` / `xdotool`)
-- `libx11`, `libxext` (phase 13 dictation HUD; soft-fail without X11/XWayland)
+- `libx11`, `libxext`, `libxrandr` (phase 13 dictation HUD; mirrored multi-monitor OSD; soft-fail without X11/XWayland)
 
 Subproject: `transcribe.cpp` (git submodule) — cmake static lib pulling
 ggml (HIP/Vulkan/CPU).

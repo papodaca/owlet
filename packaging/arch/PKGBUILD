@@ -65,6 +65,7 @@ _common_depends=(
   libei
   libx11
   libxext
+  libxrandr
   blas
   cblas
   gcc-libs

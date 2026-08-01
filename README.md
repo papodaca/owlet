@@ -68,7 +68,7 @@ the same names for the Owlet build/runtime deps checked so far.
      libgtk-4-dev libadwaita-1-dev \
      libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
      libsoup-3.0-dev libsecret-1-dev libjson-glib-dev libei-dev \
-     libx11-dev libxext-dev libcairo2-dev libpango1.0-dev libblas-dev
+     libx11-dev libxext-dev libxrandr-dev libcairo2-dev libpango1.0-dev libblas-dev
    ```
 
    Vulkan additionally needs `libvulkan-dev`, `glslc`, and
@@ -156,8 +156,11 @@ ninja -C build run                # build + compile schemas + launch
 `build/data/` for manual runs with `GSETTINGS_SCHEMA_DIR=build/data`.
 
 Global-shortcut / tray dictation shows an always-on-top OSD that needs
-X11 or XWayland (`libx11` / `libxext`). Without `DISPLAY`, dictation still
-runs and the HUD soft-fails with a warning.
+X11 or XWayland (`libx11` / `libxext` / `libxrandr`). The overlay is
+mirrored onto every active XRandR monitor (bottom-centered on each), so
+it stays visible on dual-head even when XWayland pointer coords are
+stale. Without `DISPLAY`, dictation still runs and the HUD soft-fails
+with a warning.
 
 ## Tests
 

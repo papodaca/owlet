@@ -50,7 +50,7 @@ new portal or helper process.
   before `recorder.start()`.
 - Partials/finals update `transcript_view` and, when dictating,
   `type_dictation()` (`on_partial_text` / `on_final_text`).
-- No existing overlay/HUD; no X11 / Xext build deps today.
+- No existing overlay/HUD; no X11 / Xext / XRandR build deps today.
 
 ## Architecture
 
@@ -117,7 +117,12 @@ Implementation notes:
 - Click-through via empty ShapeInput region (`Xext` shape) so the HUD never
   steals pointer or focus.
 - Never call `XSetInputFocus`; never use a GTK window for the OSD.
-- Bottom-center of the default/primary screen; ~60% screen width max.
+- Mirror one OSD onto every active XRandR CRTC, bottom-centered on each
+  (~60% of that monitor's width max). Fall back to the virtual screen
+  when RandR reports nothing. On GNOME Wayland, `XQueryPointer` stays
+  frozen over Wayland-native surfaces, so pointer-follow is unreliable
+  from an X11 client; mirroring keeps the HUD visible on whichever head
+  the user is using.
 - Own the X window lifecycle across show/hide; destroy on `dispose`.
 
 Add a C shim under `src/vapi/` (`dictation-hud-shim.c` / `.h` / `.vapi`) —
@@ -158,17 +163,25 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 
 - Add `dictation-hud.vala` to `owlet_sources`.
 - Build `dictation-hud-shim.c` as a **C static library** with deps
-  `glib-2.0`, `x11`, `xext`, `pangocairo`, `cairo-xlib`, then
+  `glib-2.0`, `x11`, `xext`, `xrandr`, `pangocairo`, `cairo-xlib`, then
   `link_with` it from `owlet`. Do **not** put those X11/Cairo pkgs on
   `owlet_deps` — Meson would pass them as `--pkg` to `valac`, and there
   is no system `xext.vapi` / `cairo-xlib.vapi`.
 - Expose the hand-written `dictation-hud-shim.vapi` via
   `valac.find_library('dictation-hud-shim', …)` only.
+- Enumerate active XRandR CRTCs and create one override-redirect OSD per
+  monitor (reuse geometry-matched windows across `show()`). Fall back to
+  the virtual screen when RandR is unavailable. Do **not** center with
+  `DisplayWidth`/`DisplayHeight` alone — those span the virtual desktop
+  and dual-head puts a single OSD between monitors. Re-query on `show()`
+  (not on every text update). Keep text/show/hide in sync across all
+  surfaces.
 
 ### Packaging (`packaging/…`, phase 12)
 
-- Ensure runtime/build depends include `libx11` / `libxext` (and pango/cairo
-  if not already implied). Document that the HUD needs X11 or XWayland.
+- Ensure runtime/build depends include `libx11` / `libxext` / `libxrandr`
+  (and pango/cairo if not already implied). Document that the HUD needs
+  X11 or XWayland and mirrors the OSD onto every active monitor.
 
 ## Edge cases
 
@@ -186,7 +199,9 @@ Vala Xlib bindings lack Xext Shape, and X11 deps must stay off the Vala
 - gtk4-layer-shell / wlr-layer-shell path
 - Separate X11 helper subprocess
 - Changing insert / test-keystroke minimize behavior
-- Multi-monitor placement beyond default/primary bottom-center
+- Pointer-follow / single-monitor-under-cursor placement (XWayland pointer
+  coords are unreliable on GNOME; v1 mirrors instead)
+- Active-window / focused-surface OSD placement
 - Auto-minimize when Owlet is focused during background launch
 
 ## Testing
@@ -199,10 +214,12 @@ Automated coverage will be thin (display-server OSD). Manual checklist:
 3. In-window Dictate → still minimizes; no HUD.
 4. Stop / finalize / recorder error dismisses HUD.
 5. Smoke on GNOME Wayland (XWayland) and one X11 session.
-6. Clicks pass through the HUD onto the app below.
-7. Soft-fail path: break X11 (`DISPLAY=` unset in a nested test if
+6. Dual-head: HUD appears bottom-centered on **each** active monitor
+   (not between them / not primary-only).
+7. Clicks pass through the HUD onto the app below.
+8. Soft-fail path: break X11 (`DISPLAY=` unset in a nested test if
    practical) → warning + dictation without HUD.
-8. Preferences → Feedback → turn off “Dictation overlay” → global/tray
+9. Preferences → Feedback → turn off “Dictation overlay” → global/tray
    dictation runs with no HUD; turn back on → HUD returns.
 
 ## Commit sequence

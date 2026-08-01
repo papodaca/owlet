@@ -1,9 +1,14 @@
 /*
  * dictation-hud-shim.c
  *
- * Always-on-top, non-focus-stealing dictation OSD via an override-redirect
- * X11 window (native X11 or XWayland). Drawn with Cairo + Pango; click-
+ * Always-on-top, non-focus-stealing dictation OSD via override-redirect
+ * X11 windows (native X11 or XWayland). Drawn with Cairo + Pango; click-
  * through via an empty ShapeInput region. Never calls XSetInputFocus.
+ *
+ * One OSD is mirrored onto every active XRandR CRTC. On GNOME Wayland,
+ * XQueryPointer stays frozen while the cursor is over Wayland-native
+ * surfaces, so "follow the pointer" cannot work from an X11 client;
+ * mirroring keeps the HUD visible on whichever head the user is using.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -13,6 +18,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xrandr.h>
 #include <X11/extensions/shape.h>
 
 #include <cairo-xlib.h>
@@ -31,36 +37,130 @@
 #define HUD_CORNER_RADIUS    12.0
 #define HUD_MAX_LINES        3
 #define HUD_FONT             "Sans 12"
+#define HUD_MAX_MONITORS     8
+
+typedef struct {
+    Window win;
+    int mon_x;
+    int mon_y;
+    int mon_w;
+    int mon_h;
+    int win_w;
+    int win_h;
+    int created;
+    int mapped;
+} HudSurface;
 
 struct OwletDictationHudNative {
     Display *dpy;
     int screen;
     Window root;
-    Window win;
     Visual *visual;
     Colormap colormap;
     int depth;
-    int screen_w;
-    int screen_h;
-    int win_w;
-    int win_h;
+    int visual_ready;
+    HudSurface surfaces[HUD_MAX_MONITORS];
+    int n_surfaces;
     char *text;
     int mapped;
-    int created;
 };
 
 static void
-ensure_window (OwletDictationHudNative *hud)
+hud_position (const HudSurface *surf, int *x_out, int *y_out)
 {
-    XSetWindowAttributes attrs;
-    XVisualInfo vinfo;
-    unsigned long valuemask;
-    Atom net_wm_state;
-    Atom net_wm_window_type;
-    Atom atoms[4];
-    int natoms = 0;
+    *x_out = surf->mon_x + (surf->mon_w - surf->win_w) / 2;
+    *y_out = surf->mon_y + surf->mon_h - surf->win_h - HUD_BOTTOM_MARGIN;
+}
 
-    if (hud->created)
+static int
+monitor_already_listed (const OwletDictationHudNative *hud,
+                        int n,
+                        int x,
+                        int y,
+                        int w,
+                        int h)
+{
+    int i;
+
+    for (i = 0; i < n; i++) {
+        if (hud->surfaces[i].mon_x == x
+            && hud->surfaces[i].mon_y == y
+            && hud->surfaces[i].mon_w == w
+            && hud->surfaces[i].mon_h == h)
+            return 1;
+    }
+    return 0;
+}
+
+/* Collect active CRTC boxes. Falls back to the virtual screen when RandR
+ * is unavailable or reports nothing usable. */
+static void
+query_monitors (OwletDictationHudNative *hud)
+{
+    int event_base = 0;
+    int error_base = 0;
+    XRRScreenResources *res = NULL;
+    int n = 0;
+    int i;
+
+    if (!XRRQueryExtension (hud->dpy, &event_base, &error_base))
+        goto fallback;
+
+    res = XRRGetScreenResourcesCurrent (hud->dpy, hud->root);
+    if (res == NULL)
+        goto fallback;
+
+    for (i = 0; i < res->ncrtc && n < HUD_MAX_MONITORS; i++) {
+        XRRCrtcInfo *cinfo = XRRGetCrtcInfo (hud->dpy, res, res->crtcs[i]);
+        int x;
+        int y;
+        int w;
+        int h;
+
+        if (cinfo == NULL)
+            continue;
+        if (cinfo->mode == None || cinfo->noutput == 0
+            || cinfo->width == 0 || cinfo->height == 0) {
+            XRRFreeCrtcInfo (cinfo);
+            continue;
+        }
+
+        x = cinfo->x;
+        y = cinfo->y;
+        w = (int) cinfo->width;
+        h = (int) cinfo->height;
+        XRRFreeCrtcInfo (cinfo);
+
+        if (monitor_already_listed (hud, n, x, y, w, h))
+            continue;
+
+        hud->surfaces[n].mon_x = x;
+        hud->surfaces[n].mon_y = y;
+        hud->surfaces[n].mon_w = w;
+        hud->surfaces[n].mon_h = h;
+        n++;
+    }
+
+    XRRFreeScreenResources (res);
+    if (n > 0) {
+        hud->n_surfaces = n;
+        return;
+    }
+
+fallback:
+    hud->surfaces[0].mon_x = 0;
+    hud->surfaces[0].mon_y = 0;
+    hud->surfaces[0].mon_w = DisplayWidth (hud->dpy, hud->screen);
+    hud->surfaces[0].mon_h = DisplayHeight (hud->dpy, hud->screen);
+    hud->n_surfaces = 1;
+}
+
+static void
+ensure_visual (OwletDictationHudNative *hud)
+{
+    XVisualInfo vinfo;
+
+    if (hud->visual_ready)
         return;
 
     if (XMatchVisualInfo (hud->dpy, hud->screen, 32, TrueColor, &vinfo)) {
@@ -73,6 +173,25 @@ ensure_window (OwletDictationHudNative *hud)
         hud->depth = DefaultDepth (hud->dpy, hud->screen);
         hud->colormap = DefaultColormap (hud->dpy, hud->screen);
     }
+    hud->visual_ready = 1;
+}
+
+static void
+ensure_surface_window (OwletDictationHudNative *hud, HudSurface *surf)
+{
+    XSetWindowAttributes attrs;
+    unsigned long valuemask;
+    Atom net_wm_state;
+    Atom net_wm_window_type;
+    Atom atoms[4];
+    int natoms = 0;
+    int x;
+    int y;
+
+    if (surf->created)
+        return;
+
+    ensure_visual (hud);
 
     memset (&attrs, 0, sizeof (attrs));
     attrs.override_redirect = True;
@@ -83,33 +202,44 @@ ensure_window (OwletDictationHudNative *hud)
     valuemask = CWOverrideRedirect | CWBackPixel | CWBorderPixel
                 | CWColormap | CWEventMask;
 
-    hud->win_w = 320;
-    hud->win_h = 48;
-    hud->win = XCreateWindow (hud->dpy, hud->root,
-                              (hud->screen_w - hud->win_w) / 2,
-                              hud->screen_h - hud->win_h - HUD_BOTTOM_MARGIN,
-                              (unsigned) hud->win_w, (unsigned) hud->win_h,
-                              0, hud->depth, InputOutput, hud->visual,
-                              valuemask, &attrs);
+    surf->win_w = 320;
+    surf->win_h = 48;
+    hud_position (surf, &x, &y);
+    surf->win = XCreateWindow (hud->dpy, hud->root, x, y,
+                               (unsigned) surf->win_w, (unsigned) surf->win_h,
+                               0, hud->depth, InputOutput, hud->visual,
+                               valuemask, &attrs);
 
     /* Click-through: empty input shape so pointer events pass through. */
-    XShapeCombineRectangles (hud->dpy, hud->win, ShapeInput,
+    XShapeCombineRectangles (hud->dpy, surf->win, ShapeInput,
                              0, 0, NULL, 0, ShapeSet, Unsorted);
 
     net_wm_state = XInternAtom (hud->dpy, "_NET_WM_STATE", False);
     atoms[natoms++] = XInternAtom (hud->dpy, "_NET_WM_STATE_ABOVE", False);
     atoms[natoms++] = XInternAtom (hud->dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
     atoms[natoms++] = XInternAtom (hud->dpy, "_NET_WM_STATE_SKIP_PAGER", False);
-    XChangeProperty (hud->dpy, hud->win, net_wm_state, XA_ATOM, 32,
+    XChangeProperty (hud->dpy, surf->win, net_wm_state, XA_ATOM, 32,
                      PropModeReplace, (unsigned char *) atoms, natoms);
 
     net_wm_window_type = XInternAtom (hud->dpy, "_NET_WM_WINDOW_TYPE", False);
     atoms[0] = XInternAtom (hud->dpy, "_NET_WM_WINDOW_TYPE_NOTIFICATION", False);
-    XChangeProperty (hud->dpy, hud->win, net_wm_window_type, XA_ATOM, 32,
+    XChangeProperty (hud->dpy, surf->win, net_wm_window_type, XA_ATOM, 32,
                      PropModeReplace, (unsigned char *) atoms, 1);
 
-    XStoreName (hud->dpy, hud->win, "Owlet Dictation");
-    hud->created = 1;
+    XStoreName (hud->dpy, surf->win, "Owlet Dictation");
+    surf->created = 1;
+}
+
+static void
+destroy_surface (OwletDictationHudNative *hud, HudSurface *surf)
+{
+    if (!surf->created)
+        return;
+
+    XDestroyWindow (hud->dpy, surf->win);
+    surf->win = None;
+    surf->created = 0;
+    surf->mapped = 0;
 }
 
 static void
@@ -152,7 +282,7 @@ measure_and_layout (cairo_t *cr,
 }
 
 static void
-redraw (OwletDictationHudNative *hud)
+redraw_surface (OwletDictationHudNative *hud, HudSurface *surf)
 {
     cairo_surface_t *surface;
     cairo_t *cr;
@@ -172,15 +302,15 @@ redraw (OwletDictationHudNative *hud)
     double dot_cx;
     double dot_cy;
 
-    if (!hud->created || !hud->mapped)
+    if (!surf->created || !surf->mapped)
         return;
 
-    max_w = (int) (hud->screen_w * HUD_MAX_WIDTH_FRAC);
+    max_w = (int) (surf->mon_w * HUD_MAX_WIDTH_FRAC);
     if (max_w < 200)
         max_w = 200;
 
     /* Temporary surface for measuring with the real visual. */
-    surface = cairo_xlib_surface_create (hud->dpy, hud->win, hud->visual,
+    surface = cairo_xlib_surface_create (hud->dpy, surf->win, hud->visual,
                                          max_w, 200);
     cr = cairo_create (surface);
 
@@ -207,21 +337,20 @@ redraw (OwletDictationHudNative *hud)
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
 
-    if (new_w != hud->win_w || new_h != hud->win_h) {
-        hud->win_w = new_w;
-        hud->win_h = new_h;
-        x = (hud->screen_w - hud->win_w) / 2;
-        y = hud->screen_h - hud->win_h - HUD_BOTTOM_MARGIN;
-        XMoveResizeWindow (hud->dpy, hud->win, x, y,
-                           (unsigned) hud->win_w, (unsigned) hud->win_h);
+    if (new_w != surf->win_w || new_h != surf->win_h) {
+        surf->win_w = new_w;
+        surf->win_h = new_h;
+        hud_position (surf, &x, &y);
+        XMoveResizeWindow (hud->dpy, surf->win, x, y,
+                           (unsigned) surf->win_w, (unsigned) surf->win_h);
         /* Re-apply empty input shape after resize. */
-        XShapeCombineRectangles (hud->dpy, hud->win, ShapeInput,
+        XShapeCombineRectangles (hud->dpy, surf->win, ShapeInput,
                                  0, 0, NULL, 0, ShapeSet, Unsorted);
     }
 
-    surface = cairo_xlib_surface_create (hud->dpy, hud->win, hud->visual,
-                                         hud->win_w, hud->win_h);
-    cairo_xlib_surface_set_size (surface, hud->win_w, hud->win_h);
+    surface = cairo_xlib_surface_create (hud->dpy, surf->win, hud->visual,
+                                         surf->win_w, surf->win_h);
+    cairo_xlib_surface_set_size (surface, surf->win_w, surf->win_h);
     cr = cairo_create (surface);
 
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
@@ -230,26 +359,26 @@ redraw (OwletDictationHudNative *hud)
 
     cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
     rounded_rect (cr, 0.5, 0.5,
-                  hud->win_w - 1.0, hud->win_h - 1.0, HUD_CORNER_RADIUS);
+                  surf->win_w - 1.0, surf->win_h - 1.0, HUD_CORNER_RADIUS);
     cairo_set_source_rgba (cr, 0.08, 0.08, 0.10, 0.82);
     cairo_fill_preserve (cr);
     cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.12);
     cairo_set_line_width (cr, 1.0);
     cairo_stroke (cr);
 
-    max_text_w = hud->win_w - (int) (HUD_PAD_X * 2 + HUD_DOT_RADIUS * 2 + HUD_DOT_GAP);
+    max_text_w = surf->win_w - (int) (HUD_PAD_X * 2 + HUD_DOT_RADIUS * 2 + HUD_DOT_GAP);
     if (max_text_w < 80)
         max_text_w = 80;
     measure_and_layout (cr, hud->text, max_text_w, &layout, &text_w, &text_h);
 
     dot_cx = HUD_PAD_X + HUD_DOT_RADIUS;
-    dot_cy = hud->win_h / 2.0;
+    dot_cy = surf->win_h / 2.0;
     cairo_arc (cr, dot_cx, dot_cy, HUD_DOT_RADIUS, 0, 2 * G_PI);
     cairo_set_source_rgba (cr, 0.90, 0.18, 0.18, 1.0);
     cairo_fill (cr);
 
     text_x = HUD_PAD_X + HUD_DOT_RADIUS * 2 + HUD_DOT_GAP;
-    text_y = (hud->win_h - text_h) / 2.0;
+    text_y = (surf->win_h - text_h) / 2.0;
     cairo_move_to (cr, text_x, text_y);
     cairo_set_source_rgba (cr, 0.95, 0.95, 0.97, 1.0);
     pango_cairo_show_layout (cr, layout);
@@ -257,7 +386,17 @@ redraw (OwletDictationHudNative *hud)
     g_object_unref (layout);
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
-    XFlush (hud->dpy);
+}
+
+static void
+redraw_all (OwletDictationHudNative *hud)
+{
+    int i;
+
+    for (i = 0; i < hud->n_surfaces; i++)
+        redraw_surface (hud, &hud->surfaces[i]);
+    if (hud->mapped)
+        XFlush (hud->dpy);
 }
 
 OwletDictationHudNative *
@@ -274,8 +413,7 @@ owlet_dictation_hud_native_new (void)
     hud->dpy = dpy;
     hud->screen = DefaultScreen (dpy);
     hud->root = RootWindow (dpy, hud->screen);
-    hud->screen_w = DisplayWidth (dpy, hud->screen);
-    hud->screen_h = DisplayHeight (dpy, hud->screen);
+    query_monitors (hud);
     hud->text = g_strdup ("");
     return hud;
 }
@@ -283,14 +421,16 @@ owlet_dictation_hud_native_new (void)
 void
 owlet_dictation_hud_native_free (OwletDictationHudNative *hud)
 {
+    int i;
+
     if (hud == NULL)
         return;
 
-    if (hud->created) {
-        XDestroyWindow (hud->dpy, hud->win);
-        if (hud->depth == 32 && hud->colormap != None)
-            XFreeColormap (hud->dpy, hud->colormap);
-    }
+    for (i = 0; i < HUD_MAX_MONITORS; i++)
+        destroy_surface (hud, &hud->surfaces[i]);
+
+    if (hud->visual_ready && hud->depth == 32 && hud->colormap != None)
+        XFreeColormap (hud->dpy, hud->colormap);
     if (hud->dpy != NULL)
         XCloseDisplay (hud->dpy);
     g_free (hud->text);
@@ -300,33 +440,81 @@ owlet_dictation_hud_native_free (OwletDictationHudNative *hud)
 void
 owlet_dictation_hud_native_show (OwletDictationHudNative *hud)
 {
-    int x;
-    int y;
+    HudSurface old[HUD_MAX_MONITORS];
+    int old_n;
+    int i;
+    int j;
 
     if (hud == NULL)
         return;
 
-    ensure_window (hud);
-    x = (hud->screen_w - hud->win_w) / 2;
-    y = hud->screen_h - hud->win_h - HUD_BOTTOM_MARGIN;
-    XMoveResizeWindow (hud->dpy, hud->win, x, y,
-                       (unsigned) hud->win_w, (unsigned) hud->win_h);
-    XMapRaised (hud->dpy, hud->win);
+    /* Preserve existing X windows across a monitor re-query so we can
+     * reuse geometry-matched surfaces instead of flickering. */
+    memcpy (old, hud->surfaces, sizeof (old));
+    old_n = hud->n_surfaces;
+    memset (hud->surfaces, 0, sizeof (hud->surfaces));
+    query_monitors (hud);
+
+    for (i = 0; i < hud->n_surfaces; i++) {
+        HudSurface *surf = &hud->surfaces[i];
+
+        for (j = 0; j < old_n; j++) {
+            if (!old[j].created)
+                continue;
+            if (old[j].mon_x == surf->mon_x
+                && old[j].mon_y == surf->mon_y
+                && old[j].mon_w == surf->mon_w
+                && old[j].mon_h == surf->mon_h) {
+                surf->win = old[j].win;
+                surf->win_w = old[j].win_w;
+                surf->win_h = old[j].win_h;
+                surf->created = 1;
+                surf->mapped = old[j].mapped;
+                old[j].created = 0;
+                break;
+            }
+        }
+    }
+
+    for (j = 0; j < old_n; j++)
+        destroy_surface (hud, &old[j]);
+
+    for (i = 0; i < hud->n_surfaces; i++) {
+        HudSurface *surf = &hud->surfaces[i];
+        int x;
+        int y;
+
+        ensure_surface_window (hud, surf);
+        hud_position (surf, &x, &y);
+        XMoveResizeWindow (hud->dpy, surf->win, x, y,
+                           (unsigned) surf->win_w, (unsigned) surf->win_h);
+        XMapRaised (hud->dpy, surf->win);
+        surf->mapped = 1;
+    }
+
     hud->mapped = 1;
-    redraw (hud);
+    redraw_all (hud);
 }
 
 void
 owlet_dictation_hud_native_hide (OwletDictationHudNative *hud)
 {
-    if (hud == NULL || !hud->created)
+    int i;
+
+    if (hud == NULL)
         return;
 
-    if (hud->mapped) {
-        XUnmapWindow (hud->dpy, hud->win);
-        hud->mapped = 0;
-        XFlush (hud->dpy);
+    for (i = 0; i < hud->n_surfaces; i++) {
+        HudSurface *surf = &hud->surfaces[i];
+
+        if (surf->created && surf->mapped) {
+            XUnmapWindow (hud->dpy, surf->win);
+            surf->mapped = 0;
+        }
     }
+    if (hud->mapped)
+        XFlush (hud->dpy);
+    hud->mapped = 0;
     g_free (hud->text);
     hud->text = g_strdup ("");
 }
@@ -341,5 +529,5 @@ owlet_dictation_hud_native_set_text (OwletDictationHudNative *hud,
     g_free (hud->text);
     hud->text = g_strdup (text != NULL ? text : "");
     if (hud->mapped)
-        redraw (hud);
+        redraw_all (hud);
 }
