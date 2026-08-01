@@ -33,6 +33,8 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 13 | [`phase-13-dictation-hud.md`](phase-13-dictation-hud.md) | Global/tray dictation HUD (Xlib OSD, no minimize) |
 | 14 | [`phase-14-debian-packaging.md`](phase-14-debian-packaging.md) | Debian/Ubuntu `.deb`: split CPU/Vulkan/HIP; GitHub release `.deb` artifacts |
 | 15 | [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md) | Full rename to Owlet / `im.apodaca.owlet` |
+| 16 | [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md) | AppImage: CPU + Vulkan only (no HIP); GitHub release AppImage artifacts |
+| 17 | [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md) | Opt-in dictation auto-stop after adjustable silence pause |
 
 ## Architectural decisions
 
@@ -119,3 +121,9 @@ meson setup build -Dgpu_backend=cpu                        # CPU
    **complete** (CPU/Vulkan/HIP smoke green on `ubuntu:26.04`).
 10. Phase 15: full identity rename to Owlet / `im.apodaca.owlet` (see
     [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md)).
+11. Phase 16: AppImage packaging (`packaging/appimage/`, CPU + Vulkan
+    only — no HIP; release workflow AppImage artifacts; see
+    [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md)).
+12. Phase 17: opt-in dictation silence auto-stop (host-side RMS on
+    capture chunks → `stop_dictation()`; see
+    [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)).

@@ -131,12 +131,13 @@ pkg-config: `gtk4`, `libadwaita-1 >= 1.8`, `gstreamer-1.0`,
 optional: `rocminfo`, `ydotool`, `xdotool`, `xdg-desktop-portal`. C++
 toolchain required to link the transcribe static lib. Submodule must
 be initialized. Packaging: Arch under `packaging/arch/`; Debian/Ubuntu
-(`.deb`, Ubuntu 26.04 / Debian sid) under `packaging/debian/`. HIP
-`.deb` builds also need noble's `libxml2` (`libxml2.so.2`) because ROCm
-6.4.3's `lld` is not built against distro `libxml2-16` — see README /
-`smoke-docker-inner.sh`. HIP `dh_shlibdeps` needs
-`-l/opt/rocm/lib --ignore-missing-info` (ROCm libs outside multiarch;
-ROCm .debs often lack shlibs/symbols).
+(`.deb`, Ubuntu 26.04 / Debian sid) under `packaging/debian/`;
+AppImage under `packaging/appimage/` (CPU + Vulkan only — no HIP;
+Ubuntu 26.04+ glibc floor). HIP `.deb` builds also need noble's
+`libxml2` (`libxml2.so.2`) because ROCm 6.4.3's `lld` is not built
+against distro `libxml2-16` — see README / `smoke-docker-inner.sh`.
+HIP `dh_shlibdeps` needs `-l/opt/rocm/lib --ignore-missing-info`
+(ROCm libs outside multiarch; ROCm .debs often lack shlibs/symbols).
 
 ## Plans status
 
@@ -150,6 +151,8 @@ Phase 11 = recording start/stop tones + Preferences disable). Still open
 | 9 | Finish gettext/`po/` (`owlet.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
+| 16 | AppImage packaging (CPU + Vulkan only; no HIP) — see `docs/plans/phase-16-appimage-packaging.md` |
+| 17 | Dictation silence auto-stop (opt-in; adjustable pause) — see `docs/plans/phase-17-dictation-silence-auto-stop.md` |
 
 ## Layout
 
