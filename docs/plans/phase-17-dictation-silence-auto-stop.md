@@ -279,7 +279,7 @@ the pref mid-session does not require restart.
       (live GSettings reads in `on_chunk`)
 - [x] No crash / GTK-from-wrong-thread warnings on auto-stop
       (`Idle.add` → `stop_dictation()`)
-- [ ] `meson test -C build --suite unit` passes (schema defaults)
+- [x] `meson test -C build --suite unit` passes (schema defaults)
 
 ## Manual test notes
 
