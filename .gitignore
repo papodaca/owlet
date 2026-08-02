@@ -56,3 +56,11 @@ __pycache__/
 /packaging/debian/owlet-vulkan/
 /packaging/debian/owlet-hip/
 /debian
+
+# AppImage linuxdeploy artifacts (packaging/appimage/build.sh)
+/packaging/appimage/*.AppImage
+/packaging/appimage/AppDir/
+/packaging/appimage/builddir-*/
+/packaging/appimage/.linuxdeploy-cache/
+/packaging/appimage/.gst-plugins-minimal/
+/packaging/appimage/squashfs-root/

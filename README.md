@@ -144,6 +144,45 @@ After installation, launch **Owlet** from the application menu. Speech
 models are downloaded from Preferences and are not bundled in the
 package.
 
+## Build an AppImage
+
+These steps create a portable `*.AppImage` on **Ubuntu 26.04** (or an
+equivalent glibc). Owlet needs **libadwaita ≥ 1.8**, so the AppImage
+glibc floor matches that build host — it will **not** run on older
+distros (e.g. Ubuntu 22.04 / 24.04). Only **CPU** and **Vulkan**
+AppImages are shipped; HIP/ROCm remains Arch / Debian only.
+
+Easiest path (Docker, mirrors CI):
+
+```bash
+git clone https://github.com/papodaca/owlet.git
+cd owlet/packaging/appimage
+./smoke-docker.sh cpu      # → Owlet-*-x86_64-cpu.AppImage
+./smoke-docker.sh vulkan   # → Owlet-*-x86_64-vulkan.AppImage
+```
+
+Native build on Ubuntu 26.04 (install the same build deps as the Debian
+section, plus `gstreamer1.0-plugins-good`, `gstreamer1.0-pulseaudio`,
+`file`, `patchelf`, and for Vulkan `libvulkan-dev` / `glslc` /
+`spirv-headers`):
+
+```bash
+cd packaging/appimage
+OWLET_BACKEND=cpu ./build.sh
+OWLET_BACKEND=vulkan ./build.sh
+```
+
+| Variant | Recommended for | Artifact |
+| --- | --- | --- |
+| CPU | Any computer; slowest but most compatible | `Owlet-*-x86_64-cpu.AppImage` |
+| Vulkan | Most AMD, Intel, and NVIDIA GPUs | `Owlet-*-x86_64-vulkan.AppImage` |
+
+Make the AppImage executable and run it (`chmod +x` then double-click or
+`./Owlet-….AppImage`). Vulkan builds expect a **host Vulkan ICD** (GPU
+drivers / Mesa); those libraries are not bundled. Speech models are
+downloaded from Preferences into `$XDG_DATA_HOME/owlet/models/` and are
+not bundled.
+
 ## Build & run from source
 
 ```bash

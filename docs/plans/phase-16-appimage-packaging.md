@@ -1,6 +1,6 @@
 # Phase 16 — AppImage packaging (CPU + Vulkan)
 
-> **Status:** planned (not implemented)
+> **Status:** complete
 
 ## Goal
 
@@ -119,15 +119,19 @@ Orchestration: extend `packaging/build.sh` so
    `chmod +x`. Prefer pinned release URLs over floating `continuous` when
    practical.
 8. Run linuxdeploy with `DEPLOY_GTK_VERSION=4`, `--plugin gtk`,
-   `--plugin gstreamer`, `--appdir AppDir`, `--output appimage`,
-   `VERSION=…`, and `OUTPUT=Owlet-$VERSION-x86_64-$OWLET_BACKEND.AppImage`
-   (or rename after). Set `APPIMAGE_EXTRACT_AND_RUN=1`.
+   `--plugin gstreamer`, `--appdir AppDir` (populate only — no
+   `--output` yet), `VERSION=…`. Set `APPIMAGE_EXTRACT_AND_RUN=1`.
 9. Post-process AppRun hooks if the gtk plugin forces `GDK_BACKEND=x11`
    — remove or override so Wayland works.
 10. For Vulkan builds: ensure graphics driver / ICD / EGL / drm libs are
     on the exclude path (strip if accidentally deployed). Document host
-    Vulkan ICD requirement in README.
-11. Write the final `.AppImage` into `packaging/appimage/`.
+    Vulkan ICD requirement in README. Assert AppDir is clean of those
+    libs before packing.
+11. Pack the cleaned AppDir with `appimagetool` extracted from the
+    pinned linuxdeploy AppImage (a second `linuxdeploy --output appimage`
+    pass re-deploys excluded Vulkan/Mesa libs). Write
+    `Owlet-$VERSION-x86_64-$OWLET_BACKEND.AppImage` into
+    `packaging/appimage/`.
 
 Optional smoke inside `build.sh` (or smoke-inner only):
 
@@ -215,18 +219,21 @@ Do **not** change Arch or Debian matrix backends.
 
 ## Verification checklist
 
-1. [ ] `packaging/appimage/smoke-docker.sh cpu` produces
+1. [x] `packaging/appimage/smoke-docker.sh cpu` produces
    `Owlet-*-x86_64-cpu.AppImage`.
-2. [ ] Same for `vulkan` → `Owlet-*-x86_64-vulkan.AppImage`.
-3. [ ] `OWLET_BACKEND=hip ./build.sh` (and `all`) fail fast with a clear
+2. [x] Same for `vulkan` → `Owlet-*-x86_64-vulkan.AppImage`.
+3. [x] `OWLET_BACKEND=hip ./build.sh` (and `all`) fail fast with a clear
    error; no AppImage emitted.
-4. [ ] `./packaging/build.sh appimage` runs cpu then vulkan only.
-5. [ ] Extract-and-run smoke: AppImage starts / prints help under Xvfb on
+4. [x] `./packaging/build.sh appimage` runs cpu then vulkan only
+   (`run_distro` backends `(cpu vulkan)` for appimage; smoke verified
+   per-backend).
+5. [x] Extract-and-run smoke: AppImage starts / prints help under Xvfb on
    the build image; bundled `pulsesrc` visible to `gst-inspect` when
    probed against the AppDir.
-6. [ ] Vulkan AppImage does not bundle Mesa ICD / driver libs; README
-   states host Vulkan ICD requirement.
-7. [ ] `release.yml` on `v*` builds/uploads AppImages for cpu + vulkan;
+6. [x] Vulkan AppImage does not bundle Mesa ICD / driver libs (`libvulkan`
+   stripped + packed via `appimagetool`); README states host Vulkan ICD
+   requirement.
+7. [x] `release.yml` on `v*` builds/uploads AppImages for cpu + vulkan;
    Arch/Debian hip jobs unchanged; release notes mention AppImage +
    glibc floor.
-8. [ ] README documents AppImage build/run and 26.04+ floor.
+8. [x] README documents AppImage build/run and 26.04+ floor.

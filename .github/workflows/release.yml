@@ -95,16 +95,48 @@ jobs:
           path: packaging/debian/*.deb
           if-no-files-found: error
 
+  appimage:
+    name: AppImage (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [cpu, vulkan]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build AppImage
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          docker run --rm \
+            -e BACKEND \
+            -e OWLET_DOCKER_ROOT=/workspace \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            ubuntu:26.04 \
+            bash -euo pipefail /workspace/packaging/appimage/smoke-docker-inner.sh
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v7
+        with:
+          name: appimage-${{ matrix.backend }}
+          path: packaging/appimage/*.AppImage
+          if-no-files-found: error
+
   publish:
     name: Publish GitHub Release
-    needs: [arch, debian]
+    needs: [arch, debian, appimage]
     runs-on: ubuntu-latest
     steps:
       - name: Download packages
         uses: actions/download-artifact@v8
         with:
           path: dist
-          pattern: '{arch,debian}-*'
+          pattern: '{arch,debian,appimage}-*'
           merge-multiple: true
 
       - name: Create release
@@ -113,6 +145,7 @@ jobs:
           files: |
             dist/*.pkg.tar.zst
             dist/*.deb
+            dist/*.AppImage
           generate_release_notes: true
           fail_on_unmatched_files: true
           body: |
@@ -134,7 +167,20 @@ jobs:
             | `owlet-vulkan` | Vulkan |
             | `owlet-hip` | AMD HIP/ROCm |
 
-            Install one variant only — they conflict with each other.
-            The HIP `.deb` needs AMD's ROCm apt repository for runtime
+            ### AppImage (built on Ubuntu 26.04)
+
+            | Artifact | Backend |
+            | --- | --- |
+            | `Owlet-*-x86_64-cpu.AppImage` | CPU |
+            | `Owlet-*-x86_64-vulkan.AppImage` | Vulkan |
+
+            AppImages require a host with **Ubuntu 26.04+ / equivalent glibc**
+            (libadwaita ≥ 1.8). They will not run on older glibc (e.g. Ubuntu
+            22.04 / 24.04). Vulkan AppImages need a host Vulkan ICD (Mesa /
+            NVIDIA / AMD drivers are **not** bundled). There is no HIP
+            AppImage — use Arch or Debian for ROCm.
+
+            Install one Arch/Debian variant only — they conflict with each
+            other. The HIP `.deb` needs AMD's ROCm apt repository for runtime
             libraries. Models are downloaded from Preferences and are not
             bundled.

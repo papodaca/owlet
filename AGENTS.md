@@ -141,9 +141,10 @@ HIP `dh_shlibdeps` needs `-l/opt/rocm/lib --ignore-missing-info`
 
 ## Plans status
 
-Phases 0–7, 11, and 17 are in tree (Phase 7 = pytest suites under `meson test`;
-Phase 11 = recording start/stop tones + Preferences disable; Phase 17 =
-opt-in dictation silence auto-stop). Still open (see `docs/plans/`):
+Phases 0–7, 11, and 16–17 are in tree (Phase 7 = pytest suites under `meson test`;
+Phase 11 = recording start/stop tones + Preferences disable; Phase 16 =
+AppImage CPU/Vulkan packaging; Phase 17 = opt-in dictation silence auto-stop).
+Still open (see `docs/plans/`):
 
 | # | Goal |
 | --- | --- |
@@ -151,7 +152,6 @@ opt-in dictation silence auto-stop). Still open (see `docs/plans/`):
 | 9 | Finish gettext/`po/` (`owlet.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
-| 16 | AppImage packaging (CPU + Vulkan only; no HIP) — see `docs/plans/phase-16-appimage-packaging.md` |
 
 ## Layout
 

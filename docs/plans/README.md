@@ -123,7 +123,8 @@ meson setup build -Dgpu_backend=cpu                        # CPU
     [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md)).
 11. Phase 16: AppImage packaging (`packaging/appimage/`, CPU + Vulkan
     only — no HIP; release workflow AppImage artifacts; see
-    [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md)).
+    [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md)) —
+    **complete** (CPU/Vulkan Docker smoke green; no HIP AppImage).
 12. Phase 17: opt-in dictation silence auto-stop (host-side RMS on
     capture chunks → `stop_dictation()`; see
     [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)) —
