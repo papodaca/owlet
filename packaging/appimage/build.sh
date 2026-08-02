@@ -5,7 +5,8 @@
 #   cd packaging/appimage
 #   OWLET_BACKEND=cpu ./build.sh          # cpu | vulkan
 #
-# Produces: Owlet-$VERSION-x86_64-$OWLET_BACKEND.AppImage in this directory.
+# Produces: Owlet-$VERSION-$ARCH-$OWLET_BACKEND.AppImage in this directory
+# (ARCH is uname -m: x86_64 or aarch64).
 # Requires: meson, ninja, valac, cmake, curl, file, desktop-file-utils,
 # patchelf, GTK4/libadwaita/GStreamer build deps; for vulkan also
 # libvulkan-dev, glslc, spirv-headers. Runtime GStreamer plugins used for
@@ -18,6 +19,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 OWLET_BACKEND=${OWLET_BACKEND:-}
+HOST_ARCH=$(uname -m)
 
 # Docker/CI bind-mounts often trip "dubious ownership"; allow git in this tree.
 git config --global --add safe.directory "${REPO_ROOT}" 2>/dev/null || true
@@ -41,9 +43,24 @@ EOF
     ;;
 esac
 
+case "${HOST_ARCH}" in
+  x86_64|aarch64) ;;
+  *)
+    echo "AppImage packaging supports x86_64 and aarch64 (got: ${HOST_ARCH})" >&2
+    exit 1
+    ;;
+esac
+
+# Debian multiarch libdir triplet for this host.
+case "${HOST_ARCH}" in
+  x86_64) MULTIARCH_TRIPLET=x86_64-linux-gnu ;;
+  aarch64) MULTIARCH_TRIPLET=aarch64-linux-gnu ;;
+esac
+
 # Pinned tooling (prefer tagged linuxdeploy over floating continuous).
 LINUXDEPLOY_VERSION=${LINUXDEPLOY_VERSION:-1-alpha-20251107-1}
-LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/${LINUXDEPLOY_VERSION}/linuxdeploy-x86_64.AppImage"
+LINUXDEPLOY_BIN="linuxdeploy-${HOST_ARCH}.AppImage"
+LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/${LINUXDEPLOY_VERSION}/${LINUXDEPLOY_BIN}"
 # Plugin scripts: pin to known commits (github API at packaging time).
 GTK_PLUGIN_URL="https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/7a3fbc31a9e5/linuxdeploy-plugin-gtk.sh"
 GSTREAMER_PLUGIN_URL="https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gstreamer/2a2e67491c32/linuxdeploy-plugin-gstreamer.sh"
@@ -147,12 +164,12 @@ PY
 
 fetch_tooling() {
   mkdir -p "${CACHE_DIR}"
-  local ld="${CACHE_DIR}/linuxdeploy-x86_64.AppImage"
+  local ld="${CACHE_DIR}/${LINUXDEPLOY_BIN}"
   local gtk="${CACHE_DIR}/linuxdeploy-plugin-gtk.sh"
   local gst="${CACHE_DIR}/linuxdeploy-plugin-gstreamer.sh"
 
   if [[ ! -f ${ld} ]]; then
-    echo "Downloading linuxdeploy ${LINUXDEPLOY_VERSION}…"
+    echo "Downloading linuxdeploy ${LINUXDEPLOY_VERSION} (${HOST_ARCH})…"
     curl -fL --retry 3 -o "${ld}.partial" "${LINUXDEPLOY_URL}"
     mv "${ld}.partial" "${ld}"
   fi
@@ -176,7 +193,7 @@ fetch_tooling() {
     rm -rf "${CACHE_DIR}/squashfs-root"
     (
       cd "${CACHE_DIR}"
-      APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy-x86_64.AppImage --appimage-extract >/dev/null
+      APPIMAGE_EXTRACT_AND_RUN=1 "./${LINUXDEPLOY_BIN}" --appimage-extract >/dev/null
     )
   fi
 }
@@ -197,7 +214,7 @@ assert_no_graphics_driver_libs() {
     -name 'libnvidia-*.so*' -o \
     -name 'libcuda.so*' \
   \) 2>/dev/null || true)
-  if [[ -d ${APPDIR}/usr/lib/dri || -d ${APPDIR}/usr/lib/x86_64-linux-gnu/dri || -d ${APPDIR}/usr/share/vulkan ]]; then
+  if [[ -d ${APPDIR}/usr/lib/dri || -d ${APPDIR}/usr/lib/${MULTIARCH_TRIPLET}/dri || -d ${APPDIR}/usr/share/vulkan ]]; then
     hits+=$'\n'"dri-or-vulkan-share-dir"
   fi
   if [[ -n ${hits} ]]; then
@@ -212,8 +229,8 @@ stage_minimal_gstreamer_plugins() {
   # playback plugins for MediaFile start/stop .ogg tones. Avoid shipping
   # the full host "good/bad" plugin tree.
   local host_plugins=""
-  if [[ -d /usr/lib/x86_64-linux-gnu/gstreamer-1.0 ]]; then
-    host_plugins=/usr/lib/x86_64-linux-gnu/gstreamer-1.0
+  if [[ -d /usr/lib/${MULTIARCH_TRIPLET}/gstreamer-1.0 ]]; then
+    host_plugins=/usr/lib/${MULTIARCH_TRIPLET}/gstreamer-1.0
   elif [[ -d /usr/lib/gstreamer-1.0 ]]; then
     host_plugins=/usr/lib/gstreamer-1.0
   else
@@ -283,10 +300,10 @@ strip_graphics_driver_libs() {
   done
   rm -rf \
     "${APPDIR}/usr/lib/dri" \
-    "${APPDIR}/usr/lib/x86_64-linux-gnu/dri" \
+    "${APPDIR}/usr/lib/${MULTIARCH_TRIPLET}/dri" \
     "${APPDIR}/usr/share/vulkan" \
     "${APPDIR}/usr/lib/vulkan" \
-    "${APPDIR}/usr/lib/x86_64-linux-gnu/vulkan" \
+    "${APPDIR}/usr/lib/${MULTIARCH_TRIPLET}/vulkan" \
     "${APPDIR}/usr/share/doc/libvulkan1" \
     "${APPDIR}/usr/share/doc/libvulkan-dev" \
     2>/dev/null || true
@@ -347,13 +364,13 @@ smoke_appimage() {
 git -C "${REPO_ROOT}" submodule update --init --recursive
 
 VERSION=$(owlet_appimage_version)
-OUTPUT_NAME="Owlet-${VERSION}-x86_64-${OWLET_BACKEND}.AppImage"
+OUTPUT_NAME="Owlet-${VERSION}-${HOST_ARCH}-${OWLET_BACKEND}.AppImage"
 OUTPUT_PATH="${SCRIPT_DIR}/${OUTPUT_NAME}"
 
 echo "Building ${OUTPUT_NAME} (OWLET_BACKEND=${OWLET_BACKEND}) from ${REPO_ROOT}"
 
 rm -rf "${APPDIR}" "${BUILDDIR}"
-rm -f "${SCRIPT_DIR}/Owlet-"*-"x86_64-${OWLET_BACKEND}.AppImage"
+rm -f "${SCRIPT_DIR}/Owlet-"*-"${HOST_ARCH}-${OWLET_BACKEND}.AppImage"
 mkdir -p "${APPDIR}"
 
 fetch_tooling
@@ -388,7 +405,7 @@ export GSTREAMER_PLUGINS_DIR="${GST_STAGE}"
 # current plugin script, but keep unset for clarity).
 unset GSTREAMER_INCLUDE_BAD_PLUGINS || true
 
-LINUXDEPLOY="${CACHE_DIR}/linuxdeploy-x86_64.AppImage"
+LINUXDEPLOY="${CACHE_DIR}/${LINUXDEPLOY_BIN}"
 # Plugins must live next to linuxdeploy (or on PATH).
 cp -f "${CACHE_DIR}/linuxdeploy-plugin-gtk.sh" \
   "${CACHE_DIR}/linuxdeploy-plugin-gstreamer.sh" \
@@ -434,7 +451,7 @@ if [[ ! -x ${APPIMAGETOOL} ]]; then
 fi
 (
   cd "${SCRIPT_DIR}"
-  env ARCH=x86_64 \
+  env ARCH="${HOST_ARCH}" \
     VERSION="${VERSION}" \
     APPIMAGE_EXTRACT_AND_RUN=1 \
     "${APPIMAGETOOL}" "${APPDIR}" "${OUTPUT_PATH}"

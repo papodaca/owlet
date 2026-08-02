@@ -74,6 +74,8 @@ esac
 ARCH_DIR="${SCRIPT_DIR}/arch"
 DEBIAN_DIR="${SCRIPT_DIR}/debian"
 APPIMAGE_DIR="${SCRIPT_DIR}/appimage"
+# Host uname -m for AppImage artifact names (x86_64 / aarch64).
+HOST_ARCH=$(uname -m)
 
 pkg_dir_for() {
   case "$1" in
@@ -92,8 +94,8 @@ expected_pkgs_for() {
     debian/cpu) echo "owlet_*.deb" ;;
     debian/vulkan) echo "owlet-vulkan_*.deb" ;;
     debian/hip) echo "owlet-hip_*.deb" ;;
-    appimage/cpu) echo "Owlet-*-x86_64-cpu.AppImage" ;;
-    appimage/vulkan) echo "Owlet-*-x86_64-vulkan.AppImage" ;;
+    appimage/cpu) echo "Owlet-*-${HOST_ARCH}-cpu.AppImage" ;;
+    appimage/vulkan) echo "Owlet-*-${HOST_ARCH}-vulkan.AppImage" ;;
   esac
 }
 
@@ -106,8 +108,8 @@ forbidden_pkgs_for() {
     debian/cpu) echo "owlet-vulkan_*.deb owlet-hip_*.deb" ;;
     debian/vulkan) echo "owlet_*.deb owlet-hip_*.deb" ;;
     debian/hip) echo "owlet_*.deb owlet-vulkan_*.deb" ;;
-    appimage/cpu) echo "Owlet-*-x86_64-vulkan.AppImage" ;;
-    appimage/vulkan) echo "Owlet-*-x86_64-cpu.AppImage" ;;
+    appimage/cpu) echo "Owlet-*-${HOST_ARCH}-vulkan.AppImage" ;;
+    appimage/vulkan) echo "Owlet-*-${HOST_ARCH}-cpu.AppImage" ;;
   esac
 }
 
@@ -227,10 +229,10 @@ clean_backend_artifacts() {
       rm -f "${pkg_dir}"/owlet-hip_*.deb
       ;;
     appimage/cpu)
-      rm -f "${pkg_dir}"/Owlet-*-x86_64-cpu.AppImage
+      rm -f "${pkg_dir}"/Owlet-*-"${HOST_ARCH}"-cpu.AppImage
       ;;
     appimage/vulkan)
-      rm -f "${pkg_dir}"/Owlet-*-x86_64-vulkan.AppImage
+      rm -f "${pkg_dir}"/Owlet-*-"${HOST_ARCH}"-vulkan.AppImage
       ;;
   esac
 }

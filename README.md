@@ -157,8 +157,8 @@ Easiest path (Docker, mirrors CI):
 ```bash
 git clone https://github.com/papodaca/owlet.git
 cd owlet/packaging/appimage
-./smoke-docker.sh cpu      # → Owlet-*-x86_64-cpu.AppImage
-./smoke-docker.sh vulkan   # → Owlet-*-x86_64-vulkan.AppImage
+./smoke-docker.sh cpu      # → Owlet-*-$ARCH-cpu.AppImage (x86_64 or aarch64)
+./smoke-docker.sh vulkan   # → Owlet-*-$ARCH-vulkan.AppImage
 ```
 
 Native build on Ubuntu 26.04 (install the same build deps as the Debian

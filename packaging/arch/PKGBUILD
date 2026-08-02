@@ -15,7 +15,7 @@ pkgrel=1
 pkgdesc='Speech-to-text GNOME app using local transcribe.cpp (GTK4/libadwaita)'
 url='https://github.com/papodaca/owlet'
 license=('GPL-3.0-or-later')
-arch=('x86_64')
+arch=('x86_64' 'aarch64')
 install=owlet.install
 source=()
 sha256sums=()
@@ -169,6 +169,8 @@ package_owlet-vulkan() {
 
 package_owlet-hip() {
   pkgdesc+=' (AMD HIP/ROCm backend)'
+  # ROCm/HIP toolchain is x86_64-only upstream.
+  arch=('x86_64')
   depends=("${_common_depends[@]}" hip-runtime-amd hipblas rocblas)
   optdepends=("${_common_optdepends[@]}")
   provides=('owlet')

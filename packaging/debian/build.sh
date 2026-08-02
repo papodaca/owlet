@@ -28,9 +28,21 @@ case "${OWLET_BACKEND}" in
     ;;
 esac
 
+# Host Debian arch for .changes / .buildinfo filenames (amd64, arm64, …).
+DEB_HOST_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH 2>/dev/null || uname -m)
+case "${DEB_HOST_ARCH}" in
+  x86_64) DEB_HOST_ARCH=amd64 ;;
+  aarch64) DEB_HOST_ARCH=arm64 ;;
+esac
+
 # ROCm's amdgcn lld needs libxml2.so.2. Ubuntu 26.04 / Debian sid only
 # ship libxml2.so.16 — install noble's libxml2 (pulls libicu74) first.
+# HIP/ROCm is x86_64-only; refuse other hosts early.
 if [[ ${OWLET_BACKEND} == hip || ${OWLET_BACKEND} == all ]]; then
+  if [[ ${DEB_HOST_ARCH} != amd64 ]]; then
+    echo "HIP packaging is amd64-only (host arch: ${DEB_HOST_ARCH})." >&2
+    exit 1
+  fi
   if ! ldconfig -p 2>/dev/null | grep -q 'libxml2\.so\.2'; then
     if [[ ! -e /usr/lib/x86_64-linux-gnu/libxml2.so.2 && ! -e /usr/lib64/libxml2.so.2 ]]; then
       cat >&2 <<'EOF'
@@ -133,8 +145,8 @@ echo "Building owlet ${version} (OWLET_BACKEND=${OWLET_BACKEND}) from ${REPO_ROO
   # Skip automatic dbgsym .ddeb — not published on GitHub Releases.
   export DEB_BUILD_OPTIONS="${DEB_BUILD_OPTIONS:+$DEB_BUILD_OPTIONS }noautodbgsym"
   dpkg-buildpackage -b -us -uc \
-    "--changes-file=${SCRIPT_DIR}/owlet_${version}_amd64.changes" \
-    "--buildinfo-file=${SCRIPT_DIR}/owlet_${version}_amd64.buildinfo" \
+    "--changes-file=${SCRIPT_DIR}/owlet_${version}_${DEB_HOST_ARCH}.changes" \
+    "--buildinfo-file=${SCRIPT_DIR}/owlet_${version}_${DEB_HOST_ARCH}.buildinfo" \
     "--buildinfo-option=-u${SCRIPT_DIR}" \
     "--changes-option=-u${SCRIPT_DIR}"
 )

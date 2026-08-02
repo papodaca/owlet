@@ -47,7 +47,7 @@ Build-Depends:
  rccl <!nohip>,
 
 Package: owlet
-Architecture: amd64
+Architecture: amd64 arm64
 Build-Profiles: <!nocpu>
 Depends:
  ${shlibs:Depends},
@@ -70,7 +70,7 @@ Description: Speech-to-text GNOME app (CPU backend)
  runtime and are not bundled.
 
 Package: owlet-vulkan
-Architecture: amd64
+Architecture: amd64 arm64
 Build-Profiles: <!nouvulkan>
 Depends:
  ${shlibs:Depends},
