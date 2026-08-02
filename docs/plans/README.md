@@ -8,7 +8,8 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 
 - In-app text view **and** keystroke-simulated dictation mode.
 - User-selectable GPU backend: HIP (ROCm) / Vulkan / CPU / auto.
-- No flatpak — system builds only.
+- System packages (Arch / Debian) + AppImage; optional Flatpak channel
+  (Vulkan build with CPU fallback; no HIP) — see phase 18.
 - API key stored in libsecret.
 - Global shortcuts via `xdg-desktop-portal` `GlobalShortcuts`, with a
   shell-script fallback the user binds to a custom keyboard shortcut.
@@ -35,6 +36,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 15 | [`phase-15-rename-owlet.md`](phase-15-rename-owlet.md) | Full rename to Owlet / `im.apodaca.owlet` |
 | 16 | [`phase-16-appimage-packaging.md`](phase-16-appimage-packaging.md) | AppImage: CPU + Vulkan only (no HIP); GitHub release AppImage artifacts |
 | 17 | [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md) | Opt-in dictation auto-stop after adjustable silence pause |
+| 18 | [`phase-18-flatpak-packaging.md`](phase-18-flatpak-packaging.md) | Flatpak: GNOME runtime, one Vulkan(+CPU) app, portal-first dictation; no HIP |
 
 ## Architectural decisions
 
@@ -127,5 +129,12 @@ meson setup build -Dgpu_backend=cpu                        # CPU
     **complete** (CPU/Vulkan Docker smoke green; no HIP AppImage).
 12. Phase 17: opt-in dictation silence auto-stop (host-side RMS on
     capture chunks → `stop_dictation()`; see
+<<<<<<< Updated upstream
     [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)) —
     **complete** (prefs + window wiring; manual mic checklist remains).
+=======
+    [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md)).
+13. Phase 18: Flatpak packaging (`packaging/flatpak/`, GNOME runtime,
+    one Vulkan build with CPU fallback, portal EIS dictation; no HIP;
+    see [`phase-18-flatpak-packaging.md`](phase-18-flatpak-packaging.md)).
+>>>>>>> Stashed changes

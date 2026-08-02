@@ -3,7 +3,8 @@
 GTK4 + libadwaita speech-to-text app in **Vala**. Local inference via
 git submodule `subprojects/transcribe.cpp` (static link); optional
 OpenAI-compatible remote backend. In-app transcript **and** keystroke
-dictation. System builds only (no Flatpak). GPL-3.0-or-later.
+dictation. System builds (Arch / Debian / AppImage) plus planned Flatpak
+(phase 18; no HIP in Flatpak). GPL-3.0-or-later.
 
 Product scope & phase plans: `docs/plans/README.md` (trust code over
 that file when they disagree — see stale notes below).
@@ -133,7 +134,10 @@ toolchain required to link the transcribe static lib. Submodule must
 be initialized. Packaging: Arch under `packaging/arch/`; Debian/Ubuntu
 (`.deb`, Ubuntu 26.04 / Debian sid) under `packaging/debian/`;
 AppImage under `packaging/appimage/` (CPU + Vulkan only — no HIP;
-Ubuntu 26.04+ glibc floor). HIP `.deb` builds also need noble's
+Ubuntu 26.04+ glibc floor). Flatpak (planned) under
+`packaging/flatpak/` — one GNOME-runtime app, Vulkan + CPU fallback,
+portal-first dictation; see `docs/plans/phase-18-flatpak-packaging.md`.
+HIP `.deb` builds also need noble's
 `libxml2` (`libxml2.so.2`) because ROCm 6.4.3's `lld` is not built
 against distro `libxml2-16` — see README / `smoke-docker-inner.sh`.
 HIP `dh_shlibdeps` needs `-l/opt/rocm/lib --ignore-missing-info`
@@ -152,6 +156,10 @@ Still open (see `docs/plans/`):
 | 9 | Finish gettext/`po/` (`owlet.pot` not committed yet; `LINGUAS` empty) |
 | 10 | Close-to-tray (GIO SNI) + recording tray icon — see `docs/plans/phase-10-close-to-tray.md` |
 | 12 | Arch packaging (PKGBUILD split CPU/Vulkan/HIP; static submodule link) — see `docs/plans/phase-12-packaging.md` |
+| 16 | AppImage packaging (CPU + Vulkan only; no HIP) — see `docs/plans/phase-16-appimage-packaging.md` |
+| 17 | Dictation silence auto-stop (opt-in; adjustable pause) — see `docs/plans/phase-17-dictation-silence-auto-stop.md` |
+| 18 | Flatpak packaging (GNOME runtime; Vulkan+CPU; portal dictation; no HIP) — see `docs/plans/phase-18-flatpak-packaging.md` |
+
 
 ## Layout
 
