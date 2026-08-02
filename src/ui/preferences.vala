@@ -35,6 +35,7 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
     [GtkChild] unowned Adw.SwitchRow dictation_hud_row;
     [GtkChild] unowned Adw.SwitchRow dictation_auto_stop_row;
     [GtkChild] unowned Adw.SpinRow dictation_auto_stop_pause_row;
+    [GtkChild] unowned Adw.SpinRow dictation_auto_stop_threshold_row;
     [GtkChild] unowned Adw.SwitchRow close_to_tray_row;
 
     // ----- Models page -----
@@ -191,9 +192,21 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
             settings.set_int ("dictation-auto-stop-pause-ms",
                 (int) dictation_auto_stop_pause_row.get_value ());
         });
-        dictation_auto_stop_pause_row.sensitive = dictation_auto_stop_row.active;
+
+        // Speech RMS threshold (double <-> double). Same sensitivity
+        // gate as pause duration so noisy-room tuning stays with the
+        // opt-in auto-stop controls.
+        settings.bind ("dictation-auto-stop-threshold",
+                       dictation_auto_stop_threshold_row, "value",
+                       GLib.SettingsBindFlags.DEFAULT);
+
+        bool auto_stop_on = dictation_auto_stop_row.active;
+        dictation_auto_stop_pause_row.sensitive = auto_stop_on;
+        dictation_auto_stop_threshold_row.sensitive = auto_stop_on;
         dictation_auto_stop_row.notify["active"].connect (() => {
-            dictation_auto_stop_pause_row.sensitive = dictation_auto_stop_row.active;
+            bool on = dictation_auto_stop_row.active;
+            dictation_auto_stop_pause_row.sensitive = on;
+            dictation_auto_stop_threshold_row.sensitive = on;
         });
 
         settings.bind ("close-to-tray", close_to_tray_row, "active",

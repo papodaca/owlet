@@ -54,7 +54,12 @@
 		<key name="dictation-auto-stop-pause-ms" type="i">
 			<default>1200</default>
 			<summary>Silence duration before dictation auto-stops (ms)</summary>
-			<description>How long speech must stay below the internal energy threshold before dictation stops. Intended range 500–5000. Only used when dictation-auto-stop is true.</description>
+			<description>How long speech must stay below dictation-auto-stop-threshold before dictation stops. Intended range 500–5000. Only used when dictation-auto-stop is true.</description>
+		</key>
+		<key name="dictation-auto-stop-threshold" type="d">
+			<default>0.002</default>
+			<summary>RMS energy threshold for speech vs silence</summary>
+			<description>Capture chunks at or above this RMS count as speech and reset the auto-stop pause timer. Lower values detect quieter speech (and may hold open in noisy rooms); higher values ignore room noise (and may cut off soft speech). Intended range 0.0001–0.05. Only used when dictation-auto-stop is true.</description>
 		</key>
 		<key name="close-to-tray" type="b">
 			<default>false</default>

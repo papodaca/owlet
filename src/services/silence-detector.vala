@@ -8,36 +8,25 @@
  * testable — no GSettings, GTK, or GStreamer. Observes float PCM
  * chunks (16 kHz mono F32LE from Recorder) and reports once when
  * consecutive silence reaches pause_ms.
- *
- * Mic capture levels vary wildly with Pulse/PipeWire source volume
- * (e.g. 15% ≈ −50 dB). A fixed absolute RMS gate like 0.01 misses
- * real speech on quiet inputs and stops after pause_ms of "silence"
- * that was actually talking. Track a min-biased noise floor instead
- * and treat speech as a multiple of that floor.
  */
 
 public class Owlet.SilenceDetector : GLib.Object {
-    // Below this, treat as digital silence regardless of noise floor.
-    public const float ABS_MIN_SPEECH_RMS = 1e-5f;
-    // Frame is speech when RMS >= noise_rms * this ratio.
-    public const float SPEECH_TO_NOISE_RATIO = 3.5f;
-    // When RMS is above the floor, creep the estimate upward slowly
-    // so a louder room can adapt without locking onto speech.
-    public const float NOISE_RISE_ALPHA = 0.01f;
-    // When RMS is below the floor, follow downward quickly.
-    public const float NOISE_FALL_ALPHA = 0.20f;
+    // Default speech energy floor. 0.01 was far too high for typical
+    // Pulse/PipeWire capture (quiet source volume never resets the
+    // timer, so dictation dies after pause_ms ≈ one word). 0.002 still
+    // sits well above ambient hiss on a sane mic level while keeping
+    // mid-phrase dips from looking like end-of-utterance. Overridable
+    // via GSettings / Preferences for noisy rooms or quiet mics.
+    public const float DEFAULT_SPEECH_RMS_THRESHOLD = 0.002f;
 
     public int pause_ms { get; set; default = 1200; }
+    public float speech_rms_threshold { get; set; default = DEFAULT_SPEECH_RMS_THRESHOLD; }
 
     private double silence_ms = 0.0;
-    private float noise_rms = ABS_MIN_SPEECH_RMS;
-    private bool noise_inited = false;
     private bool fired = false;
 
     public void reset () {
         silence_ms = 0.0;
-        noise_rms = ABS_MIN_SPEECH_RMS;
-        noise_inited = false;
         fired = false;
     }
 
@@ -53,24 +42,11 @@ public class Owlet.SilenceDetector : GLib.Object {
         }
         float rms = (float) Math.sqrt (sum_sq / samples.length);
 
-        if (!noise_inited) {
-            // Prefer the first non-trivial frame so leading digital-zero
-            // buffers don't pin the floor forever.
-            if (rms >= ABS_MIN_SPEECH_RMS) {
-                noise_rms = rms;
-                noise_inited = true;
-            }
-        } else if (rms < noise_rms) {
-            noise_rms = noise_rms * (1.0f - NOISE_FALL_ALPHA) + rms * NOISE_FALL_ALPHA;
-        } else {
-            noise_rms = noise_rms * (1.0f - NOISE_RISE_ALPHA) + rms * NOISE_RISE_ALPHA;
-        }
-        if (noise_rms < ABS_MIN_SPEECH_RMS)
-            noise_rms = ABS_MIN_SPEECH_RMS;
-
-        float threshold = noise_rms * SPEECH_TO_NOISE_RATIO;
-        if (threshold < ABS_MIN_SPEECH_RMS)
-            threshold = ABS_MIN_SPEECH_RMS;
+        float threshold = speech_rms_threshold;
+        if (threshold < 0.0001f)
+            threshold = 0.0001f;
+        else if (threshold > 0.05f)
+            threshold = 0.05f;
 
         if (rms >= threshold) {
             silence_ms = 0.0;

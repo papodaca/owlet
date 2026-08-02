@@ -379,6 +379,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
         else if (pause > 5000)
             pause = 5000;
         silence_detector.pause_ms = pause;
+        silence_detector.speech_rms_threshold =
+            (float) settings.get_double ("dictation-auto-stop-threshold");
         if (silence_detector.observe (samples)) {
             GLib.Idle.add (() => {
                 stop_dictation ();
@@ -554,6 +556,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
         else if (pause > 5000)
             pause = 5000;
         silence_detector.pause_ms = pause;
+        silence_detector.speech_rms_threshold =
+            (float) settings.get_double ("dictation-auto-stop-threshold");
         silence_detector.reset ();
     }
 

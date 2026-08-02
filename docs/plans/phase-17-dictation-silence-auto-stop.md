@@ -28,10 +28,10 @@ familiar OS / Whisper-style “speak, pause, done” behavior.
 | Silent start | **Same pause rule** from mic-open — no “must speak once” grace |
 | Detection | **Host-side RMS** on `Recorder.chunk_ready` PCM (16 kHz mono F32LE) |
 | Model VAD / Whisper `no_speech` | **Out of scope** — not a live end-of-utterance signal |
-| Energy threshold | Fixed constant in v1 (no Preferences slider) |
+| Energy threshold | User-adjustable `dictation-auto-stop-threshold` (default **0.002**; 0.0001–0.05) |
 | Stop path | Call **`stop_dictation()`** only (not `on_stop()`) |
 | False stop | Acceptable — easy restart via toggle/shortcut; typed text stays |
-| Pref UI | General → Feedback: SwitchRow + SpinRow (spin sensitive when on) |
+| Pref UI | General → Feedback: SwitchRow + pause SpinRow + threshold SpinRow (spins sensitive when on) |
 
 ## Why host-side RMS (not the engine)
 
@@ -57,8 +57,9 @@ path without submodule or VAPI changes.
 
 ```
 Preferences Feedback
-  SwitchRow  dictation-auto-stop          (default false)
-  SpinRow    dictation-auto-stop-pause-ms (default 1200; 500–5000)
+  SwitchRow  dictation-auto-stop              (default false)
+  SpinRow    dictation-auto-stop-pause-ms     (default 1200; 500–5000)
+  SpinRow    dictation-auto-stop-threshold    (default 0.002; 0.0001–0.05)
         │
         ▼
 GSettings
@@ -248,9 +249,9 @@ the pref mid-session does not require restart.
 - **Cancel during delay:** Existing `stop_dictation` path; detector idle.
 - **Already stopping:** Further silence chunks ignored until next
   `reset()`.
-- **Noisy rooms:** Fixed RMS may false-hold or false-stop; v1 accepts
-  that — threshold tuning + pause slider are the levers; no adaptive
-  noise floor in v1.
+- **Noisy rooms / quiet mics:** Raise or lower Speech threshold in
+  Preferences; pause duration remains the other lever. No adaptive
+  noise floor.
 - **Batch vs streaming:** Auto-stop only ends capture; finalize path
   unchanged (`on_recording_stopped` / batch).
 - **HUD / sound feedback:** Unchanged — they already follow
@@ -261,7 +262,6 @@ the pref mid-session does not require restart.
 - Auto-stop for Record mode
 - Continuous listen / “commit and keep listening”
 - Model-side VAD / Whisper `no_speech` binding
-- Preferences energy-threshold slider
 - Adaptive noise-floor calibration
 - Shortcuts dialog row (phase 8 territory if listed later)
 

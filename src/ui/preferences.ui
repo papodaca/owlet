@@ -151,6 +151,21 @@
                 </property>
               </object>
             </child>
+            <child>
+              <object class="AdwSpinRow" id="dictation_auto_stop_threshold_row">
+                <property name="title" translatable="yes">Speech threshold</property>
+                <property name="subtitle" translatable="yes">Higher ignores room noise; lower catches quieter speech</property>
+                <property name="digits">4</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">0.0001</property>
+                    <property name="upper">0.05</property>
+                    <property name="step-increment">0.0001</property>
+                    <property name="page-increment">0.001</property>
+                  </object>
+                </property>
+              </object>
+            </child>
           </object>
         </child>
         <child>
