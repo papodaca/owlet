@@ -72,6 +72,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // a use-after-free when the timeout fires after `this` is freed).
     private uint start_timeout_id = 0;
 
+    // True only after source.prepare() completes successfully. Decouples
+    // action gating (record/stop/dictate) from the visible stack page so
+    // recording works while other pages (like the reader page) are visible.
+    private bool source_ready = false;
+
     // Cached settings (constructed once; read on every partial/final).
     private GLib.Settings settings;
 
@@ -233,11 +238,14 @@ public class Owlet.Window : Adw.ApplicationWindow {
         source.final_text.connect (on_final_text);
         source.error_occurred.connect (on_source_error);
 
+        source_ready = false;
         stack.visible_child_name = "loading";
         try {
             yield source.prepare ();
+            source_ready = true;
             stack.visible_child_name = "active";
         } catch (GLib.Error e) {
+            source_ready = false;
             warning ("Source prepare failed: %s", e.message);
             stack.visible_child_name = "empty";
             toast_overlay.add_toast (new Adw.Toast (
@@ -251,14 +259,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
     /* ----------------------------------------------------------------- */
 
     private void update_action_state () {
-        bool on_active = stack.visible_child_name == "active";
-        record_action.set_enabled (on_active && !recording);
-        stop_action.set_enabled (on_active && recording);
+        record_action.set_enabled (source_ready && !recording);
+        stop_action.set_enabled (source_ready && recording);
         // Dictate stays clickable whenever a source is prepared and a
         // keystroke backend is available; toggling it off must remain
         // possible mid-dictation, so it isn't gated on `!recording`.
         dictate_action.set_enabled (
-            on_active && keystroke.backend != Owlet.Keystroke.Backend.NONE);
+            source_ready && keystroke.backend != Owlet.Keystroke.Backend.NONE);
     }
 
     /* ----------------------------------------------------------------- */
