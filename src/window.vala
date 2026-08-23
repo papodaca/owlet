@@ -26,6 +26,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.ToggleButton dictate_btn;
     [GtkChild] private unowned Adw.Banner recording_banner;
 
+    [GtkChild] private unowned Gtk.Stack reader_content_stack;
+    [GtkChild] private unowned Gtk.TextView reader_text_view;
+    [GtkChild] private unowned Gtk.Label reader_doc_title_label;
+
+    public Owlet.Document? reader_doc { get; private set; default = null; }
+    public string? reader_doc_path { get; private set; default = null; }
+
     private GLib.SimpleAction record_action;
     private GLib.SimpleAction stop_action;
     private GLib.SimpleAction dictate_action;
@@ -90,8 +97,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
         // application.vala::apply_shortcuts). Only the non-customizable
         // copy / clear / test-keystroke bindings remain hardcoded here.
         var owlet_app = (Owlet.Application) app;
-        owlet_app.set_accels_for_action ("win.copy",  {"<Control><Shift>C"});
-        owlet_app.set_accels_for_action ("win.clear", {"<Control>Delete"});
+        owlet_app.set_accels_for_action ("win.copy",     {"<Control><Shift>C"});
+        owlet_app.set_accels_for_action ("win.clear",    {"<Control>Delete"});
+        owlet_app.set_accels_for_action ("win.open-doc", {"<Control>o"});
     }
 
     construct {
@@ -153,6 +161,23 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var test_keystroke_action = new GLib.SimpleAction ("test-keystroke", null);
         test_keystroke_action.activate.connect (on_test_keystroke);
         add_action (test_keystroke_action);
+
+        var open_doc_action = new GLib.SimpleAction ("open-doc", null);
+        open_doc_action.activate.connect (on_open_doc_action);
+        add_action (open_doc_action);
+
+        var close_doc_action = new GLib.SimpleAction ("close-doc", null);
+        close_doc_action.activate.connect (on_close_doc_action);
+        add_action (close_doc_action);
+
+        // Test-only startup open seam (U5).
+        string? test_open = GLib.Environment.get_variable ("OWLET_TEST_OPEN");
+        if (test_open != null && test_open != "") {
+            Idle.add (() => {
+                open_document_file (test_open);
+                return false;
+            });
+        }
 
         // Recorder signals.
         recorder.chunk_ready.connect (on_chunk);
@@ -756,6 +781,83 @@ public class Owlet.Window : Adw.ApplicationWindow {
                 keystroke.type_text.begin ("\n");
             last_typed = "";
         }
+    }
+
+    /* ----------------------------------------------------------------- */
+    /* Document Reader (U5)                                              */
+    /* ----------------------------------------------------------------- */
+
+    private void on_open_doc_action () {
+        open_doc_dialog_async.begin ();
+    }
+
+    private async void open_doc_dialog_async () {
+        var dialog = new Gtk.FileDialog ();
+        dialog.title = _("Open Text or Markdown Document");
+
+        var filter_list = new GLib.ListStore (typeof (Gtk.FileFilter));
+
+        var text_filter = new Gtk.FileFilter ();
+        text_filter.name = _("Text & Markdown files");
+        text_filter.add_pattern ("*.txt");
+        text_filter.add_pattern ("*.md");
+        text_filter.add_pattern ("*.markdown");
+        text_filter.add_mime_type ("text/plain");
+        text_filter.add_mime_type ("text/markdown");
+        filter_list.append (text_filter);
+
+        var all_filter = new Gtk.FileFilter ();
+        all_filter.name = _("All files");
+        all_filter.add_pattern ("*");
+        filter_list.append (all_filter);
+
+        dialog.filters = filter_list;
+        dialog.default_filter = text_filter;
+
+        try {
+            var file = yield dialog.open (this, null);
+            if (file != null) {
+                open_document_file (file.get_path ());
+            }
+        } catch (GLib.Error e) {
+            // Cancelled or dismissed
+        }
+    }
+
+    public void open_document_file (string file_path) {
+        var doc = Owlet.Document.load (file_path);
+        switch (doc.status) {
+        case Owlet.DocumentStatus.OK:
+            reader_doc = doc;
+            reader_doc_path = file_path;
+            reader_doc_title_label.label = GLib.Path.get_basename (file_path);
+            reader_text_view.buffer.text = string.joinv ("\n\n", doc.sentences);
+            reader_content_stack.visible_child_name = "content";
+            stack.visible_child_name = "reader";
+            break;
+        case Owlet.DocumentStatus.EMPTY:
+            reader_doc = doc;
+            reader_doc_path = file_path;
+            reader_doc_title_label.label = GLib.Path.get_basename (file_path);
+            reader_text_view.buffer.text = "";
+            reader_content_stack.visible_child_name = "empty";
+            stack.visible_child_name = "reader";
+            break;
+        case Owlet.DocumentStatus.NOT_TEXT:
+        case Owlet.DocumentStatus.UNSUPPORTED_ENCODING:
+        case Owlet.DocumentStatus.IO_ERROR:
+        default:
+            toast_overlay.add_toast (new Adw.Toast (doc.error_message));
+            break;
+        }
+    }
+
+    private void on_close_doc_action () {
+        reader_doc = null;
+        reader_doc_path = null;
+        reader_text_view.buffer.text = "";
+        reader_doc_title_label.label = "";
+        stack.visible_child_name = source_ready ? "active" : "empty";
     }
 
     public override void dispose () {
