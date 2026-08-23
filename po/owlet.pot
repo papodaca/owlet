@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: owlet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-23 12:40-0700\n"
+"POT-Creation-Date: 2026-08-23 13:05-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1168,94 +1168,98 @@ msgstr ""
 msgid "Main Menu"
 msgstr ""
 
-#: src/window.ui:41
+#: src/window.ui:35
+msgid "Microphone is active"
+msgstr ""
+
+#: src/window.ui:47
 msgid "No Model Loaded"
 msgstr ""
 
-#: src/window.ui:42
+#: src/window.ui:48
 msgid ""
 "Open Preferences to download a model or configure an OpenAI-compatible API."
 msgstr ""
 
-#: src/window.ui:53
+#: src/window.ui:59
 msgid "Loading model…"
 msgstr ""
 
-#: src/window.ui:73
+#: src/window.ui:79
 msgid "Record"
 msgstr ""
 
-#: src/window.ui:74
+#: src/window.ui:80
 msgid "Start recording (Ctrl+R)"
 msgstr ""
 
-#: src/window.ui:81
+#: src/window.ui:87
 msgid "Stop recording (Ctrl+S)"
 msgstr ""
 
-#: src/window.ui:88
+#: src/window.ui:94
 msgid "Test Keystroke"
 msgstr ""
 
-#: src/window.ui:89
+#: src/window.ui:95
 msgid ""
 "Type the current buffer into the previously focused window (tests the "
 "keystroke backend)"
 msgstr ""
 
-#: src/window.ui:96
+#: src/window.ui:102
 msgid "Copy transcript to clipboard (Ctrl+Shift+C)"
 msgstr ""
 
-#: src/window.ui:103
+#: src/window.ui:109
 msgid "Clear transcript (Ctrl+Delete)"
 msgstr ""
 
-#: src/window.ui:138
+#: src/window.ui:144
 msgid "_Preferences"
 msgstr ""
 
-#: src/window.ui:142
+#: src/window.ui:148
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: src/window.ui:146
+#: src/window.ui:152
 msgid "_About Owlet"
 msgstr ""
 
-#: src/window.vala:244
+#: src/window.vala:253
 #, c-format
 msgid "Prepare failed: %s"
 msgstr ""
 
-#: src/window.vala:293 src/window.vala:454 src/window.vala:579
-#: src/window.vala:602
+#: src/window.vala:301 src/window.vala:462 src/window.vala:587
+#: src/window.vala:610
 msgid "No keystroke backend available"
 msgstr ""
 
-#: src/window.vala:310
+#: src/window.vala:318
 msgid "Stop dictation before inserting text"
 msgstr ""
 
-#: src/window.vala:493 src/window.vala:514
+#: src/window.vala:501 src/window.vala:522
 #, c-format
 msgid "Recorder start failed: %s"
 msgstr ""
 
-#: src/window.vala:585
+#: src/window.vala:593
 msgid "Buffer is empty — type something to test with first"
 msgstr ""
 
-#: src/window.vala:608
+#: src/window.vala:616
 msgid "Buffer is empty — type something to insert first"
 msgstr ""
 
-#: src/window.vala:688
+#: src/window.vala:696
 #, c-format
 msgid "Recorder error: %s"
 msgstr ""
 
-#: src/window.vala:696
+#: src/window.vala:704
 #, c-format
 msgid "Source error: %s"
 msgstr ""

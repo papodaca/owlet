@@ -30,6 +30,12 @@
             </child>
           </object>
         </child>
+        <child type="top">
+          <object class="AdwBanner" id="recording_banner">
+            <property name="title" translatable="yes">Microphone is active</property>
+            <property name="revealed">False</property>
+          </object>
+        </child>
         <property name="content">
           <object class="GtkStack" id="stack">
             <child>

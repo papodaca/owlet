@@ -24,6 +24,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.TextView transcript_view;
     [GtkChild] private unowned Adw.ToastOverlay toast_overlay;
     [GtkChild] private unowned Gtk.ToggleButton dictate_btn;
+    [GtkChild] private unowned Adw.Banner recording_banner;
 
     private GLib.SimpleAction record_action;
     private GLib.SimpleAction stop_action;
@@ -709,9 +710,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
     /* ----------------------------------------------------------------- */
 
     // Flip the UI recording flag and push the same state to the tray
-    // (Application caches it even when the tray is not visible).
+    // (Application caches it even when the tray is not visible) and the
+    // mic-live recording banner (visible on every window page).
     private void set_recording_state (bool active) {
         recording = active;
+        recording_banner.revealed = active;
         var app = this.application as Owlet.Application;
         if (app != null)
             app.set_tray_recording (active);
