@@ -90,6 +90,18 @@ def voice_cli() -> Path:
 
 
 @pytest.fixture(scope="session")
+def tts_cli() -> Path:
+    env = os.environ.get("OWLET_TTS_CLI")
+    if env:
+        path = Path(env)
+    else:
+        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "owlet-tts-cli"
+    if not path.is_file():
+        pytest.skip(f"owlet-tts-cli not found at {path}")
+    return path
+
+
+@pytest.fixture(scope="session")
 def remote_cli() -> Path:
     env = os.environ.get("OWLET_REMOTE_CLI")
     if env:

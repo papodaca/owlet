@@ -28,6 +28,7 @@ owlet_sources = [
   'services/keystroke.vala',
   'services/model-downloader.vala',
   'services/voice-models.vala',
+  'services/speech-player.vala',
   'services/secret-store.vala',
   'services/global-shortcuts.vala',
   'services/sound-feedback.vala',

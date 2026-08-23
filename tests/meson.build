@@ -39,6 +39,7 @@ test_env.set('OWLET_DOWNLOAD_CLI', download_cli.full_path())
 test_env.set('OWLET_DOCUMENT_CLI', document_cli.full_path())
 test_env.set('OWLET_ENGINE_CLI', engine_cli.full_path())
 test_env.set('OWLET_VOICE_CLI', voice_cli.full_path())
+test_env.set('OWLET_TTS_CLI', tts_cli.full_path())
 test_env.set('OWLET_REMOTE_CLI', remote_cli.full_path())
 # Only prepend the venv when we accepted it above; a broken foreign
 # venv on PATH would shadow system pytest at test runtime too.
@@ -81,5 +82,6 @@ test('pytest-network', pytest,
   env: test_env,
   suite: 'network',
   workdir: meson.project_source_root(),
-  timeout: 60,
+  depends: [owlet, tts_cli],
+  timeout: 180,
 )

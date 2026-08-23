@@ -54,6 +54,27 @@ voice_cli = executable(
   install: false,
 )
 
+tts_cli = executable(
+  'owlet-tts-cli',
+  files(
+    'tts_cli.vala',
+    src_dir / 'services' / 'document.vala',
+    src_dir / 'services' / 'speech-player.vala',
+  ),
+  dependencies: [
+    dependency('glib-2.0'),
+    dependency('gobject-2.0'),
+    dependency('gio-2.0'),
+    dependency('gstreamer-1.0'),
+    dependency('gstreamer-base-1.0'),
+    dependency('gstreamer-app-1.0'),
+    dependency('gstreamer-audio-1.0'),
+    tts_dep,
+    valac.find_library('tts', dirs: src_dir / 'vapi'),
+  ],
+  install: false,
+)
+
 remote_cli = executable(
   'owlet-remote-cli',
   files(

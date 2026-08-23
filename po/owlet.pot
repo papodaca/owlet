@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: owlet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-23 12:14-0700\n"
+"POT-Creation-Date: 2026-08-23 12:40-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -414,7 +414,7 @@ msgstr ""
 msgid "No API model configured. Set one in Preferences → API."
 msgstr ""
 
-#: src/services/remote-openai-source.vala:119 src/ui/preferences.vala:802
+#: src/services/remote-openai-source.vala:119 src/ui/preferences.vala:801
 #, c-format
 msgid "%u %s: %s"
 msgstr ""
@@ -428,6 +428,42 @@ msgstr ""
 #. default collection
 #: src/services/secret-store.vala:60
 msgid "Owlet API key"
+msgstr ""
+
+#: src/services/speech-player.vala:117
+#, c-format
+msgid "Failed to initialize speech synthesis engine from %s"
+msgstr ""
+
+#: src/services/speech-player.vala:136
+msgid "Document has no readable text"
+msgstr ""
+
+#: src/services/speech-player.vala:231
+msgid "Failed to create GStreamer appsrc"
+msgstr ""
+
+#: src/services/speech-player.vala:263
+msgid "Failed to link TTS playback pipeline"
+msgstr ""
+
+#: src/services/speech-player.vala:273
+msgid "Failed to start TTS playback pipeline"
+msgstr ""
+
+#: src/services/speech-player.vala:309
+#, c-format
+msgid "Audio playback error: %s"
+msgstr ""
+
+#: src/services/speech-player.vala:326
+#, c-format
+msgid "Failed to start synthesis worker thread: %s"
+msgstr ""
+
+#: src/services/speech-player.vala:367
+#, c-format
+msgid "Speech synthesis failed on sentence %d"
 msgstr ""
 
 #: src/services/voice-models.vala:118
@@ -713,7 +749,7 @@ msgid "Checking status…"
 msgstr ""
 
 #: src/ui/preferences.ui:211 src/ui/preferences.ui:230
-#: src/ui/preferences.vala:346
+#: src/ui/preferences.vala:345
 msgid "Download"
 msgstr ""
 
@@ -841,200 +877,200 @@ msgstr ""
 msgid "Ask the API to return an English transcript"
 msgstr ""
 
-#: src/ui/preferences.vala:141
+#: src/ui/preferences.vala:140
 msgid "HIP (ROCm) backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:142
+#: src/ui/preferences.vala:141
 msgid "Vulkan backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:143
+#: src/ui/preferences.vala:142
 msgid "CPU backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:144
+#: src/ui/preferences.vala:143
 msgid "Auto — backend selected at runtime"
 msgstr ""
 
-#: src/ui/preferences.vala:228
+#: src/ui/preferences.vala:227
 msgid "(none)"
 msgstr ""
 
 #. Size unavailable — leave subtitle empty.
 #. Select button on the right to set as default.
-#: src/ui/preferences.vala:302
+#: src/ui/preferences.vala:301
 msgid "Set as default"
 msgstr ""
 
-#: src/ui/preferences.vala:307
+#: src/ui/preferences.vala:306
 #, c-format
 msgid "Set default model to %s"
 msgstr ""
 
-#: src/ui/preferences.vala:319
+#: src/ui/preferences.vala:318
 msgid "No models installed"
 msgstr ""
 
-#: src/ui/preferences.vala:320
+#: src/ui/preferences.vala:319
 msgid "Use Download below to fetch one"
 msgstr ""
 
-#: src/ui/preferences.vala:336
+#: src/ui/preferences.vala:335
 msgid "Installed"
 msgstr ""
 
-#: src/ui/preferences.vala:337 src/ui/preferences.vala:341
+#: src/ui/preferences.vala:336 src/ui/preferences.vala:340
 msgid "Re-download"
 msgstr ""
 
-#: src/ui/preferences.vala:340
+#: src/ui/preferences.vala:339
 msgid "Voice not ready (missing or corrupted files)"
 msgstr ""
 
-#: src/ui/preferences.vala:345
+#: src/ui/preferences.vala:344
 msgid "Not installed"
 msgstr ""
 
-#: src/ui/preferences.vala:356 src/ui/preferences.vala:414
+#: src/ui/preferences.vala:355 src/ui/preferences.vala:413
 msgid "A download is already running"
 msgstr ""
 
-#: src/ui/preferences.vala:361
+#: src/ui/preferences.vala:360
 msgid "Kokoro English Voice Model"
 msgstr ""
 
-#: src/ui/preferences.vala:362 src/ui/preferences.vala:435
+#: src/ui/preferences.vala:361 src/ui/preferences.vala:434
 msgid "Starting download…"
 msgstr ""
 
-#: src/ui/preferences.vala:380
+#: src/ui/preferences.vala:379
 msgid "Voice model downloaded successfully"
 msgstr ""
 
-#: src/ui/preferences.vala:386
+#: src/ui/preferences.vala:385
 #, c-format
 msgid "Voice download failed: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:426
+#: src/ui/preferences.vala:425
 #, c-format
 msgid "Failed to create models dir: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:456
+#: src/ui/preferences.vala:455
 #, c-format
 msgid "%s / %s"
 msgstr ""
 
-#: src/ui/preferences.vala:458
+#: src/ui/preferences.vala:457
 #, c-format
 msgid "%s downloaded"
 msgstr ""
 
-#: src/ui/preferences.vala:464
+#: src/ui/preferences.vala:463
 #, c-format
 msgid "Downloaded %s"
 msgstr ""
 
-#: src/ui/preferences.vala:470
+#: src/ui/preferences.vala:469
 #, c-format
 msgid "Download failed: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:497
+#: src/ui/preferences.vala:496
 #, c-format
 msgid "Cannot create models directory: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:511
+#: src/ui/preferences.vala:510
 #, c-format
 msgid "Cannot open models directory: %s"
 msgstr ""
 
 #. (label, action, setting key, default) — order matches the plan.
-#: src/ui/preferences.vala:525
+#: src/ui/preferences.vala:524
 msgid "Record / Pause"
 msgstr ""
 
-#: src/ui/preferences.vala:526
+#: src/ui/preferences.vala:525
 msgid "Stop"
 msgstr ""
 
-#: src/ui/preferences.vala:527
+#: src/ui/preferences.vala:526
 msgid "Insert text"
 msgstr ""
 
-#: src/ui/preferences.vala:528
+#: src/ui/preferences.vala:527
 msgid "Toggle dictation"
 msgstr ""
 
-#: src/ui/preferences.vala:529
+#: src/ui/preferences.vala:528
 msgid "Show preferences"
 msgstr ""
 
-#: src/ui/preferences.vala:530
+#: src/ui/preferences.vala:529
 msgid "Show shortcuts"
 msgstr ""
 
-#: src/ui/preferences.vala:531
+#: src/ui/preferences.vala:530
 msgid "Quit"
 msgstr ""
 
-#: src/ui/preferences.vala:549
+#: src/ui/preferences.vala:548
 msgid "Bind via portal"
 msgstr ""
 
-#: src/ui/preferences.vala:555
+#: src/ui/preferences.vala:554
 msgid "Install helper script"
 msgstr ""
 
-#: src/ui/preferences.vala:563
+#: src/ui/preferences.vala:562
 msgid "Active via xdg-desktop-portal"
 msgstr ""
 
-#: src/ui/preferences.vala:567
+#: src/ui/preferences.vala:566
 msgid "Portal unavailable — install owlet-signal as a custom shortcut"
 msgstr ""
 
-#: src/ui/preferences.vala:574
+#: src/ui/preferences.vala:573
 msgid "Assign a shortcut in the portal dialog…"
 msgstr ""
 
-#: src/ui/preferences.vala:580
+#: src/ui/preferences.vala:579
 msgid "Global shortcut bound"
 msgstr ""
 
-#: src/ui/preferences.vala:582
+#: src/ui/preferences.vala:581
 msgid "Portal binding failed — use the helper script"
 msgstr ""
 
-#: src/ui/preferences.vala:599
+#: src/ui/preferences.vala:598
 #, c-format
 msgid "Missing bundled owlet-signal.sh: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:609
+#: src/ui/preferences.vala:608
 #, c-format
 msgid "Cannot create %s: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:621
+#: src/ui/preferences.vala:620
 #, c-format
 msgid "Cannot write %s: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:630
+#: src/ui/preferences.vala:629
 #, c-format
 msgid "Installed %s but could not make it executable"
 msgstr ""
 
-#: src/ui/preferences.vala:636
+#: src/ui/preferences.vala:635
 #, c-format
 msgid "Installed to %s. Already on PATH."
 msgstr ""
 
-#: src/ui/preferences.vala:639
+#: src/ui/preferences.vala:638
 #, c-format
 msgid "Installed to %s. Log out/in if it isn't on PATH yet."
 msgstr ""
@@ -1042,81 +1078,81 @@ msgstr ""
 #. Pop up a small dialog with the GNOME custom-shortcut steps and a
 #. "Copy command" button that copies `owlet-signal toggle` to the
 #. clipboard so the user can paste it straight into GNOME Settings.
-#: src/ui/preferences.vala:649
+#: src/ui/preferences.vala:648
 msgid "Bind owlet-signal in GNOME"
 msgstr ""
 
-#: src/ui/preferences.vala:651
+#: src/ui/preferences.vala:650
 msgid ""
 "Open Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts"
 msgstr ""
 
-#: src/ui/preferences.vala:652
+#: src/ui/preferences.vala:651
 msgid "Name: Owlet Toggle Recording"
 msgstr ""
 
-#: src/ui/preferences.vala:653
+#: src/ui/preferences.vala:652
 msgid "Command: owlet-signal toggle"
 msgstr ""
 
-#: src/ui/preferences.vala:654
+#: src/ui/preferences.vala:653
 msgid "Shortcut: (press your combo)"
 msgstr ""
 
-#: src/ui/preferences.vala:656
+#: src/ui/preferences.vala:655
 msgid "Copy command"
 msgstr ""
 
-#: src/ui/preferences.vala:657
+#: src/ui/preferences.vala:656
 msgid "Close"
 msgstr ""
 
-#: src/ui/preferences.vala:664
+#: src/ui/preferences.vala:663
 msgid "Copied “owlet-signal toggle”"
 msgstr ""
 
-#: src/ui/preferences.vala:735
+#: src/ui/preferences.vala:734
 msgid "API key saved"
 msgstr ""
 
-#: src/ui/preferences.vala:736
+#: src/ui/preferences.vala:735
 msgid "API key cleared"
 msgstr ""
 
-#: src/ui/preferences.vala:739
+#: src/ui/preferences.vala:738
 #, c-format
 msgid "Cannot save API key: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:745
+#: src/ui/preferences.vala:744
 msgid "Testing connection…"
 msgstr ""
 
-#: src/ui/preferences.vala:757
+#: src/ui/preferences.vala:756
 #, c-format
 msgid "Missing test-sample.wav resource: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:782
+#: src/ui/preferences.vala:781
 #, c-format
 msgid "Cannot read API key from keyring: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:795
+#: src/ui/preferences.vala:794
 #, c-format
 msgid "%u OK — %s"
 msgstr ""
 
-#: src/ui/preferences.vala:806
+#: src/ui/preferences.vala:805
 #, c-format
 msgid "Test connection failed: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:878 src/ui/preferences.vala:918
+#: src/ui/preferences.vala:877 src/ui/preferences.vala:917
 msgid "Set…"
 msgstr ""
 
-#: src/ui/preferences.vala:909
+#: src/ui/preferences.vala:908
 msgid "Press keys…"
 msgstr ""
 
