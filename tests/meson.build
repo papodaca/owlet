@@ -37,6 +37,7 @@ test_env.set('OWLET_BIN', owlet.full_path())
 test_env.set('OWLET_SOURCE_ROOT', meson.project_source_root())
 test_env.set('OWLET_DOWNLOAD_CLI', download_cli.full_path())
 test_env.set('OWLET_DOCUMENT_CLI', document_cli.full_path())
+test_env.set('OWLET_ENGINE_CLI', engine_cli.full_path())
 test_env.set('OWLET_REMOTE_CLI', remote_cli.full_path())
 # Only prepend the venv when we accepted it above; a broken foreign
 # venv on PATH would shadow system pytest at test runtime too.
@@ -51,7 +52,7 @@ test('pytest-unit', pytest,
   env: test_env,
   suite: 'unit',
   workdir: meson.project_source_root(),
-  depends: [owlet, document_cli],
+  depends: [owlet, document_cli, engine_cli],
 )
 
 test('pytest-integration', pytest,

@@ -24,6 +24,19 @@ document_cli = executable(
   install: false,
 )
 
+engine_cli = executable(
+  'owlet-engine-cli',
+  files('engine_cli.vala'),
+  dependencies: [
+    dependency('glib-2.0'),
+    dependency('gobject-2.0'),
+    dependency('gio-2.0'),
+    tts_dep,
+    valac.find_library('tts', dirs: src_dir / 'vapi'),
+  ],
+  install: false,
+)
+
 remote_cli = executable(
   'owlet-remote-cli',
   files(

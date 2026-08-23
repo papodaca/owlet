@@ -1,3 +1,6 @@
 [submodule "subprojects/transcribe.cpp"]
 	path = subprojects/transcribe.cpp
 	url = https://github.com/handy-computer/transcribe.cpp
+[submodule "subprojects/sherpa-onnx"]
+	path = subprojects/sherpa-onnx
+	url = https://github.com/k2-fsa/sherpa-onnx.git

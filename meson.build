@@ -252,6 +252,90 @@ transcribe_dep = declare_dependency(
   dependencies: transcribe_link_libs,
 )
 
+# --------------------------------------------------------------------------- #
+# sherpa-onnx sidecar build                                                   #
+# --------------------------------------------------------------------------- #
+#
+# Like transcribe.cpp, we drive sherpa-onnx's CMake build directly via
+# custom_target + declare_dependency.
+#
+# Pinned to v1.13.6. At configure time, upstream's cmake fetches:
+#   - onnxruntime static lib (v1.27.1, glibc 2.17)
+#   - espeak-ng source archive
+#   - piper-phonemize source archive
+#   - simple-sentencepiece source archive
+#   - kaldi-native-fbank source archive
+#   - kaldi-decoder source archive
+#   - kaldifst / openfst source archive
+#   - kissfft source archive
+#   - nlohmann/json source archive
+#   - eigen source archive
+# (U6 takes package custody of these archives for offline distro builders).
+
+sherpa_src = meson.project_source_root() / 'subprojects' / 'sherpa-onnx'
+sherpa_inc = include_directories(
+  'subprojects' / 'sherpa-onnx',
+  'subprojects' / 'sherpa-onnx' / 'sherpa-onnx' / 'c-api',
+)
+sherpa_builddir = meson.current_build_dir() / 'subprojects' / 'sherpa-onnx'
+
+sherpa_cmake_args = [
+  '-S', sherpa_src,
+  '-B', sherpa_builddir,
+  '-DCMAKE_BUILD_TYPE=Release',
+  '-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON',
+  '-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0',
+  '-DBUILD_SHARED_LIBS=OFF',
+  '-DSHERPA_ONNX_ENABLE_PYTHON=OFF',
+  '-DSHERPA_ONNX_ENABLE_TESTS=OFF',
+  '-DSHERPA_ONNX_ENABLE_CHECK=OFF',
+  '-DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF',
+  '-DSHERPA_ONNX_ENABLE_JNI=OFF',
+  '-DSHERPA_ONNX_ENABLE_C_API=ON',
+  '-DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF',
+  '-DSHERPA_ONNX_ENABLE_GPU=OFF',
+  '-DSHERPA_ONNX_ENABLE_BINARY=OFF',
+  '-DSHERPA_ONNX_BUILD_C_API_EXAMPLES=OFF',
+  '-DSHERPA_ONNX_ENABLE_TTS=ON',
+  '-DSHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION=OFF',
+]
+
+sherpa_configure_cmd = ' '.join(['cmake'] + sherpa_cmake_args)
+sherpa_build_cmd     = ' '.join(['cmake', '--build', sherpa_builddir, '--target', 'sherpa-onnx-c-api', '--parallel'])
+sherpa_touch_cmd     = ' '.join(['cmake', '-E', 'touch', '@OUTPUT@'])
+sherpa_sidecar_script = sherpa_configure_cmd + ' && ' + sherpa_build_cmd + ' && ' + sherpa_touch_cmd
+
+sherpa_build = custom_target(
+  'sherpa-build',
+  output: 'owlet-sherpa-stamp',
+  command: [find_program('sh'), '-c', sherpa_sidecar_script],
+  build_by_default: true,
+  console: true,
+)
+
+sherpa_archives = [
+  sherpa_builddir / 'lib' / 'libsherpa-onnx-c-api.a',
+  sherpa_builddir / 'lib' / 'libsherpa-onnx-core.a',
+  sherpa_builddir / 'lib' / 'libkaldi-decoder-core.a',
+  sherpa_builddir / 'lib' / 'libsherpa-onnx-kaldifst-core.a',
+  sherpa_builddir / 'lib' / 'libsherpa-onnx-fstfar.a',
+  sherpa_builddir / 'lib' / 'libsherpa-onnx-fst.a',
+  sherpa_builddir / 'lib' / 'libpiper_phonemize.a',
+  sherpa_builddir / 'lib' / 'libssentencepiece_core.a',
+  sherpa_builddir / 'lib' / 'libespeak-ng.a',
+  sherpa_builddir / 'lib' / 'libkaldi-native-fbank-core.a',
+  sherpa_builddir / 'lib' / 'libucd.a',
+  sherpa_builddir / 'lib' / 'libkissfft-float.a',
+  sherpa_builddir / '_deps' / 'onnxruntime-src' / 'lib' / 'libonnxruntime.a',
+]
+
+tts_dep = declare_dependency(
+  sources: sherpa_build,
+  include_directories: sherpa_inc,
+  link_args: sherpa_archives,
+  dependencies: [m_lib, stdcpp_lib],
+)
+
 
 subdir('data')
 subdir('src')

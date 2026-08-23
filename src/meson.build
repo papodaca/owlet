@@ -63,6 +63,8 @@ owlet_deps = [
   dependency('libadwaita-1', version: '>= 1.8'),
   transcribe_dep,
   valac.find_library('transcribe', dirs: meson.current_source_dir() / 'vapi'),
+  tts_dep,
+  valac.find_library('tts', dirs: meson.current_source_dir() / 'vapi'),
   dependency('gstreamer-1.0'),
   dependency('gstreamer-base-1.0'),
   dependency('gstreamer-app-1.0'),
