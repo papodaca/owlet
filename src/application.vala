@@ -68,6 +68,24 @@ public class Owlet.Application : Adw.Application {
         }
     }
 
+    private Owlet.ModelDownloader? _model_downloader = null;
+    public Owlet.ModelDownloader model_downloader {
+        get {
+            if (_model_downloader == null)
+                _model_downloader = new Owlet.ModelDownloader ();
+            return _model_downloader;
+        }
+    }
+
+    private Owlet.VoiceModels? _voice_models = null;
+    public Owlet.VoiceModels voice_models {
+        get {
+            if (_voice_models == null)
+                _voice_models = new Owlet.VoiceModels (model_downloader);
+            return _voice_models;
+        }
+    }
+
     /**
      * Re-apply all customizable accelerators from GSettings. Called at
      * startup and whenever a shortcut-* key changes. win.* actions

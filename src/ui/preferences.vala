@@ -40,6 +40,8 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
 
     // ----- Models page -----
     [GtkChild] unowned Adw.PreferencesGroup installed_group;
+    [GtkChild] unowned Adw.ActionRow voice_status_row;
+    [GtkChild] unowned Gtk.Button voice_download_btn;
     [GtkChild] unowned Adw.PreferencesGroup download_progress_group;
 
     // ----- Shortcuts page -----
@@ -321,6 +323,82 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
         // Refresh the General page's Default model combo too — a model
         // downloaded externally should appear there without re-opening.
         refresh_default_model_row ();
+        refresh_voice_status ();
+    }
+
+    private void refresh_voice_status () {
+        if (application == null)
+            return;
+        var status = application.voice_models.get_status ();
+        switch (status) {
+        case Owlet.VoiceStatus.INSTALLED:
+            voice_status_row.subtitle = _("Installed");
+            voice_download_btn.label = _("Re-download");
+            break;
+        case Owlet.VoiceStatus.BROKEN:
+            voice_status_row.subtitle = _("Voice not ready (missing or corrupted files)");
+            voice_download_btn.label = _("Re-download");
+            break;
+        case Owlet.VoiceStatus.NOT_INSTALLED:
+        default:
+            voice_status_row.subtitle = _("Not installed");
+            voice_download_btn.label = _("Download");
+            break;
+        }
+    }
+
+    [GtkCallback]
+    private void on_download_voice () {
+        if (application == null)
+            return;
+        if (application.voice_models.download_in_progress || download_cancellable != null) {
+            add_toast (new Adw.Toast (_("A download is already running")));
+            return;
+        }
+
+        active_progress_row = new Adw.ActionRow ();
+        active_progress_row.title = _("Kokoro English Voice Model");
+        active_progress_row.subtitle = _("Starting download…");
+        var spinner = new Adw.Spinner ();
+        active_progress_row.add_suffix (spinner);
+
+        download_progress_group.add (active_progress_row);
+        download_progress_group.set_visible (true);
+
+        download_cancellable = new Cancellable ();
+
+        application.voice_models.progress.connect (on_download_progress);
+        application.voice_models.completed.connect (on_voice_download_completed);
+        application.voice_models.failed.connect (on_voice_download_failed);
+
+        application.voice_models.download_voice_async.begin (null, null, Owlet.VoiceModels.DEFAULT_ARTIFACT_ID, download_cancellable);
+    }
+
+    private void on_voice_download_completed (string local_dir) {
+        cleanup_voice_download_ui ();
+        add_toast (new Adw.Toast (_("Voice model downloaded successfully")));
+        refresh_voice_status ();
+    }
+
+    private void on_voice_download_failed (string message) {
+        cleanup_voice_download_ui ();
+        add_toast (new Adw.Toast (_("Voice download failed: %s").printf (message)));
+        refresh_voice_status ();
+    }
+
+    private void cleanup_voice_download_ui () {
+        if (application != null) {
+            application.voice_models.progress.disconnect (on_download_progress);
+            application.voice_models.completed.disconnect (on_voice_download_completed);
+            application.voice_models.failed.disconnect (on_voice_download_failed);
+        }
+
+        if (active_progress_row != null) {
+            download_progress_group.remove (active_progress_row);
+            active_progress_row = null;
+        }
+        download_progress_group.set_visible (false);
+        download_cancellable = null;
     }
 
     [GtkCallback]

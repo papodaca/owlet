@@ -27,6 +27,7 @@ owlet_sources = [
   'services/remote-openai-source.vala',
   'services/keystroke.vala',
   'services/model-downloader.vala',
+  'services/voice-models.vala',
   'services/secret-store.vala',
   'services/global-shortcuts.vala',
   'services/sound-feedback.vala',
@@ -75,6 +76,8 @@ owlet_deps = [
   # Phase 6: JSON parsing for the OpenAI-compatible /v1/audio/transcriptions
   # response ({"text": "..."} for json / verbose_json).
   dependency('json-glib-1.0'),
+  # Phase 20 (TTS): voice model extraction (libarchive).
+  dependency('libarchive'),
   # Phase 13: Vala bindings only (C X11 deps stay on the static lib above).
   valac.find_library('dictation-hud-shim',
                       dirs: meson.current_source_dir () / 'vapi'),

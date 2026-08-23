@@ -199,6 +199,26 @@
         </child>
 
         <child>
+          <object class="AdwPreferencesGroup" id="voice_group">
+            <property name="title" translatable="yes">Voice model</property>
+            <property name="description" translatable="yes">Kokoro English v0.19 neural voice for document reading</property>
+            <child>
+              <object class="AdwActionRow" id="voice_status_row">
+                <property name="title" translatable="yes">Kokoro English (v0.19) — ~305 MB</property>
+                <property name="subtitle" translatable="yes">Checking status…</property>
+                <child type="suffix">
+                  <object class="GtkButton" id="voice_download_btn">
+                    <property name="label" translatable="yes">Download</property>
+                    <property name="valign">center</property>
+                    <signal name="clicked" handler="on_download_voice"/>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <child>
           <object class="AdwPreferencesGroup" id="download_progress_group">
             <property name="title" translatable="yes">Active download</property>
             <property name="visible">False</property>

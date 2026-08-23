@@ -37,6 +37,23 @@ engine_cli = executable(
   install: false,
 )
 
+voice_cli = executable(
+  'owlet-voice-cli',
+  files(
+    'voice_cli.vala',
+    src_dir / 'services' / 'model-downloader.vala',
+    src_dir / 'services' / 'voice-models.vala',
+  ),
+  dependencies: [
+    dependency('glib-2.0'),
+    dependency('gobject-2.0'),
+    dependency('gio-2.0'),
+    dependency('libsoup-3.0'),
+    dependency('libarchive'),
+  ],
+  install: false,
+)
+
 remote_cli = executable(
   'owlet-remote-cli',
   files(
