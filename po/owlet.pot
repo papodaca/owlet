@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: owlet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-31 20:24-0700\n"
+"POT-Creation-Date: 2026-08-23 11:24-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -119,10 +119,44 @@ msgid ""
 msgstr ""
 
 #: data/im.apodaca.owlet.gschema.xml:51
-msgid "Hide to system tray on window close"
+msgid "Stop dictation after a pause in speech"
 msgstr ""
 
 #: data/im.apodaca.owlet.gschema.xml:52
+msgid ""
+"When true, dictation ends automatically after dictation-auto-stop-pause-ms "
+"of silence (including if the user never speaks). Record mode is unaffected. "
+"When false, dictation stops only via toggle, Stop, or shortcut."
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:56
+msgid "Silence duration before dictation auto-stops (ms)"
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:57
+msgid ""
+"How long speech must stay below dictation-auto-stop-threshold before "
+"dictation stops. Intended range 500–5000. Only used when dictation-auto-stop "
+"is true."
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:61
+msgid "RMS energy threshold for speech vs silence"
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:62
+msgid ""
+"Capture chunks at or above this RMS count as speech and reset the auto-stop "
+"pause timer. Lower values detect quieter speech (and may hold open in noisy "
+"rooms); higher values ignore room noise (and may cut off soft speech). "
+"Intended range 0.0001–0.05. Only used when dictation-auto-stop is true."
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:66
+msgid "Hide to system tray on window close"
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:67
 msgid ""
 "When true, closing the main window hides Owlet to a StatusNotifierItem tray "
 "icon instead of quitting. Use Quit (Ctrl+Q) or the tray Quit item to exit. "
@@ -130,151 +164,151 @@ msgid ""
 "for the icon to appear."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:56
+#: data/im.apodaca.owlet.gschema.xml:71
 msgid "Keystroke injection backend: auto|libei|ydotool|xdotool"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:57
+#: data/im.apodaca.owlet.gschema.xml:72
 msgid ""
 "Forces a specific backend. \"auto\" picks libei (if built with support) then "
 "ydotool then xdotool based on availability and session type."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:62
+#: data/im.apodaca.owlet.gschema.xml:77
 msgid ""
 "Preferred GPU backend (read-only at runtime; reflects the build-time choice)"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:63
+#: data/im.apodaca.owlet.gschema.xml:78
 msgid ""
 "The resolved backend baked into the binary at build time (auto / hip / "
 "vulkan / cpu). Read-only at runtime; the binary was linked against one "
 "backend only."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:67
+#: data/im.apodaca.owlet.gschema.xml:82
 msgid "Enable flash-attention for the local Whisper model"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:68
+#: data/im.apodaca.owlet.gschema.xml:83
 msgid ""
 "When true, transcribe.cpp session.run is invoked with flash attention "
 "enabled. May improve performance on supported models."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:72
+#: data/im.apodaca.owlet.gschema.xml:87
 msgid "Transcription source: local|api"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:73
+#: data/im.apodaca.owlet.gschema.xml:88
 msgid ""
 "\"local\" uses the GGUF model on disk. \"api\" sends audio to an OpenAI-"
 "compatible endpoint (see api-* keys)."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:77
+#: data/im.apodaca.owlet.gschema.xml:92
 msgid "OpenAI-compatible transcription endpoint URL"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:78
+#: data/im.apodaca.owlet.gschema.xml:93
 msgid ""
 "POSTed multipart/form-data with the captured WAV. Defaults to OpenAI; point "
 "at any OpenAI-compatible server."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:82
+#: data/im.apodaca.owlet.gschema.xml:97
 msgid "Model name sent to the transcription API"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:83
+#: data/im.apodaca.owlet.gschema.xml:98
 msgid ""
 "The \"model\" form field passed to the endpoint. Defaults to OpenAI's "
 "whisper-1."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:87
+#: data/im.apodaca.owlet.gschema.xml:102
 msgid "Response format requested from the transcription API"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:88
+#: data/im.apodaca.owlet.gschema.xml:103
 msgid ""
 "One of \"json\", \"text\", or \"verbose_json\". Sent as the "
 "\"response_format\" form field when supported by the endpoint."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:92
+#: data/im.apodaca.owlet.gschema.xml:107
 msgid "Sampling temperature for the transcription API (0.0–1.0)"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:93
+#: data/im.apodaca.owlet.gschema.xml:108
 msgid ""
 "Passed as the \"temperature\" form field. 0.0 is deterministic; 1.0 is "
 "maximum randomness."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:97
+#: data/im.apodaca.owlet.gschema.xml:112
 msgid "Request English translation from the API"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:98
+#: data/im.apodaca.owlet.gschema.xml:113
 msgid ""
 "When true, sends \"translate=true\" so the API returns an English transcript "
 "of whatever language was spoken."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:102
+#: data/im.apodaca.owlet.gschema.xml:117
 msgid "Accelerator for win.record"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:103 data/im.apodaca.owlet.gschema.xml:108
+#: data/im.apodaca.owlet.gschema.xml:118 data/im.apodaca.owlet.gschema.xml:123
 msgid ""
 "GTK accelerator string. Applied at startup and re-applied live when changed "
 "in Preferences."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:107
+#: data/im.apodaca.owlet.gschema.xml:122
 msgid "Accelerator for win.stop"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:112
+#: data/im.apodaca.owlet.gschema.xml:127
 msgid "Accelerator for win.insert"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:113
+#: data/im.apodaca.owlet.gschema.xml:128
 msgid ""
 "GTK accelerator string. win.insert copies the transcript to the clipboard "
 "and types it into the previously focused window via the keystroke backend."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:117
+#: data/im.apodaca.owlet.gschema.xml:132
 msgid "Accelerator for win.dictate"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:118
+#: data/im.apodaca.owlet.gschema.xml:133
 msgid "GTK accelerator string. Toggles dictation mode on or off."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:122
+#: data/im.apodaca.owlet.gschema.xml:137
 msgid "Accelerator for app.preferences"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:123
+#: data/im.apodaca.owlet.gschema.xml:138
 msgid "GTK accelerator string. Opens the Preferences dialog."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:127
+#: data/im.apodaca.owlet.gschema.xml:142
 msgid "Accelerator for app.shortcuts"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:128
+#: data/im.apodaca.owlet.gschema.xml:143
 msgid "GTK accelerator string. Opens the Keyboard Shortcuts dialog."
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:132
+#: data/im.apodaca.owlet.gschema.xml:147
 msgid "Accelerator for app.quit"
 msgstr ""
 
-#: data/im.apodaca.owlet.gschema.xml:133
+#: data/im.apodaca.owlet.gschema.xml:148
 msgid "GTK accelerator string. Quits Owlet."
 msgstr ""
 
@@ -306,6 +340,21 @@ msgstr ""
 
 #: src/application.vala:293
 msgid "translator-credits"
+msgstr ""
+
+#: src/services/document.vala:79
+#, c-format
+msgid "Could not read the file: %s"
+msgstr ""
+
+#: src/services/document.vala:152
+msgid ""
+"This file's text encoding is not supported yet (UTF-16/UTF-32). Convert it "
+"to UTF-8."
+msgstr ""
+
+#: src/services/document.vala:158
+msgid "This file does not look like a text or markdown file."
 msgstr ""
 
 #: src/services/local-source.vala:87
@@ -363,7 +412,7 @@ msgstr ""
 msgid "No API model configured. Set one in Preferences → API."
 msgstr ""
 
-#: src/services/remote-openai-source.vala:119 src/ui/preferences.vala:692
+#: src/services/remote-openai-source.vala:119 src/ui/preferences.vala:723
 #, c-format
 msgid "%u %s: %s"
 msgstr ""
@@ -545,325 +594,349 @@ msgid ""
 "tray"
 msgstr ""
 
-#: src/ui/preferences.ui:138
-msgid "Window"
+#: src/ui/preferences.ui:136
+msgid "Auto-stop after pause"
 msgstr ""
 
-#: src/ui/preferences.ui:141
-msgid "Close to tray"
+#: src/ui/preferences.ui:137
+msgid "End dictation when you stop speaking for a while"
 msgstr ""
 
 #: src/ui/preferences.ui:142
+msgid "Pause duration"
+msgstr ""
+
+#: src/ui/preferences.ui:143
+msgid "Milliseconds of silence before dictation stops"
+msgstr ""
+
+#: src/ui/preferences.ui:156
+msgid "Speech threshold"
+msgstr ""
+
+#: src/ui/preferences.ui:157
+msgid "Higher ignores room noise; lower catches quieter speech"
+msgstr ""
+
+#: src/ui/preferences.ui:173
+msgid "Window"
+msgstr ""
+
+#: src/ui/preferences.ui:176
+msgid "Close to tray"
+msgstr ""
+
+#: src/ui/preferences.ui:177
 msgid ""
 "Hide to the system tray instead of quitting. On GNOME, enable an "
 "AppIndicator extension."
 msgstr ""
 
-#: src/ui/preferences.ui:156
+#: src/ui/preferences.ui:191
 msgid "Models"
 msgstr ""
 
-#: src/ui/preferences.ui:161
+#: src/ui/preferences.ui:196
 msgid "Installed models"
 msgstr ""
 
-#: src/ui/preferences.ui:162
+#: src/ui/preferences.ui:197
 msgid "Files in ~/.local/share/owlet/models/"
 msgstr ""
 
-#: src/ui/preferences.ui:168
+#: src/ui/preferences.ui:203
 msgid "Active download"
 msgstr ""
 
-#: src/ui/preferences.ui:175
+#: src/ui/preferences.ui:210
 msgid "Download"
 msgstr ""
 
-#: src/ui/preferences.ui:178
+#: src/ui/preferences.ui:213
 msgid "Whisper Tiny (English, Q8_0) — ~77 MB"
 msgstr ""
 
-#: src/ui/preferences.ui:185
+#: src/ui/preferences.ui:220
 msgid "Whisper Base (English, Q8_0) — ~142 MB"
 msgstr ""
 
-#: src/ui/preferences.ui:192
+#: src/ui/preferences.ui:227
 msgid "Whisper Small (English, Q8_0) — ~466 MB"
 msgstr ""
 
-#: src/ui/preferences.ui:204
+#: src/ui/preferences.ui:239
 msgid "Open Models Directory"
 msgstr ""
 
-#: src/ui/preferences.ui:220
+#: src/ui/preferences.ui:255
 msgid "Shortcuts"
 msgstr ""
 
-#: src/ui/preferences.ui:224
+#: src/ui/preferences.ui:259
 msgid "Global shortcut"
 msgstr ""
 
-#: src/ui/preferences.ui:225
+#: src/ui/preferences.ui:260
 msgid "Toggle recording from anywhere on the desktop"
 msgstr ""
 
-#: src/ui/preferences.ui:228
+#: src/ui/preferences.ui:263
 msgid "Toggle recording"
 msgstr ""
 
-#: src/ui/preferences.ui:229
+#: src/ui/preferences.ui:264
 msgid "Checking portal availability…"
 msgstr ""
 
-#: src/ui/preferences.ui:236
+#: src/ui/preferences.ui:271
 msgid "Keyboard shortcuts"
 msgstr ""
 
-#: src/ui/preferences.ui:237
+#: src/ui/preferences.ui:272
 msgid "Click \"Set…\" to capture a new key combination"
 msgstr ""
 
-#: src/ui/preferences.ui:249
+#: src/ui/preferences.ui:284
 msgid "API"
 msgstr ""
 
-#: src/ui/preferences.ui:253
+#: src/ui/preferences.ui:288
 msgid "OpenAI-compatible transcription"
 msgstr ""
 
-#: src/ui/preferences.ui:256
+#: src/ui/preferences.ui:291
 msgid "Transcription source"
 msgstr ""
 
-#: src/ui/preferences.ui:260
+#: src/ui/preferences.ui:295
 msgid "Local model"
 msgstr ""
 
-#: src/ui/preferences.ui:261
+#: src/ui/preferences.ui:296
 msgid "OpenAI-compatible API"
 msgstr ""
 
-#: src/ui/preferences.ui:275
+#: src/ui/preferences.ui:310
 msgid "Endpoint"
 msgstr ""
 
-#: src/ui/preferences.ui:278
+#: src/ui/preferences.ui:313
 msgid "Endpoint URL"
 msgstr ""
 
-#: src/ui/preferences.ui:285
+#: src/ui/preferences.ui:320
 msgid "Model name"
 msgstr ""
 
-#: src/ui/preferences.ui:291
+#: src/ui/preferences.ui:326
 msgid "API key"
 msgstr ""
 
-#: src/ui/preferences.ui:298
+#: src/ui/preferences.ui:333
 msgid "Test connection — POSTs a 100 ms silent sample to the endpoint"
 msgstr ""
 
-#: src/ui/preferences.ui:308
+#: src/ui/preferences.ui:343
 msgid "Request"
 msgstr ""
 
-#: src/ui/preferences.ui:311
+#: src/ui/preferences.ui:346
 msgid "Response format"
 msgstr ""
 
-#: src/ui/preferences.ui:315
+#: src/ui/preferences.ui:350
 msgid "JSON"
 msgstr ""
 
-#: src/ui/preferences.ui:316
+#: src/ui/preferences.ui:351
 msgid "Text"
 msgstr ""
 
-#: src/ui/preferences.ui:317
+#: src/ui/preferences.ui:352
 msgid "Verbose JSON"
 msgstr ""
 
-#: src/ui/preferences.ui:328
+#: src/ui/preferences.ui:363
 msgid "Temperature"
 msgstr ""
 
-#: src/ui/preferences.ui:329
+#: src/ui/preferences.ui:364
 msgid "0.0 deterministic — 1.0 random"
 msgstr ""
 
-#: src/ui/preferences.ui:345
+#: src/ui/preferences.ui:380
 msgid "Translate to English"
 msgstr ""
 
-#: src/ui/preferences.ui:346
+#: src/ui/preferences.ui:381
 msgid "Ask the API to return an English transcript"
 msgstr ""
 
-#: src/ui/preferences.vala:135
+#: src/ui/preferences.vala:138
 msgid "HIP (ROCm) backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:136
+#: src/ui/preferences.vala:139
 msgid "Vulkan backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:137
+#: src/ui/preferences.vala:140
 msgid "CPU backend compiled in"
 msgstr ""
 
-#: src/ui/preferences.vala:138
+#: src/ui/preferences.vala:141
 msgid "Auto — backend selected at runtime"
 msgstr ""
 
-#: src/ui/preferences.vala:194
+#: src/ui/preferences.vala:225
 msgid "(none)"
 msgstr ""
 
 #. Size unavailable — leave subtitle empty.
 #. Select button on the right to set as default.
-#: src/ui/preferences.vala:268
+#: src/ui/preferences.vala:299
 msgid "Set as default"
 msgstr ""
 
-#: src/ui/preferences.vala:273
+#: src/ui/preferences.vala:304
 #, c-format
 msgid "Set default model to %s"
 msgstr ""
 
-#: src/ui/preferences.vala:285
+#: src/ui/preferences.vala:316
 msgid "No models installed"
 msgstr ""
 
-#: src/ui/preferences.vala:286
+#: src/ui/preferences.vala:317
 msgid "Use Download below to fetch one"
 msgstr ""
 
-#: src/ui/preferences.vala:304
+#: src/ui/preferences.vala:335
 msgid "A download is already running"
 msgstr ""
 
-#: src/ui/preferences.vala:316
+#: src/ui/preferences.vala:347
 #, c-format
 msgid "Failed to create models dir: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:325
+#: src/ui/preferences.vala:356
 msgid "Starting download…"
 msgstr ""
 
-#: src/ui/preferences.vala:346
+#: src/ui/preferences.vala:377
 #, c-format
 msgid "%s / %s"
 msgstr ""
 
-#: src/ui/preferences.vala:348
+#: src/ui/preferences.vala:379
 #, c-format
 msgid "%s downloaded"
 msgstr ""
 
-#: src/ui/preferences.vala:354
+#: src/ui/preferences.vala:385
 #, c-format
 msgid "Downloaded %s"
 msgstr ""
 
-#: src/ui/preferences.vala:360
+#: src/ui/preferences.vala:391
 #, c-format
 msgid "Download failed: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:387
+#: src/ui/preferences.vala:418
 #, c-format
 msgid "Cannot create models directory: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:401
+#: src/ui/preferences.vala:432
 #, c-format
 msgid "Cannot open models directory: %s"
 msgstr ""
 
 #. (label, action, setting key, default) — order matches the plan.
-#: src/ui/preferences.vala:415
+#: src/ui/preferences.vala:446
 msgid "Record / Pause"
 msgstr ""
 
-#: src/ui/preferences.vala:416
+#: src/ui/preferences.vala:447
 msgid "Stop"
 msgstr ""
 
-#: src/ui/preferences.vala:417
+#: src/ui/preferences.vala:448
 msgid "Insert text"
 msgstr ""
 
-#: src/ui/preferences.vala:418
+#: src/ui/preferences.vala:449
 msgid "Toggle dictation"
 msgstr ""
 
-#: src/ui/preferences.vala:419
+#: src/ui/preferences.vala:450
 msgid "Show preferences"
 msgstr ""
 
-#: src/ui/preferences.vala:420
+#: src/ui/preferences.vala:451
 msgid "Show shortcuts"
 msgstr ""
 
-#: src/ui/preferences.vala:421
+#: src/ui/preferences.vala:452
 msgid "Quit"
 msgstr ""
 
-#: src/ui/preferences.vala:439
+#: src/ui/preferences.vala:470
 msgid "Bind via portal"
 msgstr ""
 
-#: src/ui/preferences.vala:445
+#: src/ui/preferences.vala:476
 msgid "Install helper script"
 msgstr ""
 
-#: src/ui/preferences.vala:453
+#: src/ui/preferences.vala:484
 msgid "Active via xdg-desktop-portal"
 msgstr ""
 
-#: src/ui/preferences.vala:457
+#: src/ui/preferences.vala:488
 msgid "Portal unavailable — install owlet-signal as a custom shortcut"
 msgstr ""
 
-#: src/ui/preferences.vala:464
+#: src/ui/preferences.vala:495
 msgid "Assign a shortcut in the portal dialog…"
 msgstr ""
 
-#: src/ui/preferences.vala:470
+#: src/ui/preferences.vala:501
 msgid "Global shortcut bound"
 msgstr ""
 
-#: src/ui/preferences.vala:472
+#: src/ui/preferences.vala:503
 msgid "Portal binding failed — use the helper script"
-msgstr ""
-
-#: src/ui/preferences.vala:489
-#, c-format
-msgid "Missing bundled owlet-signal.sh: %s"
-msgstr ""
-
-#: src/ui/preferences.vala:499
-#, c-format
-msgid "Cannot create %s: errno %d"
-msgstr ""
-
-#: src/ui/preferences.vala:511
-#, c-format
-msgid "Cannot write %s: %s"
 msgstr ""
 
 #: src/ui/preferences.vala:520
 #, c-format
+msgid "Missing bundled owlet-signal.sh: %s"
+msgstr ""
+
+#: src/ui/preferences.vala:530
+#, c-format
+msgid "Cannot create %s: errno %d"
+msgstr ""
+
+#: src/ui/preferences.vala:542
+#, c-format
+msgid "Cannot write %s: %s"
+msgstr ""
+
+#: src/ui/preferences.vala:551
+#, c-format
 msgid "Installed %s but could not make it executable"
 msgstr ""
 
-#: src/ui/preferences.vala:526
+#: src/ui/preferences.vala:557
 #, c-format
 msgid "Installed to %s. Already on PATH."
 msgstr ""
 
-#: src/ui/preferences.vala:529
+#: src/ui/preferences.vala:560
 #, c-format
 msgid "Installed to %s. Log out/in if it isn't on PATH yet."
 msgstr ""
@@ -871,81 +944,81 @@ msgstr ""
 #. Pop up a small dialog with the GNOME custom-shortcut steps and a
 #. "Copy command" button that copies `owlet-signal toggle` to the
 #. clipboard so the user can paste it straight into GNOME Settings.
-#: src/ui/preferences.vala:539
+#: src/ui/preferences.vala:570
 msgid "Bind owlet-signal in GNOME"
 msgstr ""
 
-#: src/ui/preferences.vala:541
+#: src/ui/preferences.vala:572
 msgid ""
 "Open Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts"
 msgstr ""
 
-#: src/ui/preferences.vala:542
+#: src/ui/preferences.vala:573
 msgid "Name: Owlet Toggle Recording"
 msgstr ""
 
-#: src/ui/preferences.vala:543
+#: src/ui/preferences.vala:574
 msgid "Command: owlet-signal toggle"
 msgstr ""
 
-#: src/ui/preferences.vala:544
+#: src/ui/preferences.vala:575
 msgid "Shortcut: (press your combo)"
 msgstr ""
 
-#: src/ui/preferences.vala:546
+#: src/ui/preferences.vala:577
 msgid "Copy command"
 msgstr ""
 
-#: src/ui/preferences.vala:547
+#: src/ui/preferences.vala:578
 msgid "Close"
 msgstr ""
 
-#: src/ui/preferences.vala:554
+#: src/ui/preferences.vala:585
 msgid "Copied “owlet-signal toggle”"
 msgstr ""
 
-#: src/ui/preferences.vala:625
+#: src/ui/preferences.vala:656
 msgid "API key saved"
 msgstr ""
 
-#: src/ui/preferences.vala:626
+#: src/ui/preferences.vala:657
 msgid "API key cleared"
 msgstr ""
 
-#: src/ui/preferences.vala:629
+#: src/ui/preferences.vala:660
 #, c-format
 msgid "Cannot save API key: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:635
+#: src/ui/preferences.vala:666
 msgid "Testing connection…"
 msgstr ""
 
-#: src/ui/preferences.vala:647
+#: src/ui/preferences.vala:678
 #, c-format
 msgid "Missing test-sample.wav resource: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:672
+#: src/ui/preferences.vala:703
 #, c-format
 msgid "Cannot read API key from keyring: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:685
+#: src/ui/preferences.vala:716
 #, c-format
 msgid "%u OK — %s"
 msgstr ""
 
-#: src/ui/preferences.vala:696
+#: src/ui/preferences.vala:727
 #, c-format
 msgid "Test connection failed: %s"
 msgstr ""
 
-#: src/ui/preferences.vala:768 src/ui/preferences.vala:808
+#: src/ui/preferences.vala:799 src/ui/preferences.vala:839
 msgid "Set…"
 msgstr ""
 
-#: src/ui/preferences.vala:799
+#: src/ui/preferences.vala:830
 msgid "Press keys…"
 msgstr ""
 
@@ -1016,39 +1089,39 @@ msgstr ""
 msgid "_About Owlet"
 msgstr ""
 
-#: src/window.vala:242
+#: src/window.vala:244
 #, c-format
 msgid "Prepare failed: %s"
 msgstr ""
 
-#: src/window.vala:291 src/window.vala:433 src/window.vala:543
-#: src/window.vala:566
+#: src/window.vala:293 src/window.vala:454 src/window.vala:579
+#: src/window.vala:602
 msgid "No keystroke backend available"
 msgstr ""
 
-#: src/window.vala:308
+#: src/window.vala:310
 msgid "Stop dictation before inserting text"
 msgstr ""
 
-#: src/window.vala:470 src/window.vala:491
+#: src/window.vala:493 src/window.vala:514
 #, c-format
 msgid "Recorder start failed: %s"
 msgstr ""
 
-#: src/window.vala:549
+#: src/window.vala:585
 msgid "Buffer is empty — type something to test with first"
 msgstr ""
 
-#: src/window.vala:572
+#: src/window.vala:608
 msgid "Buffer is empty — type something to insert first"
 msgstr ""
 
-#: src/window.vala:652
+#: src/window.vala:688
 #, c-format
 msgid "Recorder error: %s"
 msgstr ""
 
-#: src/window.vala:660
+#: src/window.vala:696
 #, c-format
 msgid "Source error: %s"
 msgstr ""

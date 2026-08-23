@@ -1,0 +1,1 @@
+﻿First sentence with BOM. Second one.

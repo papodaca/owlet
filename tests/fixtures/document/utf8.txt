@@ -1,0 +1,5 @@
+First sentence here. Second sentence!
+
+A new paragraph begins. Does it work? Yes… indeed.
+
+Last line without terminator

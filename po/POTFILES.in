@@ -4,6 +4,7 @@ data/im.apodaca.owlet.desktop.in
 data/im.apodaca.owlet.gschema.xml
 data/im.apodaca.owlet.metainfo.xml.in
 src/application.vala
+src/services/document.vala
 src/services/local-source.vala
 src/services/model-downloader.vala
 src/services/recorder.vala

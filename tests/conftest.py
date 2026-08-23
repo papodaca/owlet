@@ -54,6 +54,18 @@ def download_cli() -> Path:
 
 
 @pytest.fixture(scope="session")
+def document_cli() -> Path:
+    env = os.environ.get("OWLET_DOCUMENT_CLI")
+    if env:
+        path = Path(env)
+    else:
+        path = SOURCE_ROOT / "build" / "tests" / "helpers" / "owlet-document-cli"
+    if not path.is_file():
+        pytest.skip(f"owlet-document-cli not found at {path}")
+    return path
+
+
+@pytest.fixture(scope="session")
 def remote_cli() -> Path:
     env = os.environ.get("OWLET_REMOTE_CLI")
     if env:

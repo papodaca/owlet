@@ -13,6 +13,17 @@ download_cli = executable(
   install: false,
 )
 
+document_cli = executable(
+  'owlet-document-cli',
+  files('document_cli.vala', src_dir / 'services' / 'document.vala'),
+  dependencies: [
+    dependency('glib-2.0'),
+    dependency('gobject-2.0'),
+    dependency('gio-2.0'),
+  ],
+  install: false,
+)
+
 remote_cli = executable(
   'owlet-remote-cli',
   files(

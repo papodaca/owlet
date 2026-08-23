@@ -20,6 +20,7 @@ owlet_sources = [
   'main.vala',
   'application.vala',
   'window.vala',
+  'services/document.vala',
   'services/recorder.vala',
   'services/transcription-source.vala',
   'services/local-source.vala',
