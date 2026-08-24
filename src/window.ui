@@ -154,9 +154,53 @@
                           </object>
                         </child>
                         <child type="center">
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">12</property>
+                            <child>
+                              <object class="GtkButton" id="reader_play_btn">
+                                <property name="icon-name">media-playback-start-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Play document</property>
+                                <property name="action-name">win.reader-play</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="reader_pause_btn">
+                                <property name="icon-name">media-playback-pause-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Pause playback</property>
+                                <property name="action-name">win.reader-pause</property>
+                                <property name="visible">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="reader_stop_btn">
+                                <property name="icon-name">media-playback-stop-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Stop playback</property>
+                                <property name="action-name">win.reader-stop</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkSeparator">
+                                <property name="orientation">vertical</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="reader_position_label">
+                                <property name="label"></property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="reader_status_label">
+                                <property name="label"></property>
+                                <property name="visible">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child type="end">
                           <object class="GtkLabel" id="reader_doc_title_label">
                             <property name="ellipsize">middle</property>
-                            <property name="max-width-chars">40</property>
+                            <property name="max-width-chars">30</property>
                           </object>
                         </child>
                       </object>
@@ -193,6 +237,60 @@
                                 <property name="icon-name">text-x-generic-symbolic</property>
                                 <property name="title" translatable="yes">Empty Document</property>
                                 <property name="description" translatable="yes">The selected document contains no readable text.</property>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">downloading</property>
+                            <property name="child">
+                              <object class="AdwStatusPage" id="reader_downloading_page">
+                                <property name="icon-name">folder-download-symbolic</property>
+                                <property name="title" translatable="yes">Downloading Voice Model…</property>
+                                <property name="description" translatable="yes">Downloading Kokoro English voice model</property>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">18</property>
+                                    <property name="halign">center</property>
+                                    <child>
+                                      <object class="AdwSpinner">
+                                        <property name="width-request">32</property>
+                                        <property name="height-request">32</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="reader_cancel_dl_btn">
+                                        <property name="label" translatable="yes">Cancel</property>
+                                        <property name="action-name">win.reader-cancel-download</property>
+                                        <property name="halign">center</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">no_voice</property>
+                            <property name="child">
+                              <object class="AdwStatusPage" id="reader_no_voice_page">
+                                <property name="icon-name">audio-volume-high-symbolic</property>
+                                <property name="title" translatable="yes">Voice Model Not Ready</property>
+                                <property name="description" translatable="yes">The Kokoro voice model is needed for document reading.</property>
+                                <child>
+                                  <object class="GtkButton" id="reader_retry_dl_btn">
+                                    <property name="label" translatable="yes">Download Voice</property>
+                                    <property name="action-name">win.reader-download-voice</property>
+                                    <property name="halign">center</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                    </style>
+                                  </object>
+                                </child>
                               </object>
                             </property>
                           </object>

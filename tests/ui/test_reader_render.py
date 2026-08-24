@@ -78,6 +78,54 @@ wait $APP_PID 2>/dev/null || true
     assert not hits, f"unexpected criticals:\n" + "\n".join(hits) + f"\n\nfull stderr:\n{raw}"
 
 
+def test_reader_render_with_installed_voice_model(
+    owlet_bin, schema_dir, xdg_home, xvfb, source_root, tmp_path
+):
+    # Seed installed voice directory
+    voice_dir = xdg_home / ".local" / "share" / "owlet" / "models" / "voices" / "kokoro-en-v0_19"
+    voice_dir.mkdir(parents=True, exist_ok=True)
+    (voice_dir / "model.onnx").write_bytes(b"dummy-model")
+    (voice_dir / "voices.bin").write_bytes(b"dummy-voices")
+    (voice_dir / "tokens.txt").write_bytes(b"dummy-tokens")
+    (voice_dir / "espeak-ng-data").mkdir(exist_ok=True)
+    (voice_dir / "espeak-ng-data" / "dict").write_bytes(b"dummy-dict")
+
+    doc_path = source_root / "tests" / "fixtures" / "document" / "utf8.txt"
+    log_path = tmp_path / "owlet-installed-voice-stderr.log"
+
+    env = os.environ.copy()
+    env["GSETTINGS_SCHEMA_DIR"] = str(schema_dir)
+    env["HOME"] = str(xdg_home)
+    env["XDG_DATA_HOME"] = str(xdg_home / ".local" / "share")
+    env["XDG_CONFIG_HOME"] = str(xdg_home / ".config")
+    env["GDK_BACKEND"] = "x11"
+    env["GTK_A11Y"] = "none"
+    env["OWLET_TEST_OPEN"] = str(doc_path)
+    env["OWLET_TTS_SINK"] = "fakesink"
+
+    script = f"""
+set -e
+{owlet_bin} > /dev/null 2>{log_path} &
+APP_PID=$!
+sleep 3
+kill $APP_PID 2>/dev/null || true
+wait $APP_PID 2>/dev/null || true
+"""
+    result = subprocess.run(
+        ["xvfb-run", "-a", "-s", "-screen 0 1280x1024x24", "bash", "-c", script],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+
+    raw = log_path.read_text() if log_path.exists() else ""
+    hits = _unexpected_criticals(raw)
+    assert not hits, f"unexpected criticals:\n" + "\n".join(hits) + f"\n\nfull stderr:\n{raw}"
+
+
 def test_reader_render_empty_document(
     owlet_bin, schema_dir, xdg_home, xvfb, source_root, tmp_path
 ):

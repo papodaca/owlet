@@ -29,6 +29,15 @@ public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.Stack reader_content_stack;
     [GtkChild] private unowned Gtk.TextView reader_text_view;
     [GtkChild] private unowned Gtk.Label reader_doc_title_label;
+    [GtkChild] private unowned Gtk.Button reader_play_btn;
+    [GtkChild] private unowned Gtk.Button reader_pause_btn;
+    [GtkChild] private unowned Gtk.Button reader_stop_btn;
+    [GtkChild] private unowned Gtk.Label reader_position_label;
+    [GtkChild] private unowned Gtk.Label reader_status_label;
+    [GtkChild] private unowned Adw.StatusPage reader_downloading_page;
+    [GtkChild] private unowned Adw.StatusPage reader_no_voice_page;
+    [GtkChild] private unowned Gtk.Button reader_cancel_dl_btn;
+    [GtkChild] private unowned Gtk.Button reader_retry_dl_btn;
 
     public Owlet.Document? reader_doc { get; private set; default = null; }
     public string? reader_doc_path { get; private set; default = null; }
@@ -43,6 +52,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private Owlet.SoundFeedback sound_feedback;
     private Owlet.SilenceDetector silence_detector;
     private Owlet.DictationHud hud;
+    private Owlet.SpeechPlayer player;
+
+    private bool reader_download_initiated = false;
+    private Cancellable? reader_cancellable = null;
+    private ulong _reader_progress_id = 0;
+    private ulong _reader_completed_id = 0;
+    private ulong _reader_failed_id = 0;
 
     // How dictation was launched. FOREGROUND (in-window Dictate) keeps
     // the minimize + 250 ms delay and skips the HUD. BACKGROUND
@@ -169,6 +185,32 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var close_doc_action = new GLib.SimpleAction ("close-doc", null);
         close_doc_action.activate.connect (on_close_doc_action);
         add_action (close_doc_action);
+
+        player = new Owlet.SpeechPlayer ();
+        player.playback_started.connect (on_player_started);
+        player.playback_stopped.connect (on_player_stopped);
+        player.position_changed.connect (on_player_position_changed);
+        player.error_occurred.connect (on_player_error);
+
+        var reader_play_action = new GLib.SimpleAction ("reader-play", null);
+        reader_play_action.activate.connect (on_reader_play);
+        add_action (reader_play_action);
+
+        var reader_pause_action = new GLib.SimpleAction ("reader-pause", null);
+        reader_pause_action.activate.connect (on_reader_pause);
+        add_action (reader_pause_action);
+
+        var reader_stop_action = new GLib.SimpleAction ("reader-stop", null);
+        reader_stop_action.activate.connect (on_reader_stop);
+        add_action (reader_stop_action);
+
+        var reader_dl_action = new GLib.SimpleAction ("reader-download-voice", null);
+        reader_dl_action.activate.connect (on_reader_download_voice);
+        add_action (reader_dl_action);
+
+        var reader_cancel_dl_action = new GLib.SimpleAction ("reader-cancel-download", null);
+        reader_cancel_dl_action.activate.connect (on_reader_cancel_download);
+        add_action (reader_cancel_dl_action);
 
         // Test-only startup open seam (U5).
         string? test_open = GLib.Environment.get_variable ("OWLET_TEST_OPEN");
@@ -784,7 +826,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     /* ----------------------------------------------------------------- */
-    /* Document Reader (U5)                                              */
+    /* Document Reader & Playback (U5, U10)                              */
     /* ----------------------------------------------------------------- */
 
     private void on_open_doc_action () {
@@ -825,6 +867,12 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     public void open_document_file (string file_path) {
+        player.stop ();
+        if (reader_cancellable != null && reader_download_initiated) {
+            reader_cancellable.cancel ();
+        }
+        disconnect_reader_vm_signals ();
+
         var doc = Owlet.Document.load (file_path);
         switch (doc.status) {
         case Owlet.DocumentStatus.OK:
@@ -832,17 +880,31 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_doc_path = file_path;
             reader_doc_title_label.label = GLib.Path.get_basename (file_path);
             reader_text_view.buffer.text = string.joinv ("\n\n", doc.sentences);
-            reader_content_stack.visible_child_name = "content";
             stack.visible_child_name = "reader";
+
+            var app = this.application as Owlet.Application;
+            var voice_status = (app != null) ? app.voice_models.get_status () : Owlet.VoiceStatus.NOT_INSTALLED;
+
+            if (voice_status == Owlet.VoiceStatus.INSTALLED) {
+                reader_content_stack.visible_child_name = "content";
+                update_reader_transport_ui ();
+                start_reader_playback ();
+            } else {
+                start_reader_voice_download ();
+            }
             break;
+
         case Owlet.DocumentStatus.EMPTY:
             reader_doc = doc;
             reader_doc_path = file_path;
             reader_doc_title_label.label = GLib.Path.get_basename (file_path);
             reader_text_view.buffer.text = "";
+            reader_position_label.label = "";
             reader_content_stack.visible_child_name = "empty";
             stack.visible_child_name = "reader";
+            update_reader_transport_ui ();
             break;
+
         case Owlet.DocumentStatus.NOT_TEXT:
         case Owlet.DocumentStatus.UNSUPPORTED_ENCODING:
         case Owlet.DocumentStatus.IO_ERROR:
@@ -853,14 +915,183 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     private void on_close_doc_action () {
+        player.stop ();
+        if (reader_cancellable != null && reader_download_initiated) {
+            reader_cancellable.cancel ();
+        }
+        disconnect_reader_vm_signals ();
         reader_doc = null;
         reader_doc_path = null;
         reader_text_view.buffer.text = "";
         reader_doc_title_label.label = "";
+        reader_position_label.label = "";
+        reader_status_label.visible = false;
         stack.visible_child_name = source_ready ? "active" : "empty";
     }
 
+    private void on_reader_play () {
+        if (reader_doc == null)
+            return;
+        if (player.is_paused) {
+            player.resume ();
+        } else {
+            start_reader_playback ();
+        }
+    }
+
+    private void on_reader_pause () {
+        player.pause ();
+    }
+
+    private void on_reader_stop () {
+        player.stop ();
+    }
+
+    private void on_reader_download_voice () {
+        start_reader_voice_download ();
+    }
+
+    private void on_reader_cancel_download () {
+        if (reader_cancellable != null && reader_download_initiated) {
+            reader_cancellable.cancel ();
+        }
+        on_close_doc_action ();
+    }
+
+    private void start_reader_playback () {
+        var app = this.application as Owlet.Application;
+        if (app == null || reader_doc == null)
+            return;
+
+        reader_status_label.label = _("Preparing voice…");
+        reader_status_label.visible = true;
+        update_reader_transport_ui ();
+
+        player.play (reader_doc, app.voice_models.get_voice_dir (), player.current_sentence_index);
+    }
+
+    private void start_reader_voice_download () {
+        var app = this.application as Owlet.Application;
+        if (app == null)
+            return;
+
+        disconnect_reader_vm_signals ();
+
+        if (app.voice_models.download_in_progress) {
+            // Download started elsewhere (e.g. Preferences); show downloading state without Cancel
+            reader_download_initiated = false;
+            reader_cancel_dl_btn.visible = false;
+            reader_content_stack.visible_child_name = "downloading";
+            reader_downloading_page.description = _("Downloading voice model…");
+
+            _reader_progress_id = app.voice_models.progress.connect (on_reader_vm_progress);
+            _reader_completed_id = app.voice_models.completed.connect (on_reader_vm_completed);
+            _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
+            return;
+        }
+
+        reader_download_initiated = true;
+        reader_cancel_dl_btn.visible = true;
+        reader_content_stack.visible_child_name = "downloading";
+        reader_downloading_page.description = _("Starting download…");
+
+        reader_cancellable = new Cancellable ();
+
+        _reader_progress_id = app.voice_models.progress.connect (on_reader_vm_progress);
+        _reader_completed_id = app.voice_models.completed.connect (on_reader_vm_completed);
+        _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
+
+        app.voice_models.download_voice_async.begin (null, null, Owlet.VoiceModels.DEFAULT_ARTIFACT_ID, reader_cancellable);
+    }
+
+    private void on_reader_vm_progress (int64 downloaded, int64 total) {
+        string dl = GLib.format_size (downloaded);
+        if (total > 0)
+            reader_downloading_page.description = _("%s / %s").printf (dl, GLib.format_size (total));
+        else
+            reader_downloading_page.description = _("%s downloaded").printf (dl);
+    }
+
+    private void on_reader_vm_completed (string local_dir) {
+        disconnect_reader_vm_signals ();
+        player.invalidate_engine ();
+        if (reader_doc != null && stack.visible_child_name == "reader") {
+            reader_content_stack.visible_child_name = "content";
+            update_reader_transport_ui ();
+            start_reader_playback ();
+        }
+    }
+
+    private void on_reader_vm_failed (string message) {
+        disconnect_reader_vm_signals ();
+        if (reader_doc != null && stack.visible_child_name == "reader") {
+            reader_no_voice_page.description = _("Download failed: %s").printf (message);
+            reader_content_stack.visible_child_name = "no_voice";
+            update_reader_transport_ui ();
+        }
+    }
+
+    private void disconnect_reader_vm_signals () {
+        var app = this.application as Owlet.Application;
+        if (app != null) {
+            if (_reader_progress_id != 0) {
+                app.voice_models.disconnect (_reader_progress_id);
+                _reader_progress_id = 0;
+            }
+            if (_reader_completed_id != 0) {
+                app.voice_models.disconnect (_reader_completed_id);
+                _reader_completed_id = 0;
+            }
+            if (_reader_failed_id != 0) {
+                app.voice_models.disconnect (_reader_failed_id);
+                _reader_failed_id = 0;
+            }
+        }
+        reader_cancellable = null;
+    }
+
+    private void on_player_started () {
+        reader_status_label.visible = false;
+        update_reader_transport_ui ();
+    }
+
+    private void on_player_position_changed (int index, int total) {
+        reader_status_label.visible = false;
+        reader_position_label.label = _("%d / %d sentences").printf (index, total);
+        update_reader_transport_ui ();
+    }
+
+    private void on_player_stopped (bool natural_end) {
+        reader_status_label.visible = false;
+        if (natural_end) {
+            reader_position_label.label = "";
+        }
+        update_reader_transport_ui ();
+    }
+
+    private void on_player_error (string message) {
+        reader_status_label.visible = false;
+        toast_overlay.add_toast (new Adw.Toast (message));
+        update_reader_transport_ui ();
+    }
+
+    private void update_reader_transport_ui () {
+        if (reader_doc == null || reader_content_stack.visible_child_name != "content") {
+            reader_play_btn.visible = true;
+            reader_play_btn.sensitive = false;
+            reader_pause_btn.visible = false;
+            reader_stop_btn.sensitive = false;
+            return;
+        }
+
+        reader_play_btn.visible = !player.is_playing;
+        reader_play_btn.sensitive = true;
+        reader_pause_btn.visible = player.is_playing;
+        reader_stop_btn.sensitive = (player.is_playing || player.is_paused);
+    }
+
     public override void dispose () {
+        player.dispose ();
         if (start_timeout_id != 0) {
             GLib.Source.remove (start_timeout_id);
             start_timeout_id = 0;
