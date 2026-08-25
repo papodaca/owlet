@@ -75,9 +75,18 @@ def test_speech_player_pause_and_resume(tts_cli, kokoro_model_dir, source_root):
     assert result.returncode == 0
     assert "event: paused (index: 1)" in result.stdout
     assert "event: resuming" in result.stdout
+    # Resume re-synthesizes the flushed in-flight sentence, then continues.
     assert "position: 2 / 4" in result.stdout
     assert "position: 4 / 4" in result.stdout
     assert "event: stopped (natural_end: true)" in result.stdout
+    paused_at = result.stdout.find("event: paused (index: 1)")
+    stopped_at = result.stdout.find("event: stopped (natural_end: true)")
+    assert paused_at != -1 and stopped_at > paused_at
+    after_pause = result.stdout[paused_at:stopped_at]
+    before_resume, after_resume = after_pause.split("event: resuming", 1)
+    assert "position: 1 / 4" not in before_resume
+    # Resume re-synthesizes the flushed in-flight sentence (index 1).
+    assert "position: 1 / 4" in after_resume
 
 
 def test_speech_player_stop_clean_reset(tts_cli, kokoro_model_dir, source_root):
@@ -95,6 +104,7 @@ def test_speech_player_stop_clean_reset(tts_cli, kokoro_model_dir, source_root):
     )
     assert result.returncode == 0
     assert "event: stopped (natural_end: false)" in result.stdout
+    assert "index_after_stop: 0" in result.stdout
 
 
 def test_speech_player_to_wav_output(tts_cli, kokoro_model_dir, source_root, tmp_path):

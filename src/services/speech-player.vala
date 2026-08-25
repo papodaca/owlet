@@ -64,6 +64,9 @@ public class Owlet.SpeechPlayer : GLib.Object {
     private int _current_sid = 1;
     private float _current_speed = 1.0f;
     private int _synth_index = 0;
+    // Last sentence successfully pushed into appsrc (0-based), or -1.
+    // Pause flushes that in-flight buffer; resume re-synthesizes it.
+    private int _last_pushed_index = -1;
 
     private static bool _gst_inited = false;
 
@@ -152,6 +155,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
         total_sentences = document.sentences.length;
         current_sentence_index = (start_index >= 0 && start_index < total_sentences) ? start_index : 0;
         _synth_index = current_sentence_index;
+        _last_pushed_index = -1;
 
         if (!setup_pipeline (_engine.sample_rate ())) {
             return;
@@ -169,11 +173,9 @@ public class Owlet.SpeechPlayer : GLib.Object {
         }
 
         stop_worker ();
-
-        if (_pipeline != null) {
-            _pipeline.set_state (State.PAUSED);
-        }
-
+        // Drop queued PCM immediately (KTD-3). Position stays frozen;
+        // resume re-synthesizes the flushed in-flight sentence.
+        teardown_pipeline ();
         state = PlayerState.PAUSED;
     }
 
@@ -186,14 +188,14 @@ public class Owlet.SpeechPlayer : GLib.Object {
             return;
         }
 
-        if (_pipeline == null) {
-            if (!setup_pipeline (_engine.sample_rate ())) {
-                return;
-            }
+        // Re-synthesize the sentence whose PCM we flushed, if any.
+        _synth_index = (_last_pushed_index >= 0) ? _last_pushed_index : current_sentence_index;
+        _last_pushed_index = -1;
+
+        if (!setup_pipeline (_engine.sample_rate ())) {
+            return;
         }
 
-        _synth_index = current_sentence_index;
-        _pipeline.set_state (State.PLAYING);
         state = PlayerState.PLAYING;
         playback_started ();
 
@@ -212,6 +214,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
         state = PlayerState.STOPPED;
         current_sentence_index = 0;
         total_sentences = 0;
+        _last_pushed_index = -1;
         _current_doc = null;
 
         if (emit_signal && was_active) {
@@ -235,7 +238,10 @@ public class Owlet.SpeechPlayer : GLib.Object {
 
         src.set_property ("format", Format.TIME);
         src.set_property ("is-live", false);
-        src.set_property ("max-bytes", (uint64) (sample_rate * sizeof (float) * 2)); // ~2 seconds queue
+        src.set_property ("block", true);
+        // One in-flight sentence: the next push blocks until the sink
+        // drains (or pause tears the pipeline down).
+        src.set_property ("max-buffers", 1u);
         src.set_caps (Caps.from_string (
             "audio/x-raw, format=F32LE, channels=1, rate=%d, layout=interleaved".printf (sample_rate)));
         _appsrc = src;
@@ -379,6 +385,9 @@ public class Owlet.SpeechPlayer : GLib.Object {
                 var flow = _appsrc.push_buffer (buf);
                 if (flow != FlowReturn.OK && flow != FlowReturn.FLUSHING) {
                     break;
+                }
+                if (flow == FlowReturn.OK) {
+                    _last_pushed_index = idx;
                 }
             }
 

@@ -101,6 +101,7 @@ int main (string[] args) {
         });
         player.playback_stopped.connect ((natural_end) => {
             stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
+            stdout.printf ("index_after_stop: %d\n", player.current_sentence_index);
             loop.quit ();
         });
         player.error_occurred.connect ((msg) => {

@@ -191,6 +191,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.playback_stopped.connect (on_player_stopped);
         player.position_changed.connect (on_player_position_changed);
         player.error_occurred.connect (on_player_error);
+        player.notify["state"].connect (() => {
+            update_reader_transport_ui ();
+        });
 
         var reader_play_action = new GLib.SimpleAction ("reader-play", null);
         reader_play_action.activate.connect (on_reader_play);
@@ -941,6 +944,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
     private void on_reader_pause () {
         player.pause ();
+        update_reader_transport_ui ();
     }
 
     private void on_reader_stop () {
@@ -1063,9 +1067,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
     private void on_player_stopped (bool natural_end) {
         reader_status_label.visible = false;
-        if (natural_end) {
-            reader_position_label.label = "";
-        }
+        // Stop and natural end both reset position to the start (KTD-3).
+        reader_position_label.label = "";
         update_reader_transport_ui ();
     }
 
