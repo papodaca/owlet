@@ -654,6 +654,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // key (default true). When disabled, global/tray dictation still
     // runs; set_text is already a no-op unless the HUD was shown.
     private void maybe_show_dictation_hud () {
+        if (owlet_holds_focus ())
+            return;
         if (settings.get_boolean ("dictation-hud"))
             hud.show ();
     }
@@ -810,6 +812,17 @@ public class Owlet.Window : Adw.ApplicationWindow {
         return settings.get_boolean ("dictation-auto-type");
     }
 
+    private bool owlet_holds_focus () {
+        var app = this.application;
+        if (app == null)
+            return this.is_active;
+        foreach (weak Gtk.Window w in app.get_windows ()) {
+            if (w.is_active)
+                return true;
+        }
+        return false;
+    }
+
     // Send the new suffix of `text` (relative to last_typed) through
     // the keystroke backend. For final text, optionally append a
     // trailing newline per the user setting. last_typed is reset to
@@ -828,6 +841,14 @@ public class Owlet.Window : Adw.ApplicationWindow {
             delta = text;
         }
         last_typed = text;
+
+        // Transcript already received this text. Injecting into the
+        // focused Owlet window types it a second time into the view.
+        if (owlet_holds_focus ()) {
+            if (is_final)
+                last_typed = "";
+            return;
+        }
 
         if (delta.length > 0 && delta.validate ())
             keystroke.type_text.begin (delta);

@@ -222,6 +222,9 @@ Must include:
   Dictate button is insensitive and the dictation global shortcut / tray action
   is a no-op; pausing or stopping playback re-enables Dictate. Starting play
   while dictation is live stops dictation.
+- **Dictation while Owlet is focused**: transcript updates once; keystroke
+  injection is skipped so the view is not typed into a second time. The
+  dictation HUD overlay is not shown.
 - **Navigation & background playback**: navigating from reader to transcript page
   maintains active speech playback; close-to-tray keeps playback running until stopped.
 
