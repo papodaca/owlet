@@ -43,8 +43,17 @@ def _speed_values(stdout: str) -> list[float]:
     values: list[float] = []
     for line in stdout.splitlines():
         if line.startswith("speed:"):
-            values.append(float(line.split(":", 1)[1].strip().split()[0]))
+            values.append(float(line.split(":", 1)[1].strip().split()[-1]))
     return values
+
+
+def _speed_pairs(stdout: str) -> list[tuple[int, float]]:
+    pairs: list[tuple[int, float]] = []
+    for line in stdout.splitlines():
+        if line.startswith("speed:"):
+            tokens = line.split(":", 1)[1].split()
+            pairs.append((int(tokens[0]), float(tokens[-1])))
+    return pairs
 
 
 def test_speech_player_change_speed_mid_listen(tts_cli, kokoro_model_dir, source_root):
@@ -70,8 +79,17 @@ def test_speech_player_change_speed_mid_listen(tts_cli, kokoro_model_dir, source
     after_pos1 = out[first_pos1 + len("position: 1 / 4") :]
     assert "position: 1 / 4" not in after_pos1
     assert "position: 4 / 4" in after_pos1
-    speeds = _speed_values(out)
-    assert any(s in (1.5, 2.0) for s in speeds), speeds
+    speeds_before = _speed_values(out[:first_pos1])
+    assert speeds_before
+    assert all(s == 1.0 for s in speeds_before), speeds_before
+    # Prefetch may keep one extra 1.0 after pos 1; a later sentence must be 1.5.
+    remaining = _speed_pairs(after_pos1)
+    if remaining and remaining[0][1] == 1.0:
+        remaining = remaining[1:]
+    assert remaining, "expected a speed after the mid-listen change"
+    later_idx, later_rate = remaining[0]
+    assert later_rate == 1.5, remaining
+    assert later_idx > 1, remaining
     assert "event: stopped (natural_end: true)" in out
 
 
@@ -116,9 +134,16 @@ def test_speech_player_pause_then_change_speed(tts_cli, kokoro_model_dir, source
     out = result.stdout
     assert "event: paused (index: 1)" in out
     assert "event: resuming" in out
-    after_resume = out.split("event: resuming", 1)[1]
+    paused_at = out.find("event: paused (index: 1)")
+    stopped_at = out.find("event: stopped (natural_end: true)")
+    assert paused_at != -1 and stopped_at > paused_at
+    after_pause = out[paused_at:stopped_at]
+    before_resume, after_resume = after_pause.split("event: resuming", 1)
+    assert "position: 1 / 4" not in before_resume
+    assert "position: 1 / 4" in after_resume
     speeds_after = _speed_values(after_resume)
-    assert any(s == 0.75 for s in speeds_after), speeds_after
+    assert speeds_after, speeds_after
+    assert speeds_after[0] == 0.75, speeds_after
     assert "position: 4 / 4" in out
     assert "event: stopped (natural_end: true)" in out
 

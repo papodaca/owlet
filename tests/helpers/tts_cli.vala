@@ -10,7 +10,7 @@
  */
 
 void print_speed_applied (int sentence_index, float speed) {
-    stdout.printf ("speed: %g\n", speed);
+    stdout.printf ("speed: %d %g\n", sentence_index, speed);
 }
 
 int main (string[] args) {
