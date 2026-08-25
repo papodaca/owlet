@@ -1,10 +1,12 @@
 # Owlet — agent notes
 
 GTK4 + libadwaita speech-to-text app in **Vala**. Local inference via
-git submodule `subprojects/transcribe.cpp` (static link); optional
+git submodules `subprojects/transcribe.cpp` (speech-to-text) and
+`subprojects/sherpa-onnx` (text-to-speech, static link); optional
 OpenAI-compatible remote backend. In-app transcript **and** keystroke
-dictation. System builds (Arch / Debian / AppImage) plus planned Flatpak
-(phase 18; no HIP in Flatpak). GPL-3.0-or-later.
+dictation, plus document text-to-speech reading. System builds (Arch /
+Debian / AppImage) plus planned Flatpak (phase 18; no HIP in Flatpak).
+GPL-3.0-or-later.
 
 Product scope & phase plans: `docs/plans/README.md` (trust code over
 that file when they disagree — see stale notes below).
@@ -75,6 +77,9 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
   `meson.build` drives cmake via `custom_target` + `declare_dependency`
   because meson's cmake wrapper breaks Vulkan (`;;;` config) and HIP
   (demands nvcc). Plans still say A1/`cmake.subproject()` — ignore that.
+- **sherpa-onnx sidecar**: Root `meson.build` drives sherpa-onnx's CMake
+  build via a second `custom_target` + `declare_dependency` pattern for
+  local neural TTS (Kokoro/VITS). It links statically into Owlet on CPU.
 - **HIP**: sidecar cmake gets `PATH` prepended with ROCm's `bin/` (often
   `/opt/rocm/bin`) so `enable_language(HIP)` finds clang; the user shell
   is left alone. Empty `-Damd_targets=` autodetects via `rocminfo`.
@@ -85,7 +90,7 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
 - **Audio capture** (`recorder.vala`): GStreamer
   `pulsesrc` → else `pipewiresrc` → `audioconvert` → `audioresample` →
   caps (16 kHz mono F32LE) → `appsink`.
-- **Hand-written VAPIs** in `src/vapi/` (`transcribe.vapi`,
+- **Hand-written VAPIs** in `src/vapi/` (`transcribe.vapi`, `tts.vapi`,
   `libei-1.0.vapi` + C shims). They bind only the subset Owlet uses —
   extend the VAPI when calling new C API, do not regenerate from headers.
 - **`Config.GPU_BACKEND`** is compile-time (from meson option →
@@ -127,7 +132,7 @@ F32LE / 16 kHz / mono.
 
 pkg-config: `gtk4`, `libadwaita-1 >= 1.8`, `gstreamer-1.0`,
 `gstreamer-base-1.0`, `gstreamer-app-1.0`, `gstreamer-audio-1.0`,
-`libsecret-1`, `libsoup-3.0`, `json-glib-1.0`, plus optional
+`libsecret-1`, `libsoup-3.0`, `json-glib-1.0`, `libarchive`, plus optional
 `libei-1.0` (≥ 1.6 for TEXT path; else ydotool/xdotool). Runtime
 optional: `rocminfo`, `ydotool`, `xdotool`, `xdg-desktop-portal`. C++
 toolchain required to link the transcribe static lib. Submodule must
@@ -156,18 +161,20 @@ Still open (see `docs/plans/`):
 | --- | --- |
 | 18 | Flatpak packaging (GNOME runtime; Vulkan+CPU; portal dictation; no HIP) — post-1.0 |
 | 19 | 1.0 release readiness (AppStream, version, manual GGUF help, CI) — model catalog deferred |
+| 20 | Local document text-to-speech reading (`2026-08-22-001-feat-tts-document-reading-plan.md`) |
 
 
 ## Layout
 
 | Path | Role |
 | --- | --- |
-| `src/*.vala`, `src/ui/` | App + preferences UI |
-| `src/services/` | Recorder, local/remote transcription, keystroke, secrets, shortcuts, downloads, tray (SNI) |
-| `src/vapi/` | Hand-written bindings + shims |
+| `src/*.vala`, `src/ui/` | App + preferences UI + document reader UI |
+| `src/services/` | Recorder, local/remote transcription, document model, voice models, speech player, keystroke, secrets, shortcuts, downloads, tray (SNI) |
+| `src/vapi/` | Hand-written bindings (`transcribe.vapi`, `tts.vapi`, `libei-1.0.vapi`) + shims |
 | `data/` | Desktop/AppStream/GSettings, `owlet-signal` helper |
 | `docs/plans/` | Phase plans — **may lag the code**; trust `meson.build` / `src/` |
-| `subprojects/transcribe.cpp/` | Upstream engine; its own `AGENTS.md` |
+| `subprojects/transcribe.cpp/` | Upstream STT engine; its own `AGENTS.md` |
+| `subprojects/sherpa-onnx/` | Upstream TTS engine sidecar (pinned v1.13.6) |
 
 ## Working in the submodule
 

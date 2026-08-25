@@ -38,6 +38,7 @@ local inference engine and supporting OpenAI-compatible remote APIs.
 | 17 | [`phase-17-dictation-silence-auto-stop.md`](phase-17-dictation-silence-auto-stop.md) | Opt-in dictation auto-stop after adjustable silence pause |
 | 18 | [`phase-18-flatpak-packaging.md`](phase-18-flatpak-packaging.md) | Flatpak: GNOME runtime, one Vulkan(+CPU) app, portal-first dictation; no HIP |
 | 19 | [`phase-19-1.0-release.md`](phase-19-1.0-release.md) | 1.0 release readiness (metadata, version, help, CI); model catalog deferred |
+| 20 | [`2026-08-22-001-feat-tts-document-reading-plan.md`](2026-08-22-001-feat-tts-document-reading-plan.md) | Local document text-to-speech reading with Kokoro voice via sherpa-onnx |
 
 ## Architectural decisions
 

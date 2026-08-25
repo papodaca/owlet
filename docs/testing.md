@@ -206,6 +206,23 @@ Must include:
 /im/apodaca/owlet/window.ui
 ```
 
+### 10. Document TTS reading and transport
+
+- **30-page listening check**: load a real long-form document (`.txt` or `.md`) in
+  the reader surface with the Kokoro voice model, play to end to confirm voice
+  naturalness and continuous synthesis without stutter.
+- **Offline after download**: download Kokoro voice, disable network, open document,
+  verify playback works fully offline.
+- **Corrupt voice recovery**: simulate missing/corrupted voice asset files in
+  `~/.local/share/owlet/models/voices/kokoro-en-v0_19/`, verify reader displays
+  "Voice not ready" with a functional Re-download action.
+- **Banner visibility across pages**: verify the mic-live recording banner appears
+  above the window content on all pages (transcript and reader) while recording.
+- **Playback during recording (F3 flow)**: start TTS playback, then click Record;
+  verify TTS audio continues playing and recorder captures voice into transcript.
+- **Navigation & background playback**: navigating from reader to transcript page
+  maintains active speech playback; close-to-tray keeps playback running until stopped.
+
 ## What is NOT tested
 
 - **Live shortcut rebind**: needs interactive focus to confirm the accelerator

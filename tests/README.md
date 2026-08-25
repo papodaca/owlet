@@ -13,6 +13,7 @@ inference, or real OpenAI / HuggingFace downloads (except the optional
 | UI suite | `xorg-server-xvfb xdotool imagemagick` | `xvfb xdotool imagemagick` | `xorg-x11-server-Xvfb xdotool ImageMagick` |
 | Secret suite | `gnome-keyring libsecret` | `gnome-keyring libsecret-tools` | `gnome-keyring libsecret` |
 | Metadata (already used by `data/`) | `desktop-file-utils appstream glib2` | same idea | same idea |
+| TTS engine & packaging | `libarchive` | `libarchive-dev` | `libarchive-devel` |
 
 Alternatively, use a local venv (gitignored):
 
@@ -44,5 +45,6 @@ OWLET_BIN=build/src/owlet tests/.venv/bin/pytest -q tests/ui -m ui
 ```
 
 Missing optional tools (Xvfb, keyring) make the corresponding tests **skip**,
-not fail. The `network` suite is opt-in (outbound HTTP) and excluded from the
-default CI job.
+not fail. The `network` suite exercises remote URLs and voice model synthesis
+(HuggingFace HEAD checks + Kokoro voice tarball synthesis via `owlet-tts-cli`),
+and is opt-in / excluded from the default CI job.
