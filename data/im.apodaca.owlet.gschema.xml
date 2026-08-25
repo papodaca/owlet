@@ -147,5 +147,10 @@
 			<summary>Accelerator for app.quit</summary>
 			<description>GTK accelerator string. Quits Owlet.</description>
 		</key>
+		<key name="reader-playback-speed" type="d">
+			<default>1.0</default>
+			<summary>Document reader speech rate</summary>
+			<description>Playback speed for document text-to-speech. Intended values are 0.75×, 1×, 1.25×, 1.5×, and 2×. Last chosen speed is reused on the next launch and the next document.</description>
+		</key>
 	</schema>
 </schemalist>
