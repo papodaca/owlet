@@ -51,6 +51,8 @@ override_dh_auto_configure:
 
 override_dh_auto_build:
 	set -e; for backend in $(BACKENDS); do \
+		$(CURDIR)/packaging/sherpa-onnx-archives.sh seed \
+			$(CURDIR)/build-$$backend/subprojects/sherpa-onnx; \
 		ninja -C build-$$backend; \
 	done
 
@@ -84,6 +86,8 @@ override_dh_auto_install:
 			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-transcribe.cpp; \
 		install -m644 subprojects/sherpa-onnx/LICENSE \
 			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-sherpa-onnx; \
+		install -m644 packaging/notices/kokoro-en-v0_19.NOTICE \
+			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-kokoro-en-v0_19; \
 	done
 
 # ROCm shared libs live under /opt/rocm/lib (not a Debian multiarch

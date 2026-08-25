@@ -57,6 +57,9 @@ __pycache__/
 /packaging/debian/owlet-hip/
 /debian
 
+# sherpa-onnx FetchContent archive cache (packaging/sherpa-onnx-archives.sh)
+/packaging/.cache/
+
 # AppImage linuxdeploy artifacts (packaging/appimage/build.sh)
 /packaging/appimage/*.AppImage
 /packaging/appimage/AppDir/

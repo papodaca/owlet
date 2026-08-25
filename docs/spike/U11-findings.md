@@ -1,5 +1,12 @@
 # U11 Spike Findings — Local TTS Engine & Voice (2026-08-23)
 
+## Owner decision (2026-08-25)
+
+Proceed with the implemented stack: **sherpa-onnx v1.13.6 + Kokoro English
+v0_19 fp32**, voice **af_bella (sid 1)**. Piper remains the documented
+fallback; Qwen/Vulkan is not in v1. Peak RSS **1.71 GB**, RTF ≈ 0.20 on
+the spike machine.
+
 Machine: Ryzen 7 7800X3D (8C/16T), 62 GB RAM, RX 7900 XTX (gfx1100, Vulkan/ROCm).
 Test text: 35-word *Time Machine* passage (`test-quick.txt`) + 14,964-word 30-page doc (`doc-30page.txt`).
 All artifacts in `/tmp/opencode/tts-spike/`.
@@ -69,4 +76,4 @@ Owner ear verdicts: Kokoro af_bella — **"need more"** (not passed). Piper/Bark
 2. **Qwen3-TTS via qwentts.cpp** is license-clean (MIT + Apache-2.0), has structurally consistent named speakers, and is real-time+ **on Vulkan only**. Adopting it changes the product assumption "acceptable CPU cost" into a **GPU (Vulkan) requirement**, adds a ggml sidecar + 2.3 GB asset, and needs a chunked long-form pipeline in Owlet (the `--max-new` 163 s cap). The 0.6B variant exists if a lighter CPU option is wanted (untested).
 3. **Piper** remains the designated low-risk fallback (CPU-real-time, Apache-2.0), at the known "utility, not hour-long narration" quality level.
 
-Verdict: pending owner choice — (a) hear the remaining Kokoro voices, (b) commit to Qwen + Vulkan requirement, or (c) both (Kokoro default, Qwen as documented alternative). Nothing in this spike changes the U2/U8 scope; U1's engine pin is the single constant the choice updates.
+**Owner decision (2026-08-25):** keep sherpa-onnx + Kokoro v0_19 / af_bella (sid 1) — the stack already integrated in Owlet. Do not switch the v1 engine to Qwen or Piper.

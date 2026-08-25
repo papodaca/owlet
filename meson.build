@@ -259,18 +259,21 @@ transcribe_dep = declare_dependency(
 # Like transcribe.cpp, we drive sherpa-onnx's CMake build directly via
 # custom_target + declare_dependency.
 #
-# Pinned to v1.13.6. At configure time, upstream's cmake fetches:
-#   - onnxruntime static lib (v1.27.1, glibc 2.17)
-#   - espeak-ng source archive
-#   - piper-phonemize source archive
-#   - simple-sentencepiece source archive
-#   - kaldi-native-fbank source archive
-#   - kaldi-decoder source archive
-#   - kaldifst / openfst source archive
-#   - kissfft source archive
-#   - nlohmann/json source archive
-#   - eigen source archive
-# (U6 takes package custody of these archives for offline distro builders).
+# Pinned to v1.13.6. At configure time, upstream's cmake FetchContent
+# pulls the archives listed in packaging/sherpa-onnx-archives.sh (URLs
+# + sha256 + local-file fallback names). U6 seeds CMAKE_BINARY_DIR so
+# Arch/Debian/AppImage builds resolve them without a network fetch:
+#   - onnxruntime-linux-{x64,aarch64}-static_lib-1.27.1-glibc2_17.zip
+#   - espeak-ng-ed530aa113046142eb5115cf2fc9157854d0ffe1.zip
+#   - piper-phonemize-f3ff95afc03640bc1399e113e83361192a2fafb4.zip
+#   - simple-sentencepiece-0.7.tar.gz
+#   - kaldi-native-fbank-1.22.3.tar.gz
+#   - kaldi-decoder-0.3.0.tar.gz
+#   - kaldifst-1.8.0.tar.gz
+#   - openfst-1.8.5-2026-07-09.tar.gz
+#   - kissfft-febd4caeed32e33ad8b2e0bb5ea77542c40f18ec.zip
+#   - json-3.12.0.tar.gz
+#   - eigen-5.0.1.tar.gz
 
 sherpa_src = meson.project_source_root() / 'subprojects' / 'sherpa-onnx'
 sherpa_inc = include_directories(

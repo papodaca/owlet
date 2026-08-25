@@ -17,8 +17,15 @@ url='https://github.com/papodaca/owlet'
 license=('GPL-3.0-or-later')
 arch=('x86_64' 'aarch64')
 install=owlet.install
-source=()
-sha256sums=()
+
+# sherpa-onnx FetchContent archives (U6). Filenames match upstream's
+# local-file fallback so cmake configure does not hit the network.
+_owlet_packaging=$(cd "${startdir}/.." && pwd)
+. "${_owlet_packaging}/sherpa-onnx-archives.sh"
+owlet_sherpa_init "${CARCH}"
+source=("${owlet_sherpa_source_entries[@]}")
+sha256sums=("${owlet_sherpa_sha256s[@]}")
+noextract=("${owlet_sherpa_filenames[@]}")
 
 makedepends=(
   meson
@@ -123,6 +130,8 @@ build() {
       meson setup "build-${backend}" "${common[@]}" -Dgpu_backend="${backend}"
     fi
 
+    owlet_sherpa_seed --from "${srcdir}" \
+      "build-${backend}/subprojects/sherpa-onnx"
     ninja -C "build-${backend}"
   done
 }
@@ -147,6 +156,8 @@ _install_licenses() {
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.transcribe.cpp"
   install -Dm644 subprojects/sherpa-onnx/LICENSE \
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.sherpa-onnx"
+  install -Dm644 packaging/notices/kokoro-en-v0_19.NOTICE \
+    "${pkgdir}/usr/share/licenses/${pkgname}/NOTICE.kokoro-en-v0_19"
 }
 
 package_owlet() {

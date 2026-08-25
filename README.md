@@ -25,9 +25,12 @@ hand; `makepkg` installs the required build dependencies.
    ```
 
 3. Enter the packaging directory, then build and install **one**
-   variant. `makepkg` initializes the `transcribe.cpp` submodule and
-   statically links it into the app. The other variants and their GPU
-   dependencies will not be built or installed.
+   variant. `makepkg` initializes the `transcribe.cpp` and `sherpa-onnx`
+   submodules and statically links them. sherpa-onnx's cmake FetchContent
+   archives (onnxruntime, espeak-ng, …) are declared in `source=()` and
+   pre-seeded into the sidecar build dir so configure does not hit the
+   network. The other variants and their GPU dependencies will not be
+   built or installed.
 
    ```bash
    cd packaging/arch
@@ -87,7 +90,9 @@ the same names for the Owlet build/runtime deps checked so far.
 
 3. Build **one** variant. `build.sh` symlinks `packaging/debian` to the
    repo-root `debian/` directory, refreshes the changelog version from
-   git, initializes the `transcribe.cpp` submodule, and runs
+   git, initializes submodules, pre-seeds sherpa-onnx's FetchContent
+   archives (`packaging/sherpa-onnx-archives.sh`; set
+   `OWLET_SHERPA_ARCHIVES_DIR` for a network-isolated cache), and runs
    `dpkg-buildpackage`. Finished `.deb` files are left in
    `packaging/debian/`.
 

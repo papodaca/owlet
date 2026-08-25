@@ -1,0 +1,4 @@
+Kokoro English voice (kokoro-en-v0_19)
+Downloaded at runtime into $XDG_DATA_HOME/owlet/models/voices/.
+Weights, tokens, voices.bin, and bundled espeak-ng-data are Apache-2.0.
+Upstream packaging: official sherpa-onnx kokoro-en-v0_19 tarball.

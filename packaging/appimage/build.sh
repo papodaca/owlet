@@ -380,6 +380,8 @@ meson setup "${BUILDDIR}" "${REPO_ROOT}" \
   --prefix=/usr \
   --buildtype=release \
   "-Dgpu_backend=${OWLET_BACKEND}"
+"${REPO_ROOT}/packaging/sherpa-onnx-archives.sh" seed \
+  "${BUILDDIR}/subprojects/sherpa-onnx"
 ninja -C "${BUILDDIR}"
 DESTDIR="${APPDIR}" meson install -C "${BUILDDIR}"
 
@@ -407,6 +409,10 @@ if [[ -f "${REPO_ROOT}/subprojects/transcribe.cpp/LICENSE" ]]; then
 fi
 if [[ -f "${REPO_ROOT}/subprojects/sherpa-onnx/LICENSE" ]]; then
   cp -f "${REPO_ROOT}/subprojects/sherpa-onnx/LICENSE" "${DOC_DIR}/copyright-sherpa-onnx"
+fi
+if [[ -f "${REPO_ROOT}/packaging/notices/kokoro-en-v0_19.NOTICE" ]]; then
+  cp -f "${REPO_ROOT}/packaging/notices/kokoro-en-v0_19.NOTICE" \
+    "${DOC_DIR}/copyright-kokoro-en-v0_19"
 fi
 
 export APPIMAGE_EXTRACT_AND_RUN=1

@@ -80,6 +80,9 @@ Automated suites + manual gap list: `docs/testing.md` / `tests/README.md`.
 - **sherpa-onnx sidecar**: Root `meson.build` drives sherpa-onnx's CMake
   build via a second `custom_target` + `declare_dependency` pattern for
   local neural TTS (Kokoro/VITS). It links statically into Owlet on CPU.
+  Configure-time FetchContent archives are listed in
+  `packaging/sherpa-onnx-archives.sh`; Arch/Debian/AppImage seed them
+  into the sidecar build dir so isolated distro builds stay offline.
 - **HIP**: sidecar cmake gets `PATH` prepended with ROCm's `bin/` (often
   `/opt/rocm/bin`) so `enable_language(HIP)` finds clang; the user shell
   is left alone. Empty `-Damd_targets=` autodetects via `rocminfo`.
