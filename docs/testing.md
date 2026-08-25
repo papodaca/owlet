@@ -218,8 +218,10 @@ Must include:
   "Voice not ready" with a functional Re-download action.
 - **Banner visibility across pages**: verify the mic-live recording banner appears
   above the window content on all pages (transcript and reader) while recording.
-- **Playback during recording (F3 flow)**: start TTS playback, then click Record;
-  verify TTS audio continues playing and recorder captures voice into transcript.
+- **Dictate disabled during TTS playback**: while the reader is playing, the
+  Dictate button is insensitive and the dictation global shortcut / tray action
+  is a no-op; pausing or stopping playback re-enables Dictate. Starting play
+  while dictation is live stops dictation.
 - **Navigation & background playback**: navigating from reader to transcript page
   maintains active speech playback; close-to-tray keeps playback running until stopped.
 

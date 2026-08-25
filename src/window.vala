@@ -193,6 +193,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.error_occurred.connect (on_player_error);
         player.notify["state"].connect (() => {
             update_reader_transport_ui ();
+            update_action_state ();
         });
 
         var reader_play_action = new GLib.SimpleAction ("reader-play", null);
@@ -335,8 +336,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
         // Dictate stays clickable whenever a source is prepared and a
         // keystroke backend is available; toggling it off must remain
         // possible mid-dictation, so it isn't gated on `!recording`.
+        // TTS playback captures on the default source, so Dictate is
+        // disabled while speech is playing (button, accel, and the
+        // global/tray wrappers below all honor the same guard).
         dictate_action.set_enabled (
-            source_ready && keystroke.backend != Owlet.Keystroke.Backend.NONE);
+            source_ready
+            && keystroke.backend != Owlet.Keystroke.Backend.NONE
+            && !player.is_playing);
     }
 
     /* ----------------------------------------------------------------- */
@@ -350,6 +356,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // enabled gating (which depends on the in-window stack page being
     // "active") is deliberately bypassed — a global toggle must work
     // even when the window is minimized or on a non-"active" page.
+    // Playback is the exception: Dictate is a no-op while TTS is playing.
     public bool is_recording { get { return recording; } }
 
     public void record () { on_record (); }
@@ -362,6 +369,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // dictation HUD OSD and start the recorder immediately. Toggle
     // off shares the same finalize path as in-window Dictate.
     public void toggle_dictation_background () {
+        if (player.is_playing)
+            return;
         if (dictating) {
             dictate_btn.active = false;
             stop_dictation ();
@@ -523,6 +532,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
     /* ----------------------------------------------------------------- */
 
     private void on_dictate_toggle () {
+        if (player.is_playing)
+            return;
         if (dictating) {
             dictate_btn.active = false;
             stop_dictation ();
@@ -1055,8 +1066,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     private void on_player_started () {
+        if (dictating)
+            stop_dictation ();
         reader_status_label.visible = false;
         update_reader_transport_ui ();
+        update_action_state ();
     }
 
     private void on_player_position_changed (int index, int total) {
@@ -1070,6 +1084,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         // Stop and natural end both reset position to the start (KTD-3).
         reader_position_label.label = "";
         update_reader_transport_ui ();
+        update_action_state ();
     }
 
     private void on_player_error (string message) {
