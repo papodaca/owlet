@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: owlet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-25 02:33-0700\n"
+"POT-Creation-Date: 2026-08-25 03:40-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -312,6 +312,17 @@ msgstr ""
 msgid "GTK accelerator string. Quits Owlet."
 msgstr ""
 
+#: data/im.apodaca.owlet.gschema.xml:152
+msgid "Document reader speech rate"
+msgstr ""
+
+#: data/im.apodaca.owlet.gschema.xml:153
+msgid ""
+"Playback speed for document text-to-speech. Intended values are 0.75×, 1×, "
+"1.25×, 1.5×, and 2×. Last chosen speed is reused on the next launch and the "
+"next document."
+msgstr ""
+
 #: data/im.apodaca.owlet.metainfo.xml.in:8
 msgid "Keep the summary shorter, between 10 and 35 characters"
 msgstr ""
@@ -430,38 +441,38 @@ msgstr ""
 msgid "Owlet API key"
 msgstr ""
 
-#: src/services/speech-player.vala:120
+#: src/services/speech-player.vala:142
 #, c-format
 msgid "Failed to initialize speech synthesis engine from %s"
 msgstr ""
 
-#: src/services/speech-player.vala:139
+#: src/services/speech-player.vala:161
 msgid "Document has no readable text"
 msgstr ""
 
-#: src/services/speech-player.vala:234
+#: src/services/speech-player.vala:256
 msgid "Failed to create GStreamer appsrc"
 msgstr ""
 
-#: src/services/speech-player.vala:269
+#: src/services/speech-player.vala:291
 msgid "Failed to link TTS playback pipeline"
 msgstr ""
 
-#: src/services/speech-player.vala:279
+#: src/services/speech-player.vala:301
 msgid "Failed to start TTS playback pipeline"
 msgstr ""
 
-#: src/services/speech-player.vala:315
+#: src/services/speech-player.vala:337
 #, c-format
 msgid "Audio playback error: %s"
 msgstr ""
 
-#: src/services/speech-player.vala:332
+#: src/services/speech-player.vala:354
 #, c-format
 msgid "Failed to start synthesis worker thread: %s"
 msgstr ""
 
-#: src/services/speech-player.vala:373
+#: src/services/speech-player.vala:403
 #, c-format
 msgid "Speech synthesis failed on sentence %d"
 msgstr ""
@@ -940,7 +951,7 @@ msgstr ""
 msgid "Kokoro English Voice Model"
 msgstr ""
 
-#: src/ui/preferences.vala:361 src/ui/preferences.vala:434 src/window.vala:1004
+#: src/ui/preferences.vala:361 src/ui/preferences.vala:434 src/window.vala:1030
 msgid "Starting download…"
 msgstr ""
 
@@ -958,12 +969,12 @@ msgstr ""
 msgid "Failed to create models dir: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:455 src/window.vala:1018
+#: src/ui/preferences.vala:455 src/window.vala:1044
 #, c-format
 msgid "%s / %s"
 msgstr ""
 
-#: src/ui/preferences.vala:457 src/window.vala:1020
+#: src/ui/preferences.vala:457 src/window.vala:1046
 #, c-format
 msgid "%s downloaded"
 msgstr ""
@@ -973,7 +984,7 @@ msgstr ""
 msgid "Downloaded %s"
 msgstr ""
 
-#: src/ui/preferences.vala:469 src/window.vala:1036
+#: src/ui/preferences.vala:469 src/window.vala:1062
 #, c-format
 msgid "Download failed: %s"
 msgstr ""
@@ -1229,103 +1240,127 @@ msgstr ""
 msgid "Stop playback"
 msgstr ""
 
-#: src/window.ui:231
+#: src/window.ui:177 src/window.ui:196
+msgid "Playback speed"
+msgstr ""
+
+#: src/window.ui:183
+msgid "0.75×"
+msgstr ""
+
+#: src/window.ui:184
+msgid "1×"
+msgstr ""
+
+#: src/window.ui:185
+msgid "1.25×"
+msgstr ""
+
+#: src/window.ui:186
+msgid "1.5×"
+msgstr ""
+
+#: src/window.ui:187
+msgid "2×"
+msgstr ""
+
+#: src/window.ui:256
 msgid "Empty Document"
 msgstr ""
 
-#: src/window.ui:232
+#: src/window.ui:257
 msgid "The selected document contains no readable text."
 msgstr ""
 
-#: src/window.ui:243
+#: src/window.ui:268
 msgid "Downloading Voice Model…"
 msgstr ""
 
-#: src/window.ui:244
+#: src/window.ui:269
 msgid "Downloading Kokoro English voice model"
 msgstr ""
 
-#: src/window.ui:258
+#: src/window.ui:283
 msgid "Cancel"
 msgstr ""
 
-#: src/window.ui:275
+#: src/window.ui:300
 msgid "Voice Model Not Ready"
 msgstr ""
 
-#: src/window.ui:276
+#: src/window.ui:301
 msgid "The Kokoro voice model is needed for document reading."
 msgstr ""
 
-#: src/window.ui:279
+#: src/window.ui:304
 msgid "Download Voice"
 msgstr ""
 
-#: src/window.ui:307
+#: src/window.ui:332
 msgid "_Preferences"
 msgstr ""
 
-#: src/window.ui:311
+#: src/window.ui:336
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: src/window.ui:315
+#: src/window.ui:340
 msgid "_About Owlet"
 msgstr ""
 
-#: src/window.vala:320
+#: src/window.vala:343
 #, c-format
 msgid "Prepare failed: %s"
 msgstr ""
 
-#: src/window.vala:376 src/window.vala:539 src/window.vala:665
+#: src/window.vala:399 src/window.vala:562 src/window.vala:688
 msgid "No keystroke backend available"
 msgstr ""
 
-#: src/window.vala:393
+#: src/window.vala:416
 msgid "Stop dictation before inserting text"
 msgstr ""
 
-#: src/window.vala:578 src/window.vala:599
+#: src/window.vala:601 src/window.vala:622
 #, c-format
 msgid "Recorder start failed: %s"
 msgstr ""
 
-#: src/window.vala:671
+#: src/window.vala:694
 msgid "Buffer is empty — type something to insert first"
 msgstr ""
 
-#: src/window.vala:751
+#: src/window.vala:774
 #, c-format
 msgid "Recorder error: %s"
 msgstr ""
 
-#: src/window.vala:759
+#: src/window.vala:782
 #, c-format
 msgid "Source error: %s"
 msgstr ""
 
-#: src/window.vala:845
+#: src/window.vala:868
 msgid "Open Text or Markdown Document"
 msgstr ""
 
-#: src/window.vala:850
+#: src/window.vala:873
 msgid "Text & Markdown files"
 msgstr ""
 
-#: src/window.vala:859
+#: src/window.vala:882
 msgid "All files"
 msgstr ""
 
-#: src/window.vala:974
+#: src/window.vala:997
 msgid "Preparing voice…"
 msgstr ""
 
-#: src/window.vala:993
+#: src/window.vala:1019
 msgid "Downloading voice model…"
 msgstr ""
 
-#: src/window.vala:1071
+#: src/window.vala:1097
 #, c-format
 msgid "%d / %d sentences"
 msgstr ""

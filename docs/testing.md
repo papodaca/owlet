@@ -227,6 +227,18 @@ Must include:
   dictation HUD overlay is not shown.
 - **Navigation & background playback**: navigating from reader to transcript page
   maintains active speech playback; close-to-tray keeps playback running until stopped.
+- **Playback speed**: the transport-bar dropdown (0.75×, 1×, 1.25×, 1.5×, 2×)
+  stays usable on empty, downloading, and no-voice reader states, not only while
+  content is playing.
+  - Mid-play: change speed while a sentence is speaking; that sentence keeps its
+    old rate and later sentences use the new one.
+  - Pause / change / resume: pause, pick a new speed, resume; playback continues
+    from the current sentence at the new rate (does not restart the document).
+  - Remembered speed: set 1.5×, quit, relaunch, open a document; first utterance
+    plays at 1.5×. The same stored rate applies to the next document.
+  - Download then auto-play: with a stored non-1× speed, open a document that
+    needs a voice download; after the download finishes, auto-play uses the
+    menu's stored speed, not 1×.
 
 ## What is NOT tested
 

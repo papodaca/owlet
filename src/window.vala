@@ -32,6 +32,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.Button reader_play_btn;
     [GtkChild] private unowned Gtk.Button reader_pause_btn;
     [GtkChild] private unowned Gtk.Button reader_stop_btn;
+    [GtkChild] private unowned Gtk.DropDown reader_speed_dropdown;
     [GtkChild] private unowned Gtk.Label reader_position_label;
     [GtkChild] private unowned Gtk.Label reader_status_label;
     [GtkChild] private unowned Adw.StatusPage reader_downloading_page;
@@ -190,6 +191,28 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.notify["state"].connect (() => {
             update_reader_transport_ui ();
             update_action_state ();
+        });
+
+        // Restore last speed, then write + apply on menu change (KTD2 / KTD3).
+        float initial_speed = SpeechPlayer.snap_speed (
+            (float) settings.get_double ("reader-playback-speed"));
+        uint speed_idx = 1; // 1×
+        uint n_presets = (uint) SpeechPlayer.SPEED_PRESETS.length;
+        for (uint i = 0; i < n_presets; i++) {
+            if (SpeechPlayer.SPEED_PRESETS[i] == initial_speed) {
+                speed_idx = i;
+                break;
+            }
+        }
+        reader_speed_dropdown.set_selected (speed_idx);
+        reader_speed_dropdown.notify["selected"].connect (() => {
+            uint s = reader_speed_dropdown.get_selected ();
+            if (s == Gtk.INVALID_LIST_POSITION
+                || s >= (uint) SpeechPlayer.SPEED_PRESETS.length)
+                return;
+            float speed = SpeechPlayer.SPEED_PRESETS[s];
+            settings.set_double ("reader-playback-speed", (double) speed);
+            player.set_speed (speed);
         });
 
         var reader_play_action = new GLib.SimpleAction ("reader-play", null);
@@ -975,7 +998,10 @@ public class Owlet.Window : Adw.ApplicationWindow {
         reader_status_label.visible = true;
         update_reader_transport_ui ();
 
-        player.play (reader_doc, app.voice_models.get_voice_dir (), player.current_sentence_index);
+        float speed = SpeechPlayer.snap_speed (
+            (float) settings.get_double ("reader-playback-speed"));
+        player.play (reader_doc, app.voice_models.get_voice_dir (),
+                     player.current_sentence_index, 1, speed);
     }
 
     private void start_reader_voice_download () {
@@ -1092,6 +1118,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_play_btn.sensitive = false;
             reader_pause_btn.visible = false;
             reader_stop_btn.sensitive = false;
+            // Speed menu stays usable on empty / downloading / no-voice (R6).
             return;
         }
 

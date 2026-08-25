@@ -173,6 +173,31 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkDropDown" id="reader_speed_dropdown">
+                                <property name="tooltip-text" translatable="yes">Playback speed</property>
+                                <property name="enable-search">False</property>
+                                <property name="valign">center</property>
+                                <property name="model">
+                                  <object class="GtkStringList">
+                                    <items>
+                                      <item translatable="yes">0.75×</item>
+                                      <item translatable="yes">1×</item>
+                                      <item translatable="yes">1.25×</item>
+                                      <item translatable="yes">1.5×</item>
+                                      <item translatable="yes">2×</item>
+                                    </items>
+                                  </object>
+                                </property>
+                                <property name="expression">
+                                  <lookup type="GtkStringObject" name="string"/>
+                                </property>
+                                <property name="selected">1</property>
+                                <accessibility>
+                                  <property name="label" translatable="yes">Playback speed</property>
+                                </accessibility>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkSeparator">
                                 <property name="orientation">vertical</property>
                               </object>

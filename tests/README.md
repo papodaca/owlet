@@ -48,3 +48,8 @@ Missing optional tools (Xvfb, keyring) make the corresponding tests **skip**,
 not fail. The `network` suite exercises remote URLs and voice model synthesis
 (HuggingFace HEAD checks + Kokoro voice tarball synthesis via `owlet-tts-cli`),
 and is opt-in / excluded from the default CI job.
+
+Document TTS speed-menu interaction and long-form listening are manual gaps;
+recipes live in [`docs/testing.md`](../docs/testing.md) § "10. Document TTS
+reading and transport". The UI suite still smokes the reader for Gtk/Adwaita
+CRITICALs.
