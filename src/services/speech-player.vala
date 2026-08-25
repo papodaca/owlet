@@ -42,10 +42,32 @@ public class Owlet.SpeechPlayer : GLib.Object {
     public bool is_paused  { get { return state == PlayerState.PAUSED; } }
     public bool is_stopped { get { return state == PlayerState.STOPPED; } }
 
+    public const float[] SPEED_PRESETS = { 0.75f, 1.0f, 1.25f, 1.5f, 2.0f };
+
     public signal void position_changed (int sentence_index, int total);
     public signal void playback_started ();
     public signal void playback_stopped (bool natural_end);
     public signal void error_occurred (string message);
+    public signal void speed_applied (int sentence_index, float speed);
+
+    public static float snap_speed (float speed) {
+        float best = SPEED_PRESETS[0];
+        float best_dist = Math.fabsf (speed - best);
+        for (int i = 1; i < SPEED_PRESETS.length; i++) {
+            float candidate = SPEED_PRESETS[i];
+            float dist = Math.fabsf (speed - candidate);
+            if (dist < best_dist) {
+                best = candidate;
+                best_dist = dist;
+            }
+        }
+        return best;
+    }
+
+    // Live setter: next not-yet-generated sentence (KTD3). Does not restart playback.
+    public void set_speed (float speed) {
+        _current_speed = snap_speed (speed);
+    }
 
     private SherpaOnnx.OfflineTts? _engine = null;
     private string? _cached_voice_dir = null;
@@ -151,7 +173,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
         _current_doc = document;
         _current_voice_dir = voice_dir;
         _current_sid = sid;
-        _current_speed = speed;
+        _current_speed = snap_speed (speed);
         total_sentences = document.sentences.length;
         current_sentence_index = (start_index >= 0 && start_index < total_sentences) ? start_index : 0;
         _synth_index = current_sentence_index;
@@ -354,6 +376,14 @@ public class Owlet.SpeechPlayer : GLib.Object {
             string sentence_text = _current_doc.sentences[idx];
             int sid = _current_sid;
             float speed = _current_speed;
+            int sent_idx = idx + 1;
+            int total = total_sentences;
+            Idle.add (() => {
+                if (state == PlayerState.PLAYING) {
+                    speed_applied (sent_idx, speed);
+                }
+                return false;
+            });
 
             SherpaOnnx.GeneratedAudio? audio = null;
             if (_engine != null) {
@@ -393,8 +423,6 @@ public class Owlet.SpeechPlayer : GLib.Object {
 
             _synth_index = idx + 1;
 
-            int sent_idx = idx + 1;
-            int total = total_sentences;
             Idle.add (() => {
                 if (state == PlayerState.PLAYING) {
                     current_sentence_index = sent_idx;

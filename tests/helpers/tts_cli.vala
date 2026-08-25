@@ -1,15 +1,21 @@
 /* tts_cli.vala — CLI test helper around Owlet.SpeechPlayer for TTS integration tests.
  *
  * Usage:
- *   owlet-tts-cli play MODEL_DIR DOC_PATH [START_INDEX]
+ *   owlet-tts-cli play MODEL_DIR DOC_PATH [START_INDEX] [SPEED]
  *   owlet-tts-cli pause-resume MODEL_DIR DOC_PATH
+ *   owlet-tts-cli pause-speed-resume MODEL_DIR DOC_PATH [SPEED]
+ *   owlet-tts-cli change-speed MODEL_DIR DOC_PATH [SPEED] [START_SPEED]
  *   owlet-tts-cli stop MODEL_DIR DOC_PATH
  *   owlet-tts-cli to-wav MODEL_DIR DOC_PATH OUT_WAV
  */
 
+void print_speed_applied (int sentence_index, float speed) {
+    stdout.printf ("speed: %g\n", speed);
+}
+
 int main (string[] args) {
     if (args.length < 3) {
-        stderr.printf ("usage: %s <play|pause-resume|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
+        stderr.printf ("usage: %s <play|pause-resume|pause-speed-resume|change-speed|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
         return 2;
     }
 
@@ -25,6 +31,7 @@ int main (string[] args) {
 
     if (command == "play") {
         int start_idx = (args.length >= 5) ? int.parse (args[4]) : 0;
+        float speed = (args.length >= 6) ? (float) double.parse (args[5]) : 1.0f;
         var player = new Owlet.SpeechPlayer ();
         var loop = new MainLoop ();
         int exit_code = 0;
@@ -32,6 +39,7 @@ int main (string[] args) {
         player.playback_started.connect (() => {
             stdout.printf ("event: started\n");
         });
+        player.speed_applied.connect (print_speed_applied);
         player.position_changed.connect ((idx, total) => {
             stdout.printf ("position: %d / %d\n", idx, total);
         });
@@ -45,7 +53,7 @@ int main (string[] args) {
             loop.quit ();
         });
 
-        player.play (doc, model_dir, start_idx);
+        player.play (doc, model_dir, start_idx, 1, speed);
         loop.run ();
         return exit_code;
     }
@@ -65,6 +73,82 @@ int main (string[] args) {
                 did_pause = true;
                 player.pause ();
                 stdout.printf ("event: paused (index: %d)\n", player.current_sentence_index);
+                Timeout.add (50, () => {
+                    stdout.printf ("event: resuming\n");
+                    player.resume ();
+                    return false;
+                });
+            }
+        });
+        player.playback_stopped.connect ((natural_end) => {
+            stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
+            loop.quit ();
+        });
+        player.error_occurred.connect ((msg) => {
+            stderr.printf ("error: %s\n", msg);
+            exit_code = 1;
+            loop.quit ();
+        });
+
+        player.play (doc, model_dir, 0);
+        loop.run ();
+        return exit_code;
+    }
+
+    if (command == "change-speed") {
+        float new_speed = (args.length >= 5) ? (float) double.parse (args[4]) : 1.5f;
+        float start_speed = (args.length >= 6) ? (float) double.parse (args[5]) : 1.0f;
+        var player = new Owlet.SpeechPlayer ();
+        var loop = new MainLoop ();
+        int exit_code = 0;
+        bool did_change = false;
+
+        player.playback_started.connect (() => {
+            stdout.printf ("event: started\n");
+        });
+        player.speed_applied.connect (print_speed_applied);
+        player.position_changed.connect ((idx, total) => {
+            stdout.printf ("position: %d / %d\n", idx, total);
+            if (!did_change && idx >= 1) {
+                did_change = true;
+                player.set_speed (new_speed);
+            }
+        });
+        player.playback_stopped.connect ((natural_end) => {
+            stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
+            loop.quit ();
+        });
+        player.error_occurred.connect ((msg) => {
+            stderr.printf ("error: %s\n", msg);
+            exit_code = 1;
+            loop.quit ();
+        });
+
+        // Live setter must be safe while STOPPED (missing voice dir, no crash).
+        player.set_speed (1.0f);
+        player.play (doc, model_dir, 0, 1, start_speed);
+        loop.run ();
+        return exit_code;
+    }
+
+    if (command == "pause-speed-resume") {
+        float new_speed = (args.length >= 5) ? (float) double.parse (args[4]) : 0.75f;
+        var player = new Owlet.SpeechPlayer ();
+        var loop = new MainLoop ();
+        int exit_code = 0;
+        bool did_pause = false;
+
+        player.playback_started.connect (() => {
+            stdout.printf ("event: started\n");
+        });
+        player.speed_applied.connect (print_speed_applied);
+        player.position_changed.connect ((idx, total) => {
+            stdout.printf ("position: %d / %d\n", idx, total);
+            if (!did_pause && idx >= 1) {
+                did_pause = true;
+                player.pause ();
+                stdout.printf ("event: paused (index: %d)\n", player.current_sentence_index);
+                player.set_speed (new_speed);
                 Timeout.add (50, () => {
                     stdout.printf ("event: resuming\n");
                     player.resume ();
