@@ -123,31 +123,10 @@ def test_speech_player_pause_then_change_speed(tts_cli, kokoro_model_dir, source
     assert "event: stopped (natural_end: true)" in out
 
 
-def test_speech_player_set_speed_snaps_nearest_preset(tts_cli, kokoro_model_dir, source_root):
-    doc_path = source_root / "tests" / "fixtures" / "document" / "urls.txt"
-    env = os.environ.copy()
-    env["OWLET_TTS_SINK"] = "fakesink"
-
-    result = subprocess.run(
-        [str(tts_cli), "change-speed", str(kokoro_model_dir), str(doc_path), "1.1", "2.0"],
-        capture_output=True,
-        text=True,
-        timeout=60,
-        env=env,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-    speeds = _speed_values(result.stdout)
-    assert 2.0 in speeds, speeds
-    first_pos1 = result.stdout.find("position: 1 / 4")
-    assert first_pos1 != -1
-    later_speeds = _speed_values(result.stdout[first_pos1:])
-    assert 1.0 in later_speeds, later_speeds
-    assert all(s > 0 for s in speeds)
-
-
-@pytest.mark.parametrize("raw", ["0", "-1"])
-def test_speech_player_set_speed_snaps_non_positive(tts_cli, kokoro_model_dir, source_root, raw):
+@pytest.mark.parametrize("raw,expected", [("1.1", 1.0), ("0", 0.75), ("-1", 0.75)])
+def test_speech_player_set_speed_snaps_nearest_preset(
+    tts_cli, kokoro_model_dir, source_root, raw, expected
+):
     doc_path = source_root / "tests" / "fixtures" / "document" / "urls.txt"
     env = os.environ.copy()
     env["OWLET_TTS_SINK"] = "fakesink"
@@ -162,12 +141,12 @@ def test_speech_player_set_speed_snaps_non_positive(tts_cli, kokoro_model_dir, s
     )
     assert result.returncode == 0, result.stderr
     speeds = _speed_values(result.stdout)
-    assert all(s > 0 for s in speeds), speeds
     assert 2.0 in speeds, speeds
     first_pos1 = result.stdout.find("position: 1 / 4")
     assert first_pos1 != -1
     later_speeds = _speed_values(result.stdout[first_pos1:])
-    assert 0.75 in later_speeds, later_speeds
+    assert expected in later_speeds, later_speeds
+    assert all(s > 0 for s in speeds)
 
 
 def test_speech_player_set_speed_stopped_missing_voice_dir(tts_cli, source_root, tmp_path):

@@ -193,18 +193,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
             update_action_state ();
         });
 
-        // Restore last speed, then write + apply on menu change (KTD2 / KTD3).
-        float initial_speed = SpeechPlayer.snap_speed (
-            (float) settings.get_double ("reader-playback-speed"));
-        uint speed_idx = 1; // 1×
-        uint n_presets = (uint) SpeechPlayer.SPEED_PRESETS.length;
-        for (uint i = 0; i < n_presets; i++) {
-            if (SpeechPlayer.SPEED_PRESETS[i] == initial_speed) {
-                speed_idx = i;
-                break;
-            }
-        }
-        reader_speed_dropdown.set_selected (speed_idx);
+        reader_speed_dropdown.set_selected (
+            SpeechPlayer.snap_speed_index (
+                (float) settings.get_double ("reader-playback-speed")));
         reader_speed_dropdown.notify["selected"].connect (() => {
             uint s = reader_speed_dropdown.get_selected ();
             if (s == Gtk.INVALID_LIST_POSITION
@@ -998,10 +989,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
         reader_status_label.visible = true;
         update_reader_transport_ui ();
 
-        float speed = SpeechPlayer.snap_speed (
-            (float) settings.get_double ("reader-playback-speed"));
         player.play (reader_doc, app.voice_models.get_voice_dir (),
-                     player.current_sentence_index, 1, speed);
+                     player.current_sentence_index, 1,
+                     (float) settings.get_double ("reader-playback-speed"));
     }
 
     private void start_reader_voice_download () {
@@ -1118,7 +1108,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_play_btn.sensitive = false;
             reader_pause_btn.visible = false;
             reader_stop_btn.sensitive = false;
-            // Speed menu stays usable on empty / downloading / no-voice (R6).
+            // Speed menu stays usable on empty / downloading / no-voice.
             return;
         }
 

@@ -50,21 +50,24 @@ public class Owlet.SpeechPlayer : GLib.Object {
     public signal void error_occurred (string message);
     public signal void speed_applied (int sentence_index, float speed);
 
-    public static float snap_speed (float speed) {
-        float best = SPEED_PRESETS[0];
-        float best_dist = Math.fabsf (speed - best);
+    public static uint snap_speed_index (float speed) {
+        int best_i = 0;
+        float best_dist = Math.fabsf (speed - SPEED_PRESETS[0]);
         for (int i = 1; i < SPEED_PRESETS.length; i++) {
-            float candidate = SPEED_PRESETS[i];
-            float dist = Math.fabsf (speed - candidate);
+            float dist = Math.fabsf (speed - SPEED_PRESETS[i]);
             if (dist < best_dist) {
-                best = candidate;
+                best_i = i;
                 best_dist = dist;
             }
         }
-        return best;
+        return (uint) best_i;
     }
 
-    // Live setter: next not-yet-generated sentence (KTD3). Does not restart playback.
+    public static float snap_speed (float speed) {
+        return SPEED_PRESETS[snap_speed_index (speed)];
+    }
+
+    // Does not restart playback; the next not-yet-generated sentence uses the new rate.
     public void set_speed (float speed) {
         _current_speed = snap_speed (speed);
     }
