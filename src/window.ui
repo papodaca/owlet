@@ -15,7 +15,8 @@
             <child type="start">
               <object class="GtkButton" id="open_doc_btn">
                 <property name="icon-name">document-open-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Open document (Ctrl+O)</property>
+                <property name="label" translatable="yes">Read Aloud</property>
+                <property name="tooltip-text" translatable="yes">Read a document aloud (Ctrl+O)</property>
                 <property name="action-name">win.open-doc</property>
               </object>
             </child>
@@ -93,14 +94,6 @@
                             <property name="icon-name">media-playback-stop-symbolic</property>
                             <property name="tooltip-text" translatable="yes">Stop recording (Ctrl+S)</property>
                             <property name="action-name">win.stop</property>
-                          </object>
-                        </child>
-                        <child type="end">
-                          <object class="GtkButton" id="test_keystroke_btn">
-                            <property name="icon-name">emblem-ok-symbolic</property>
-                            <property name="label" translatable="yes">Test Keystroke</property>
-                            <property name="tooltip-text" translatable="yes">Type the current buffer into the previously focused window (tests the keystroke backend)</property>
-                            <property name="action-name">win.test-keystroke</property>
                           </object>
                         </child>
                         <child type="end">

@@ -111,7 +111,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         // are read from GSettings and applied by Owlet.Application at
         // startup and on every shortcut-* change (see
         // application.vala::apply_shortcuts). Only the non-customizable
-        // copy / clear / test-keystroke bindings remain hardcoded here.
+        // copy / clear bindings remain hardcoded here.
         var owlet_app = (Owlet.Application) app;
         owlet_app.set_accels_for_action ("win.copy",     {"<Control><Shift>C"});
         owlet_app.set_accels_for_action ("win.clear",    {"<Control>Delete"});
@@ -173,10 +173,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var insert_action = new GLib.SimpleAction ("insert", null);
         insert_action.activate.connect (on_insert);
         add_action (insert_action);
-
-        var test_keystroke_action = new GLib.SimpleAction ("test-keystroke", null);
-        test_keystroke_action.activate.connect (on_test_keystroke);
-        add_action (test_keystroke_action);
 
         var open_doc_action = new GLib.SimpleAction ("open-doc", null);
         open_doc_action.activate.connect (on_open_doc_action);
@@ -660,33 +656,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
             hud.show ();
     }
 
-    // Test button: types the current transcript buffer into whatever
-    // window had focus before Owlet minimized. Bypasses the
-    // recording/transcription pipeline so the keystroke backend can
-    // be exercised in isolation.
-    private void on_test_keystroke () {
-        if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
-            toast_overlay.add_toast (new Adw.Toast (
-                _("No keystroke backend available")));
-            return;
-        }
-        string text = transcript_view.buffer.text;
-        if (text.length == 0) {
-            toast_overlay.add_toast (new Adw.Toast (
-                _("Buffer is empty — type something to test with first")));
-            return;
-        }
-        this.minimize ();
-        GLib.Timeout.add (250, () => {
-            keystroke.type_text.begin (text);
-            return false;
-        });
-    }
-
     // win.insert: copy the transcript to the clipboard AND type it
     // into the previously focused window. Bound to the customizable
-    // shortcut-insert GSettings key (default <Control>I). Equivalent
-    // to on_test_keystroke with the clipboard copy added.
+    // shortcut-insert GSettings key (default <Control>I).
     private void on_insert () {
         if (keystroke.backend == Owlet.Keystroke.Backend.NONE) {
             toast_overlay.add_toast (new Adw.Toast (

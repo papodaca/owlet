@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: owlet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-23 13:24-0700\n"
+"POT-Creation-Date: 2026-08-25 02:33-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -430,38 +430,38 @@ msgstr ""
 msgid "Owlet API key"
 msgstr ""
 
-#: src/services/speech-player.vala:117
+#: src/services/speech-player.vala:120
 #, c-format
 msgid "Failed to initialize speech synthesis engine from %s"
 msgstr ""
 
-#: src/services/speech-player.vala:136
+#: src/services/speech-player.vala:139
 msgid "Document has no readable text"
 msgstr ""
 
-#: src/services/speech-player.vala:231
+#: src/services/speech-player.vala:234
 msgid "Failed to create GStreamer appsrc"
 msgstr ""
 
-#: src/services/speech-player.vala:263
+#: src/services/speech-player.vala:269
 msgid "Failed to link TTS playback pipeline"
 msgstr ""
 
-#: src/services/speech-player.vala:273
+#: src/services/speech-player.vala:279
 msgid "Failed to start TTS playback pipeline"
 msgstr ""
 
-#: src/services/speech-player.vala:309
+#: src/services/speech-player.vala:315
 #, c-format
 msgid "Audio playback error: %s"
 msgstr ""
 
-#: src/services/speech-player.vala:326
+#: src/services/speech-player.vala:332
 #, c-format
 msgid "Failed to start synthesis worker thread: %s"
 msgstr ""
 
-#: src/services/speech-player.vala:367
+#: src/services/speech-player.vala:373
 #, c-format
 msgid "Speech synthesis failed on sentence %d"
 msgstr ""
@@ -940,7 +940,7 @@ msgstr ""
 msgid "Kokoro English Voice Model"
 msgstr ""
 
-#: src/ui/preferences.vala:361 src/ui/preferences.vala:434 src/window.vala:996
+#: src/ui/preferences.vala:361 src/ui/preferences.vala:434 src/window.vala:1004
 msgid "Starting download…"
 msgstr ""
 
@@ -958,12 +958,12 @@ msgstr ""
 msgid "Failed to create models dir: errno %d"
 msgstr ""
 
-#: src/ui/preferences.vala:455 src/window.vala:1010
+#: src/ui/preferences.vala:455 src/window.vala:1018
 #, c-format
 msgid "%s / %s"
 msgstr ""
 
-#: src/ui/preferences.vala:457 src/window.vala:1012
+#: src/ui/preferences.vala:457 src/window.vala:1020
 #, c-format
 msgid "%s downloaded"
 msgstr ""
@@ -973,7 +973,7 @@ msgstr ""
 msgid "Downloaded %s"
 msgstr ""
 
-#: src/ui/preferences.vala:469 src/window.vala:1028
+#: src/ui/preferences.vala:469 src/window.vala:1036
 #, c-format
 msgid "Download failed: %s"
 msgstr ""
@@ -1103,7 +1103,7 @@ msgstr ""
 msgid "Copy command"
 msgstr ""
 
-#: src/ui/preferences.vala:656 src/window.ui:151
+#: src/ui/preferences.vala:656 src/window.ui:144
 msgid "Close"
 msgstr ""
 
@@ -1157,125 +1157,119 @@ msgid "Press keys…"
 msgstr ""
 
 #: src/window.ui:18
-msgid "Open document (Ctrl+O)"
+msgid "Read Aloud"
 msgstr ""
 
-#: src/window.ui:25
-msgid "Dictate"
+#: src/window.ui:19
+msgid "Read a document aloud (Ctrl+O)"
 msgstr ""
 
 #: src/window.ui:26
+msgid "Dictate"
+msgstr ""
+
+#: src/window.ui:27
 msgid "Toggle dictation mode (Ctrl+D)"
 msgstr ""
 
-#: src/window.ui:34
+#: src/window.ui:35
 msgid "Main Menu"
 msgstr ""
 
-#: src/window.ui:42
+#: src/window.ui:43
 msgid "Microphone is active"
 msgstr ""
 
-#: src/window.ui:54
+#: src/window.ui:55
 msgid "No Model Loaded"
 msgstr ""
 
-#: src/window.ui:55
+#: src/window.ui:56
 msgid ""
 "Open Preferences to download a model or configure an OpenAI-compatible API."
 msgstr ""
 
-#: src/window.ui:66
+#: src/window.ui:67
 msgid "Loading model…"
 msgstr ""
 
-#: src/window.ui:86
+#: src/window.ui:87
 msgid "Record"
 msgstr ""
 
-#: src/window.ui:87
+#: src/window.ui:88
 msgid "Start recording (Ctrl+R)"
 msgstr ""
 
-#: src/window.ui:94
+#: src/window.ui:95
 msgid "Stop recording (Ctrl+S)"
 msgstr ""
 
-#: src/window.ui:101
-msgid "Test Keystroke"
-msgstr ""
-
 #: src/window.ui:102
-msgid ""
-"Type the current buffer into the previously focused window (tests the "
-"keystroke backend)"
-msgstr ""
-
-#: src/window.ui:109
 msgid "Copy transcript to clipboard (Ctrl+Shift+C)"
 msgstr ""
 
-#: src/window.ui:116
+#: src/window.ui:109
 msgid "Clear transcript (Ctrl+Delete)"
 msgstr ""
 
-#: src/window.ui:152
+#: src/window.ui:145
 msgid "Close document"
 msgstr ""
 
-#: src/window.ui:163
+#: src/window.ui:156
 msgid "Play document"
 msgstr ""
 
-#: src/window.ui:170
+#: src/window.ui:163
 msgid "Pause playback"
 msgstr ""
 
-#: src/window.ui:178
+#: src/window.ui:171
 msgid "Stop playback"
 msgstr ""
 
-#: src/window.ui:238
+#: src/window.ui:231
 msgid "Empty Document"
 msgstr ""
 
-#: src/window.ui:239
+#: src/window.ui:232
 msgid "The selected document contains no readable text."
 msgstr ""
 
-#: src/window.ui:250
+#: src/window.ui:243
 msgid "Downloading Voice Model…"
 msgstr ""
 
-#: src/window.ui:251
+#: src/window.ui:244
 msgid "Downloading Kokoro English voice model"
 msgstr ""
 
-#: src/window.ui:265
+#: src/window.ui:258
 msgid "Cancel"
 msgstr ""
 
-#: src/window.ui:282
+#: src/window.ui:275
 msgid "Voice Model Not Ready"
 msgstr ""
 
-#: src/window.ui:283
+#: src/window.ui:276
 msgid "The Kokoro voice model is needed for document reading."
 msgstr ""
 
-#: src/window.ui:286
+#: src/window.ui:279
 msgid "Download Voice"
 msgstr ""
 
-#: src/window.ui:314
+#: src/window.ui:307
 msgid "_Preferences"
 msgstr ""
 
-#: src/window.ui:318
+#: src/window.ui:311
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: src/window.ui:322
+#: src/window.ui:315
 msgid "_About Owlet"
 msgstr ""
 
@@ -1284,59 +1278,54 @@ msgstr ""
 msgid "Prepare failed: %s"
 msgstr ""
 
-#: src/window.vala:368 src/window.vala:529 src/window.vala:654
-#: src/window.vala:677
+#: src/window.vala:376 src/window.vala:539 src/window.vala:665
 msgid "No keystroke backend available"
 msgstr ""
 
-#: src/window.vala:385
+#: src/window.vala:393
 msgid "Stop dictation before inserting text"
 msgstr ""
 
-#: src/window.vala:568 src/window.vala:589
+#: src/window.vala:578 src/window.vala:599
 #, c-format
 msgid "Recorder start failed: %s"
 msgstr ""
 
-#: src/window.vala:660
-msgid "Buffer is empty — type something to test with first"
-msgstr ""
-
-#: src/window.vala:683
+#: src/window.vala:671
 msgid "Buffer is empty — type something to insert first"
 msgstr ""
 
-#: src/window.vala:763
+#: src/window.vala:751
 #, c-format
 msgid "Recorder error: %s"
 msgstr ""
 
-#: src/window.vala:771
+#: src/window.vala:759
 #, c-format
 msgid "Source error: %s"
 msgstr ""
 
-#: src/window.vala:838
+#: src/window.vala:845
 msgid "Open Text or Markdown Document"
 msgstr ""
 
-#: src/window.vala:843
+#: src/window.vala:850
 msgid "Text & Markdown files"
 msgstr ""
 
-#: src/window.vala:852
+#: src/window.vala:859
 msgid "All files"
 msgstr ""
 
-#: src/window.vala:966
+#: src/window.vala:974
 msgid "Preparing voice…"
 msgstr ""
 
-#: src/window.vala:985
+#: src/window.vala:993
 msgid "Downloading voice model…"
 msgstr ""
 
-#: src/window.vala:1060
+#: src/window.vala:1071
 #, c-format
 msgid "%d / %d sentences"
 msgstr ""
