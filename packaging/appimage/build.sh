@@ -398,6 +398,17 @@ if [[ -z ${ICON_SVG} || ! -f ${ICON_SVG} ]]; then
   exit 1
 fi
 
+# Stage license and third-party notice files into the AppDir doc tree
+DOC_DIR="${APPDIR}/usr/share/doc/owlet"
+mkdir -p "${DOC_DIR}"
+cp -f "${REPO_ROOT}/COPYING" "${DOC_DIR}/copyright-GPL-3.0"
+if [[ -f "${REPO_ROOT}/subprojects/transcribe.cpp/LICENSE" ]]; then
+  cp -f "${REPO_ROOT}/subprojects/transcribe.cpp/LICENSE" "${DOC_DIR}/copyright-transcribe.cpp"
+fi
+if [[ -f "${REPO_ROOT}/subprojects/sherpa-onnx/LICENSE" ]]; then
+  cp -f "${REPO_ROOT}/subprojects/sherpa-onnx/LICENSE" "${DOC_DIR}/copyright-sherpa-onnx"
+fi
+
 export APPIMAGE_EXTRACT_AND_RUN=1
 export DEPLOY_GTK_VERSION=4
 export GSTREAMER_PLUGINS_DIR="${GST_STAGE}"

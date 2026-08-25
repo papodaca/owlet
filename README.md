@@ -67,7 +67,7 @@ the same names for the Owlet build/runtime deps checked so far.
      appstream desktop-file-utils libglib2.0-bin \
      libgtk-4-dev libadwaita-1-dev \
      libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-     libsoup-3.0-dev libsecret-1-dev libjson-glib-dev libei-dev \
+     libsoup-3.0-dev libsecret-1-dev libjson-glib-dev libarchive-dev libei-dev \
      libx11-dev libxext-dev libxrandr-dev libcairo2-dev libpango1.0-dev libblas-dev
    ```
 

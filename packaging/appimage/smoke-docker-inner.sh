@@ -28,7 +28,7 @@ apt-get install -y --no-install-recommends \
   libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
   gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
   gstreamer1.0-pulseaudio \
-  libsoup-3.0-dev libsecret-1-dev libjson-glib-dev libei-dev \
+  libsoup-3.0-dev libsecret-1-dev libjson-glib-dev libarchive-dev libei-dev \
   libx11-dev libxext-dev libxrandr-dev libcairo2-dev libpango1.0-dev libblas-dev \
   file patchelf \
   xvfb xauth \

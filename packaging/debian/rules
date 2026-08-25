@@ -82,6 +82,8 @@ override_dh_auto_install:
 			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-GPL-3.0; \
 		install -m644 subprojects/transcribe.cpp/LICENSE \
 			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-transcribe.cpp; \
+		install -m644 subprojects/sherpa-onnx/LICENSE \
+			$(CURDIR)/debian/$$pkg/usr/share/doc/$$pkg/copyright-sherpa-onnx; \
 	done
 
 # ROCm shared libs live under /opt/rocm/lib (not a Debian multiarch

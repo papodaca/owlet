@@ -27,6 +27,7 @@ Build-Depends:
  libsoup-3.0-dev,
  libsecret-1-dev,
  libjson-glib-dev,
+ libarchive-dev,
  libei-dev,
  libx11-dev,
  libxext-dev,

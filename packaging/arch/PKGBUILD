@@ -38,6 +38,7 @@ makedepends=(
   libsoup3
   libsecret
   json-glib
+  libarchive
   libei
   blas
   cblas
@@ -62,6 +63,7 @@ _common_depends=(
   libsoup3
   libsecret
   json-glib
+  libarchive
   libei
   libx11
   libxext
@@ -143,6 +145,8 @@ _install_licenses() {
   install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
   install -Dm644 subprojects/transcribe.cpp/LICENSE \
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.transcribe.cpp"
+  install -Dm644 subprojects/sherpa-onnx/LICENSE \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.sherpa-onnx"
 }
 
 package_owlet() {
