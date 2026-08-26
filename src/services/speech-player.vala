@@ -12,7 +12,9 @@
  *   - Streaming per-sentence synthesis on a background worker thread
  *   - Sentence-index position tracking (KTD-3)
  *   - Play / Pause / Resume / Stop transport controls
- *   - In-flight bounds: pause-flush preserves sentence index, stop resets to 0
+ *   - In-flight bounds: pause holds the pipeline (remaining audio + at most
+ *     one blocked next sentence); stop resets to 0
+
  *   - Lazy engine initialization, held strongly across play invocations
  */
 
@@ -168,6 +170,8 @@ public class Owlet.SpeechPlayer : GLib.Object {
         }
 
         stop_internal (false);
+        // Join any leftover generate before replacing the engine or appsrc.
+        stop_worker ();
 
         if (!ensure_engine (voice_dir)) {
             return;
@@ -197,10 +201,11 @@ public class Owlet.SpeechPlayer : GLib.Object {
             return;
         }
 
-        stop_worker ();
-        // Drop queued PCM immediately (KTD-3). Position stays frozen;
-        // resume re-synthesizes the flushed in-flight sentence.
-        teardown_pipeline ();
+        // Keep the sink's remaining PCM and the worker's blocked next
+        // sentence. Resume drains those, then synthesis continues.
+        if (_pipeline != null) {
+            _pipeline.set_state (State.PAUSED);
+        }
         state = PlayerState.PAUSED;
     }
 
@@ -209,22 +214,19 @@ public class Owlet.SpeechPlayer : GLib.Object {
             return;
         }
 
-        if (!ensure_engine (_current_voice_dir)) {
+        if (_pipeline == null) {
+            error_occurred (_("TTS playback pipeline is not available"));
             return;
         }
 
-        // Re-synthesize the sentence whose PCM we flushed, if any.
-        _synth_index = (_last_pushed_index >= 0) ? _last_pushed_index : current_sentence_index;
-        _last_pushed_index = -1;
-
-        if (!setup_pipeline (_engine.sample_rate ())) {
+        var ret = _pipeline.set_state (State.PLAYING);
+        if (ret == StateChangeReturn.FAILURE) {
+            error_occurred (_("Failed to resume TTS playback"));
             return;
         }
 
         state = PlayerState.PLAYING;
         playback_started ();
-
-        start_worker ();
     }
 
     public void stop () {
@@ -232,8 +234,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
     }
 
     private void stop_internal (bool emit_signal) {
-        stop_worker ();
-        teardown_pipeline ();
+        halt_pipeline ();
 
         bool was_active = (state != PlayerState.STOPPED);
         state = PlayerState.STOPPED;
@@ -265,7 +266,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
         src.set_property ("is-live", false);
         src.set_property ("block", true);
         // One in-flight sentence: the next push blocks until the sink
-        // drains (or pause tears the pipeline down).
+        // drains (pause leaves that buffer in place; stop tears down).
         src.set_property ("max-buffers", 1u);
         src.set_caps (Caps.from_string (
             "audio/x-raw, format=F32LE, channels=1, rate=%d, layout=interleaved".printf (sample_rate)));
@@ -348,6 +349,26 @@ public class Owlet.SpeechPlayer : GLib.Object {
         return true;
     }
 
+    // Stop audio immediately. appsrc is blocking with max-buffers=1, so the
+    // worker may be sitting in push_buffer until the sink drains — unlocking
+    // and going to NULL wakes that wait. Join happens later (play / dispose)
+    // so Stop is not delayed by the rest of the sentence. Pause uses PAUSED
+    // instead, to keep the in-flight buffer.
+    private void halt_pipeline () {
+        _cancel_worker = true;
+        if (_bus_watch_id != 0) {
+            Source.remove (_bus_watch_id);
+            _bus_watch_id = 0;
+        }
+        if (_appsrc != null) {
+            _appsrc.set_property ("block", false);
+        }
+        if (_pipeline != null) {
+            _pipeline.send_event (new Event.flush_start ());
+            _pipeline.set_state (State.NULL);
+        }
+    }
+
     private void start_worker () {
         stop_worker ();
         _cancel_worker = false;
@@ -410,7 +431,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
                 break;
             }
 
-            if (audio.n > 0 && _appsrc != null) {
+            if (audio.n > 0 && _appsrc != null && !_cancel_worker) {
                 uint8[] bytes = new uint8[audio.n * sizeof (float)];
                 Posix.memcpy (bytes, audio.samples, bytes.length);
 
@@ -419,9 +440,13 @@ public class Owlet.SpeechPlayer : GLib.Object {
                 if (flow != FlowReturn.OK && flow != FlowReturn.FLUSHING) {
                     break;
                 }
-                if (flow == FlowReturn.OK) {
+                if (flow == FlowReturn.OK && !_cancel_worker) {
                     _last_pushed_index = idx;
                 }
+            }
+
+            if (_cancel_worker) {
+                break;
             }
 
             _synth_index = idx + 1;
@@ -439,6 +464,8 @@ public class Owlet.SpeechPlayer : GLib.Object {
 
     public override void dispose () {
         stop_internal (false);
+        stop_worker ();
+        teardown_pipeline ();
         invalidate_engine ();
         base.dispose ();
     }

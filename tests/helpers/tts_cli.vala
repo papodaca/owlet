@@ -4,6 +4,7 @@
  *   owlet-tts-cli play MODEL_DIR DOC_PATH [START_INDEX] [SPEED]
  *   owlet-tts-cli pause-resume MODEL_DIR DOC_PATH
  *   owlet-tts-cli pause-speed-resume MODEL_DIR DOC_PATH [SPEED]
+ *   owlet-tts-cli pause-latency MODEL_DIR DOC_PATH
  *   owlet-tts-cli change-speed MODEL_DIR DOC_PATH [SPEED] [START_SPEED]
  *   owlet-tts-cli stop MODEL_DIR DOC_PATH
  *   owlet-tts-cli to-wav MODEL_DIR DOC_PATH OUT_WAV
@@ -15,7 +16,7 @@ void print_speed_applied (int sentence_index, float speed) {
 
 int main (string[] args) {
     if (args.length < 3) {
-        stderr.printf ("usage: %s <play|pause-resume|pause-speed-resume|change-speed|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
+        stderr.printf ("usage: %s <play|pause-resume|pause-speed-resume|pause-latency|change-speed|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
         return 2;
     }
 
@@ -83,6 +84,44 @@ int main (string[] args) {
         player.playback_stopped.connect ((natural_end) => {
             stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
             loop.quit ();
+        });
+        player.error_occurred.connect ((msg) => {
+            stderr.printf ("error: %s\n", msg);
+            exit_code = 1;
+            loop.quit ();
+        });
+
+        player.play (doc, model_dir, 0);
+        loop.run ();
+        return exit_code;
+    }
+
+    if (command == "pause-latency") {
+        var player = new Owlet.SpeechPlayer ();
+        var loop = new MainLoop ();
+        int exit_code = 0;
+        bool armed = false;
+
+        player.playback_started.connect (() => {
+            stdout.printf ("event: started\n");
+        });
+        player.position_changed.connect ((idx, total) => {
+            stdout.printf ("position: %d / %d\n", idx, total);
+            if (armed || idx < 1) {
+                return;
+            }
+            armed = true;
+            // Let the next sentence generate and block in appsrc push while
+            // the first sentence is still draining.
+            Timeout.add (1500, () => {
+                int64 t0 = get_monotonic_time ();
+                player.pause ();
+                int64 dt_ms = (get_monotonic_time () - t0) / 1000;
+                stdout.printf ("pause_wait_ms: %s\n", dt_ms.to_string ());
+                stdout.printf ("event: paused (index: %d)\n", player.current_sentence_index);
+                loop.quit ();
+                return false;
+            });
         });
         player.error_occurred.connect ((msg) => {
             stderr.printf ("error: %s\n", msg);

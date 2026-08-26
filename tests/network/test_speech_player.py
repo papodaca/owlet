@@ -117,7 +117,7 @@ def test_speech_player_play_with_speed(tts_cli, kokoro_model_dir, source_root):
 
 
 def test_speech_player_pause_then_change_speed(tts_cli, kokoro_model_dir, source_root):
-    """AE3: pause, set_speed(0.75), resume re-synthesizes the flushed sentence at 0.75."""
+    """AE3: pause, set_speed(0.75), resume keeps the current sentence; a later one uses 0.75."""
     doc_path = source_root / "tests" / "fixtures" / "document" / "urls.txt"
     env = os.environ.copy()
     env["OWLET_TTS_SINK"] = "fakesink"
@@ -139,11 +139,15 @@ def test_speech_player_pause_then_change_speed(tts_cli, kokoro_model_dir, source
     assert paused_at != -1 and stopped_at > paused_at
     after_pause = out[paused_at:stopped_at]
     before_resume, after_resume = after_pause.split("event: resuming", 1)
+    # Resume continues the same sentence (pipeline stays paused, not flushed).
     assert "position: 1 / 4" not in before_resume
-    assert "position: 1 / 4" in after_resume
     speeds_after = _speed_values(after_resume)
-    assert speeds_after, speeds_after
-    assert speeds_after[0] == 0.75, speeds_after
+    remaining = _speed_pairs(after_resume)
+    if remaining and remaining[0][1] == 1.0:
+        remaining = remaining[1:]
+    assert remaining, speeds_after
+    assert remaining[0][1] == 0.75, remaining
+    assert "position: 2 / 4" in after_resume
     assert "position: 4 / 4" in out
     assert "event: stopped (natural_end: true)" in out
 
@@ -210,6 +214,31 @@ def test_speech_player_play_streaming_events(tts_cli, kokoro_model_dir, source_r
     assert "event: stopped (natural_end: true)" in result.stdout
 
 
+def test_speech_player_pause_returns_quickly(tts_cli, kokoro_model_dir, source_root):
+    """Pause must not wait for the in-flight sentence to finish playing."""
+    doc_path = source_root / "tests" / "fixtures" / "document" / "long-paragraph.txt"
+    env = os.environ.copy()
+    env["OWLET_TTS_SINK"] = "fakesink"
+
+    result = subprocess.run(
+        [str(tts_cli), "pause-latency", str(kokoro_model_dir), str(doc_path)],
+        capture_output=True,
+        text=True,
+        timeout=90,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "event: paused" in result.stdout
+    wait_ms = None
+    for line in result.stdout.splitlines():
+        if line.startswith("pause_wait_ms:"):
+            wait_ms = int(line.split(":", 1)[1].strip())
+            break
+    assert wait_ms is not None, result.stdout
+    assert wait_ms < 1500, f"pause blocked for {wait_ms} ms\n{result.stdout}"
+
+
 def test_speech_player_pause_and_resume(tts_cli, kokoro_model_dir, source_root):
     doc_path = source_root / "tests" / "fixtures" / "document" / "urls.txt"
     env = os.environ.copy()
@@ -226,7 +255,6 @@ def test_speech_player_pause_and_resume(tts_cli, kokoro_model_dir, source_root):
     assert result.returncode == 0
     assert "event: paused (index: 1)" in result.stdout
     assert "event: resuming" in result.stdout
-    # Resume re-synthesizes the flushed in-flight sentence, then continues.
     assert "position: 2 / 4" in result.stdout
     assert "position: 4 / 4" in result.stdout
     assert "event: stopped (natural_end: true)" in result.stdout
@@ -236,8 +264,10 @@ def test_speech_player_pause_and_resume(tts_cli, kokoro_model_dir, source_root):
     after_pause = result.stdout[paused_at:stopped_at]
     before_resume, after_resume = after_pause.split("event: resuming", 1)
     assert "position: 1 / 4" not in before_resume
-    # Resume re-synthesizes the flushed in-flight sentence (index 1).
-    assert "position: 1 / 4" in after_resume
+    # Resume drains the paused sentence; it must not skip ahead by restarting
+    # at the next index (position 1 is not re-emitted).
+    assert "position: 1 / 4" not in after_resume
+    assert "position: 2 / 4" in after_resume
 
 
 def test_speech_player_stop_clean_reset(tts_cli, kokoro_model_dir, source_root):
