@@ -107,9 +107,6 @@ public class Owlet.SpeechPlayer : GLib.Object {
     private int _current_sid = 1;
     private float _current_speed = 1.0f;
     private int _synth_index = 0;
-    // Last sentence successfully pushed into appsrc (0-based), or -1.
-    // Pause flushes that in-flight buffer; resume re-synthesizes it.
-    private int _last_pushed_index = -1;
 
     // Sample rate of the pipeline caps, cached so the worker thread can
     // size buffer timestamps without touching the engine.
@@ -232,7 +229,6 @@ public class Owlet.SpeechPlayer : GLib.Object {
         total_sentences = document.sentences.length;
         current_sentence_index = (start_index >= 0 && start_index < total_sentences) ? start_index : 0;
         _synth_index = current_sentence_index;
-        _last_pushed_index = -1;
         _sample_rate = _engine.sample_rate ();
         // A new listen starts a fresh timeline; the internal stop above
         // emits no signal, so this is also where the reader's cached
@@ -301,7 +297,6 @@ public class Owlet.SpeechPlayer : GLib.Object {
         state = PlayerState.STOPPED;
         current_sentence_index = 0;
         total_sentences = 0;
-        _last_pushed_index = -1;
         _current_doc = null;
 
         if (emit_signal && was_active) {
@@ -617,7 +612,6 @@ public class Owlet.SpeechPlayer : GLib.Object {
                     break;
                 }
                 if (flow == FlowReturn.OK && !_cancel_worker) {
-                    _last_pushed_index = idx;
                     _pts_accum = pts + span;
                     // Register after the push is accepted, on the GTK
                     // thread. Windows are appended, never replaced, so the
