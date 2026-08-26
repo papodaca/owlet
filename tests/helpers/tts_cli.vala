@@ -3,20 +3,30 @@
  * Usage:
  *   owlet-tts-cli play MODEL_DIR DOC_PATH [START_INDEX] [SPEED]
  *   owlet-tts-cli pause-resume MODEL_DIR DOC_PATH
+ *   owlet-tts-cli pause-mid-resume MODEL_DIR DOC_PATH
  *   owlet-tts-cli pause-speed-resume MODEL_DIR DOC_PATH [SPEED]
  *   owlet-tts-cli pause-latency MODEL_DIR DOC_PATH
  *   owlet-tts-cli change-speed MODEL_DIR DOC_PATH [SPEED] [START_SPEED]
  *   owlet-tts-cli stop MODEL_DIR DOC_PATH
  *   owlet-tts-cli to-wav MODEL_DIR DOC_PATH OUT_WAV
+ *
+ * The play-family commands also print the word clock as
+ * `word: SENTENCE WORD START END` (0-based sentence, 0-based span, and
+ * character offsets into that sentence; WORD is -1 for a sentence with no
+ * highlightable span).
  */
 
 void print_speed_applied (int sentence_index, float speed) {
     stdout.printf ("speed: %d %g\n", sentence_index, speed);
 }
 
+void print_word_changed (int sentence_index, int word_index, int start, int end) {
+    stdout.printf ("word: %d %d %d %d\n", sentence_index, word_index, start, end);
+}
+
 int main (string[] args) {
     if (args.length < 3) {
-        stderr.printf ("usage: %s <play|pause-resume|pause-speed-resume|pause-latency|change-speed|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
+        stderr.printf ("usage: %s <play|pause-resume|pause-mid-resume|pause-speed-resume|pause-latency|change-speed|stop|to-wav> MODEL_DIR DOC_PATH [ARG]\n", args[0]);
         return 2;
     }
 
@@ -40,6 +50,7 @@ int main (string[] args) {
         player.playback_started.connect (() => {
             stdout.printf ("event: started\n");
         });
+        player.word_changed.connect (print_word_changed);
         player.speed_applied.connect (print_speed_applied);
         player.position_changed.connect ((idx, total) => {
             stdout.printf ("position: %d / %d\n", idx, total);
@@ -68,6 +79,7 @@ int main (string[] args) {
         player.playback_started.connect (() => {
             stdout.printf ("event: started\n");
         });
+        player.word_changed.connect (print_word_changed);
         player.position_changed.connect ((idx, total) => {
             stdout.printf ("position: %d / %d\n", idx, total);
             if (!did_pause && idx >= 1) {
@@ -80,6 +92,50 @@ int main (string[] args) {
                     return false;
                 });
             }
+        });
+        player.playback_stopped.connect ((natural_end) => {
+            stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
+            loop.quit ();
+        });
+        player.error_occurred.connect ((msg) => {
+            stderr.printf ("error: %s\n", msg);
+            exit_code = 1;
+            loop.quit ();
+        });
+
+        player.play (doc, model_dir, 0);
+        loop.run ();
+        return exit_code;
+    }
+
+    // Pause well inside the first sentence (not the instant it is queued),
+    // so the frozen word is provably past the sentence's first span.
+    if (command == "pause-mid-resume") {
+        var player = new Owlet.SpeechPlayer ();
+        var loop = new MainLoop ();
+        int exit_code = 0;
+        bool armed = false;
+
+        player.playback_started.connect (() => {
+            stdout.printf ("event: started\n");
+        });
+        player.word_changed.connect (print_word_changed);
+        player.position_changed.connect ((idx, total) => {
+            stdout.printf ("position: %d / %d\n", idx, total);
+            if (armed || idx < 1) {
+                return;
+            }
+            armed = true;
+            Timeout.add (1500, () => {
+                player.pause ();
+                stdout.printf ("event: paused (index: %d)\n", player.current_sentence_index);
+                Timeout.add (500, () => {
+                    stdout.printf ("event: resuming\n");
+                    player.resume ();
+                    return false;
+                });
+                return false;
+            });
         });
         player.playback_stopped.connect ((natural_end) => {
             stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
@@ -145,6 +201,7 @@ int main (string[] args) {
         player.playback_started.connect (() => {
             stdout.printf ("event: started\n");
         });
+        player.word_changed.connect (print_word_changed);
         player.speed_applied.connect (print_speed_applied);
         player.position_changed.connect ((idx, total) => {
             stdout.printf ("position: %d / %d\n", idx, total);
@@ -180,6 +237,7 @@ int main (string[] args) {
         player.playback_started.connect (() => {
             stdout.printf ("event: started\n");
         });
+        player.word_changed.connect (print_word_changed);
         player.speed_applied.connect (print_speed_applied);
         player.position_changed.connect ((idx, total) => {
             stdout.printf ("position: %d / %d\n", idx, total);
@@ -222,6 +280,7 @@ int main (string[] args) {
                 return false;
             });
         });
+        player.word_changed.connect (print_word_changed);
         player.playback_stopped.connect ((natural_end) => {
             stdout.printf ("event: stopped (natural_end: %s)\n", natural_end ? "true" : "false");
             stdout.printf ("index_after_stop: %d\n", player.current_sentence_index);

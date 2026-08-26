@@ -64,6 +64,7 @@ tts_cli = executable(
     'tts_cli.vala',
     src_dir / 'services' / 'document.vala',
     src_dir / 'services' / 'speech-player.vala',
+    src_dir / 'services' / 'word-spans.vala',
   ),
   dependencies: [
     dependency('glib-2.0'),

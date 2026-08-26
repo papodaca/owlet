@@ -16,6 +16,9 @@
  *     one blocked next sentence); stop resets to 0
 
  *   - Lazy engine initialization, held strongly across play invocations
+ *   - Word clock: buffers are stamped with accumulating PTS and each
+ *     sentence's estimated span table is registered in its PTS window, so
+ *     polling pipeline TIME says which word is being spoken (KTD2)
  */
 
 using Gst;
@@ -51,6 +54,19 @@ public class Owlet.SpeechPlayer : GLib.Object {
     public signal void playback_stopped (bool natural_end);
     public signal void error_occurred (string message);
     public signal void speed_applied (int sentence_index, float speed);
+
+    /* The word being spoken right now, as 0-based sentence index plus the
+     * span's 0-based index and its character offsets inside that sentence
+     * (KTD3 — the window maps them onto the joined display buffer).
+     * `word_index` is -1 when the speaking sentence has no highlightable
+     * span, which asks the reader to drop the tag rather than hold the
+     * previous sentence's word. Unlike `position_changed`, the sentence
+     * index here is 0-based and matches `play (start_index)`.
+     */
+    public signal void word_changed (int sentence_index,
+                                     int word_index,
+                                     int start_offset,
+                                     int end_offset);
 
     public static uint snap_speed_index (float speed) {
         int best_i = 0;
@@ -94,6 +110,38 @@ public class Owlet.SpeechPlayer : GLib.Object {
     // Last sentence successfully pushed into appsrc (0-based), or -1.
     // Pause flushes that in-flight buffer; resume re-synthesizes it.
     private int _last_pushed_index = -1;
+
+    // Sample rate of the pipeline caps, cached so the worker thread can
+    // size buffer timestamps without touching the engine.
+    private int _sample_rate = 0;
+
+    // Word clock (KTD2). Buffers carry accumulating PTS; each pushed
+    // sentence's span table is registered against the window it occupies.
+    private const uint WORD_CLOCK_INTERVAL_MS = 50;
+
+    private class SentenceWindow : GLib.Object {
+        public int sentence_index;
+        public int64 pts_start;
+        public int64 pts_end;
+        public Owlet.WordSpan[] spans;
+
+        public SentenceWindow (int sentence_index, int64 pts_start, int64 pts_end,
+                               owned Owlet.WordSpan[] spans) {
+            this.sentence_index = sentence_index;
+            this.pts_start = pts_start;
+            this.pts_end = pts_end;
+            this.spans = (owned) spans;
+        }
+    }
+
+    private int64 _pts_accum = 0;
+    private SentenceWindow[] _windows = {};
+    private uint _word_clock_id = 0;
+    // Bumped by every play / stop, so an Idle registration queued by the
+    // previous listen cannot land on the new pipeline's timeline.
+    private int _listen_generation = 0;
+    private int _last_word_sentence = -1;
+    private int _last_word_index = -1;
 
     private static bool _gst_inited = false;
 
@@ -185,14 +233,20 @@ public class Owlet.SpeechPlayer : GLib.Object {
         current_sentence_index = (start_index >= 0 && start_index < total_sentences) ? start_index : 0;
         _synth_index = current_sentence_index;
         _last_pushed_index = -1;
+        _sample_rate = _engine.sample_rate ();
+        // A new listen starts a fresh timeline; the internal stop above
+        // emits no signal, so this is also where the reader's cached
+        // offsets stop matching anything (R4).
+        reset_word_clock ();
 
-        if (!setup_pipeline (_engine.sample_rate ())) {
+        if (!setup_pipeline (_sample_rate)) {
             return;
         }
 
         state = PlayerState.PLAYING;
         playback_started ();
 
+        start_word_clock ();
         start_worker ();
     }
 
@@ -203,6 +257,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
 
         // Keep the sink's remaining PCM and the worker's blocked next
         // sentence. Resume drains those, then synthesis continues.
+        stop_word_clock ();
         if (_pipeline != null) {
             _pipeline.set_state (State.PAUSED);
         }
@@ -226,6 +281,10 @@ public class Owlet.SpeechPlayer : GLib.Object {
         }
 
         state = PlayerState.PLAYING;
+        // Resume keeps the word the pause froze: the clock restarts, but
+        // the last emitted span is remembered, so nothing repaints until
+        // the spoken word actually changes (KTD2, R3).
+        start_word_clock ();
         playback_started ();
     }
 
@@ -234,6 +293,8 @@ public class Owlet.SpeechPlayer : GLib.Object {
     }
 
     private void stop_internal (bool emit_signal) {
+        // Before halt, so a queued tick cannot paint after teardown.
+        reset_word_clock ();
         halt_pipeline ();
 
         bool was_active = (state != PlayerState.STOPPED);
@@ -246,6 +307,103 @@ public class Owlet.SpeechPlayer : GLib.Object {
         if (emit_signal && was_active) {
             playback_stopped (false);
         }
+    }
+
+    private void start_word_clock () {
+        if (_word_clock_id != 0) {
+            return;
+        }
+        _word_clock_id = Timeout.add (WORD_CLOCK_INTERVAL_MS, on_word_clock_tick);
+    }
+
+    private void stop_word_clock () {
+        if (_word_clock_id != 0) {
+            Source.remove (_word_clock_id);
+            _word_clock_id = 0;
+        }
+    }
+
+    private void reset_word_clock () {
+        stop_word_clock ();
+        _listen_generation++;
+        _windows = {};
+        _pts_accum = 0;
+        _last_word_sentence = -1;
+        _last_word_index = -1;
+    }
+
+    // Poll pipeline TIME rather than deriving position from generate
+    // progress: `position_changed` fires when a sentence is queued, which
+    // is ahead of its audio. The period is wall-clock and is never scaled
+    // by the generate speed, because that speed is already baked into the
+    // sample counts the PTS windows are built from.
+    private bool on_word_clock_tick () {
+        if (state != PlayerState.PLAYING || _pipeline == null) {
+            return true;
+        }
+
+        int64 position;
+        if (!_pipeline.query_position (Gst.Format.TIME, out position)) {
+            // Preroll, or a mid-sentence hiccup. Hold the last word; do
+            // not interpolate from wall clock.
+            return true;
+        }
+
+        prune_windows (position);
+        SentenceWindow? window = window_for (position);
+        if (window == null) {
+            return true;
+        }
+
+        if (window.spans.length == 0) {
+            emit_word (window.sentence_index, -1, 0, 0);
+            return true;
+        }
+
+        double elapsed = (double) (position - window.pts_start) / Gst.SECOND;
+        int index = window.spans.length - 1;
+        for (int i = 0; i < window.spans.length; i++) {
+            if (elapsed < window.spans[i].t1) {
+                index = i;
+                break;
+            }
+        }
+        emit_word (window.sentence_index, index,
+                   window.spans[index].start, window.spans[index].end);
+        return true;
+    }
+
+    private void emit_word (int sentence_index, int word_index, int start, int end) {
+        if (_last_word_sentence == sentence_index && _last_word_index == word_index) {
+            return;
+        }
+        _last_word_sentence = sentence_index;
+        _last_word_index = word_index;
+        word_changed (sentence_index, word_index, start, end);
+    }
+
+    // Drop windows the playhead has passed, but never the newest one: a
+    // position past the end of the last buffer keeps its final word.
+    private void prune_windows (int64 position) {
+        if (_windows.length <= 1) {
+            return;
+        }
+        SentenceWindow[] live = {};
+        for (int i = 0; i < _windows.length; i++) {
+            if (_windows[i].pts_end > position || i == _windows.length - 1) {
+                live += _windows[i];
+            }
+        }
+        _windows = live;
+    }
+
+    private SentenceWindow? window_for (int64 position) {
+        foreach (unowned SentenceWindow window in _windows) {
+            if (position >= window.pts_start && position < window.pts_end) {
+                return window;
+            }
+        }
+        return null;
     }
 
     private bool setup_pipeline (int sample_rate) {
@@ -311,6 +469,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
     }
 
     private void teardown_pipeline () {
+        stop_word_clock ();
         if (_bus_watch_id != 0) {
             Source.remove (_bus_watch_id);
             _bus_watch_id = 0;
@@ -431,17 +590,48 @@ public class Owlet.SpeechPlayer : GLib.Object {
                 break;
             }
 
+            // A zero-sample sentence is skipped without advancing PTS, so
+            // it never gets a window and never invents a word.
             if (audio.n > 0 && _appsrc != null && !_cancel_worker) {
                 uint8[] bytes = new uint8[audio.n * sizeof (float)];
                 Posix.memcpy (bytes, audio.samples, bytes.length);
 
+                int64 pts = _pts_accum;
+                int64 span = 0;
+                Owlet.WordSpan[] spans = {};
+                // The pipeline negotiated caps at this rate, so it is
+                // positive; the guard only stops a broken engine from
+                // dividing by zero.
+                if (_sample_rate > 0) {
+                    span = (int64) audio.n * Gst.SECOND / _sample_rate;
+                    spans = Owlet.WordSpans.estimate (
+                        sentence_text, (double) audio.n / _sample_rate);
+                }
+
                 var buf = new Gst.Buffer.wrapped ((owned) bytes);
+                buf.pts = (Gst.ClockTime) pts;
+                buf.duration = (Gst.ClockTime) span;
+
                 var flow = _appsrc.push_buffer (buf);
                 if (flow != FlowReturn.OK && flow != FlowReturn.FLUSHING) {
                     break;
                 }
                 if (flow == FlowReturn.OK && !_cancel_worker) {
                     _last_pushed_index = idx;
+                    _pts_accum = pts + span;
+                    // Register after the push is accepted, on the GTK
+                    // thread. Windows are appended, never replaced, so the
+                    // table currently being clocked survives the arrival of
+                    // the next sentence's table.
+                    int generation = _listen_generation;
+                    var window = new SentenceWindow (idx, pts, pts + span,
+                                                     (owned) spans);
+                    Idle.add (() => {
+                        if (_listen_generation == generation) {
+                            _windows += window;
+                        }
+                        return false;
+                    });
                 }
             }
 

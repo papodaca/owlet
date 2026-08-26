@@ -83,5 +83,8 @@ test('pytest-network', pytest,
   suite: 'network',
   workdir: meson.project_source_root(),
   depends: [owlet, tts_cli],
-  timeout: 180,
+  # Buffers now carry PTS, so fakesink's sync=true finally paces the
+  # play-family fixtures in real time instead of draining at synthesis
+  # speed. The suite is dominated by that playback wall clock.
+  timeout: 900,
 )
