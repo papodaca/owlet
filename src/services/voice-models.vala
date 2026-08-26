@@ -29,7 +29,7 @@ public enum Owlet.VoiceStatus {
 
 public class Owlet.VoiceModels : GLib.Object {
     public const string DEFAULT_ARTIFACT_ID = "kokoro-en-v0_19";
-    public const string DEFAULT_SHA256 = "912804859a0f0d1487f5d0fdf29d6be6d5b0ad6c0a7f191b7d59828e88605ac7";
+    public const string DEFAULT_SHA256 = "912804855a04745fa77a30be545b3f9a5d15c4d66db00b88cbcd4921df605ac7";
     public const string DEFAULT_VOICE_NAME = "af_bella";
     public const int DEFAULT_VOICE_SID = 1;
 
