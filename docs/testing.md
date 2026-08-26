@@ -252,6 +252,25 @@ Must include:
   `{"text":"hello"}` parsing cover the fragile bits.
 - **GStreamer mic / PipeWire capture**, **keystroke injection into a real
   editor**, **interactive portal GlobalShortcuts bind**.
+- **Hardware media keys (XF86AudioPlay / PlayPause)**: CI owns the MPRIS
+  well-known name and in-process Close-release on a private session bus.
+  Pause-without-restart is a code/manual check (MPRIS has no sentence
+  index). Walk through with a real keyboard (or `playerctl play-pause`)
+  while a readable document is open:
+  - Focused Owlet window: play/pause pauses playing narration and resumes
+    paused narration.
+  - Unfocused: another app focused; the same key still toggles Owlet while
+    it is the desktop's current media player.
+  - Tray-hidden: close-to-tray hide; play/pause still toggles; it does not
+    present the window. The desktop media indicator's Raise (or tray Show)
+    presents the reader and hides the SNI.
+  - Loaded-but-stopped: in-window Stop (or natural end), then play/pause
+    starts from the current sentence index without focusing Owlet.
+  - Empty / downloading / no-voice: Owlet does not own
+    `org.mpris.MediaPlayer2.im.apodaca.owlet`; other players keep the keys.
+  - Competing Playing client: Spotify/YouTube already Playing keeps the
+    keys until it pauses or vanishes (desktop-owned; not an Owlet bug).
+  - KDE: enable Media Controller / the Plasma media widget if keys no-op.
 - **Preferences visual polish** beyond pixel smoke ("Models page with N
   installed models looks right").
 - **`subprojects/transcribe.cpp`** (has its own CI).
