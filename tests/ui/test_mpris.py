@@ -161,6 +161,8 @@ wait $APP_PID 2>/dev/null || true
     result = _run_session(script, env)
     assert result.returncode == 0, result.stderr + result.stdout
     assert "RESULT owned=no" in result.stdout, result.stdout
+    assert "app_owned=yes" in result.stdout, result.stdout
+    assert "pid_alive=yes" in result.stdout, result.stdout
     raw = log_path.read_text() if log_path.exists() else ""
     hits = _unexpected_criticals(raw)
     assert not hits, "unexpected criticals:\n" + "\n".join(hits) + f"\n\nfull stderr:\n{raw}"
@@ -219,17 +221,26 @@ status_before=$(busctl --user get-property {MPRIS_NAME} {MPRIS_PATH} {PLAYER_IFA
 busctl --user call {MPRIS_NAME} {MPRIS_PATH} {PLAYER_IFACE} Next
 busctl --user call {MPRIS_NAME} {MPRIS_PATH} {PLAYER_IFACE} Stop
 status_after=$(busctl --user get-property {MPRIS_NAME} {MPRIS_PATH} {PLAYER_IFACE} PlaybackStatus)
-echo "RESULT owned=$owned status_before=$status_before status_after=$status_after"
+owned_after=no
+if busctl --user call org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus NameHasOwner s {MPRIS_NAME} | grep -q 'true'; then
+    owned_after=yes
+fi
+echo "RESULT owned=$owned owned_after=$owned_after status_before=$status_before status_after=$status_after pid_alive=$(kill -0 $APP_PID && echo yes || echo no)"
 kill $APP_PID 2>/dev/null || true
 wait $APP_PID 2>/dev/null || true
 """
     result = _run_session(script, env)
     assert result.returncode == 0, result.stderr + result.stdout
     assert "RESULT owned=yes" in result.stdout, result.stdout
-    # Dummy voice may fail synthesis; Next/Stop must not change whatever status we had.
+    assert "owned_after=yes" in result.stdout, result.stdout
+    assert "pid_alive=yes" in result.stdout, result.stdout
+    # Dummy voice may fail synthesis; Next/Stop must succeed without
+    # dropping the well-known name. PlaybackStatus equality does not
+    # prove Stop is a no-op while Playing.
     line = [ln for ln in result.stdout.splitlines() if ln.startswith("RESULT ")][-1]
     before = line.split("status_before=", 1)[1].split(" status_after=", 1)[0]
-    after = line.split("status_after=", 1)[1]
+    after = line.split("status_after=", 1)[1].split(" pid_alive=", 1)[0]
     assert before == after, result.stdout
     raw = log_path.read_text() if log_path.exists() else ""
     hits = _unexpected_criticals(raw)

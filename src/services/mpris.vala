@@ -112,32 +112,29 @@ public class Owlet.MprisService : GLib.Object {
         return builder.end ();
     }
 
-    private void queue_play () {
+    private delegate void QueuedAction ();
+
+    private void queue_on_main (owned QueuedAction action) {
         Idle.add (() => {
-            play_requested ();
+            action ();
             return GLib.Source.REMOVE;
         });
+    }
+
+    private void queue_play () {
+        queue_on_main (() => { play_requested (); });
     }
 
     private void queue_pause () {
-        Idle.add (() => {
-            pause_requested ();
-            return GLib.Source.REMOVE;
-        });
+        queue_on_main (() => { pause_requested (); });
     }
 
     private void queue_play_pause () {
-        Idle.add (() => {
-            play_pause_requested ();
-            return GLib.Source.REMOVE;
-        });
+        queue_on_main (() => { play_pause_requested (); });
     }
 
     private void queue_raise () {
-        Idle.add (() => {
-            raise_requested ();
-            return GLib.Source.REMOVE;
-        });
+        queue_on_main (() => { raise_requested (); });
     }
 
     private void on_bus_acquired (GLib.DBusConnection connection, string name) {
@@ -164,7 +161,11 @@ public class Owlet.MprisService : GLib.Object {
     private void on_name_lost (GLib.DBusConnection? connection, string name) {
         unregister_objects ();
         conn = null;
-        owner_id = 0;
+        if (owner_id != 0) {
+            var id = owner_id;
+            owner_id = 0;
+            GLib.Bus.unown_name (id);
+        }
         if (want_owned)
             warning ("MPRIS name lost: %s", name);
     }

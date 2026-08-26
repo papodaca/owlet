@@ -192,7 +192,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.notify["state"].connect (() => {
             update_reader_transport_ui ();
             update_action_state ();
-            sync_mpris ();
         });
 
         reader_speed_dropdown.set_selected (
@@ -965,7 +964,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
                 reader_content_stack.visible_child_name = "content";
                 update_reader_transport_ui ();
                 start_reader_playback ();
-                sync_mpris ();
             } else {
                 start_reader_voice_download ();
             }
@@ -980,7 +978,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_content_stack.visible_child_name = "empty";
             stack.visible_child_name = "reader";
             update_reader_transport_ui ();
-            sync_mpris ();
             break;
 
         case Owlet.DocumentStatus.NOT_TEXT:
@@ -1005,7 +1002,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         reader_position_label.label = "";
         reader_status_label.visible = false;
         stack.visible_child_name = source_ready ? "active" : "empty";
-        sync_mpris ();
+        update_reader_transport_ui ();
     }
 
     private void on_reader_play () {
@@ -1069,7 +1066,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             _reader_progress_id = app.voice_models.progress.connect (on_reader_vm_progress);
             _reader_completed_id = app.voice_models.completed.connect (on_reader_vm_completed);
             _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
-            sync_mpris ();
+            update_reader_transport_ui ();
             return;
         }
 
@@ -1085,7 +1082,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
 
         app.voice_models.download_voice_async.begin (null, null, Owlet.VoiceModels.DEFAULT_ARTIFACT_ID, reader_cancellable);
-        sync_mpris ();
+        update_reader_transport_ui ();
     }
 
     private void on_reader_vm_progress (int64 downloaded, int64 total) {
@@ -1103,7 +1100,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_content_stack.visible_child_name = "content";
             update_reader_transport_ui ();
             start_reader_playback ();
-            sync_mpris ();
         }
     }
 
@@ -1113,7 +1109,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_no_voice_page.description = _("Download failed: %s").printf (message);
             reader_content_stack.visible_child_name = "no_voice";
             update_reader_transport_ui ();
-            sync_mpris ();
         }
     }
 
@@ -1171,6 +1166,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_pause_btn.visible = false;
             reader_stop_btn.sensitive = false;
             // Speed menu stays usable on empty / downloading / no-voice.
+            sync_mpris ();
             return;
         }
 
@@ -1178,6 +1174,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         reader_play_btn.sensitive = true;
         reader_pause_btn.visible = player.is_playing;
         reader_stop_btn.sensitive = (player.is_playing || player.is_paused);
+        sync_mpris ();
     }
 
     public override void dispose () {
