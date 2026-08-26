@@ -15,7 +15,11 @@ download_cli = executable(
 
 document_cli = executable(
   'owlet-document-cli',
-  files('document_cli.vala', src_dir / 'services' / 'document.vala'),
+  files(
+    'document_cli.vala',
+    src_dir / 'services' / 'document.vala',
+    src_dir / 'services' / 'word-spans.vala',
+  ),
   dependencies: [
     dependency('glib-2.0'),
     dependency('gobject-2.0'),

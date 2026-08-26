@@ -1,6 +1,7 @@
 /* document_cli.vala — thin CLI around Owlet.Document for unit tests.
  *
  * Usage: owlet-document-cli PATH
+ *        owlet-document-cli estimate DURATION_S TEXT
  *
  * Stdout contract (asserted by tests/unit/test_document_model.py):
  *     status: ok|empty|not-text|unsupported-encoding|io-error
@@ -9,13 +10,43 @@
  *     [1] Second one.
  * The user-visible error_message (if any) goes to stderr.
  *
- * Exit codes: 0 ok/empty · 2 usage · 3 not-text · 4 unsupported-encoding
- * · 5 io-error.
+ * The `estimate` mode prints Owlet.WordSpans instead (asserted by
+ * tests/unit/test_word_spans.py):
+ *     spans: N
+ *     [0] START END T0 T1 TOKEN
+ * One argument is always a PATH, so `owlet-document-cli estimate` alone
+ * reads as a file name rather than a truncated estimate invocation.
+ *
+ * Exit codes: 0 ok/empty/estimate · 2 usage · 3 not-text
+ * · 4 unsupported-encoding · 5 io-error.
  */
 
+int print_estimate (double duration_s, string text) {
+    var spans = Owlet.WordSpans.estimate (text, duration_s);
+    stdout.printf ("spans: %d\n", spans.length);
+    for (int i = 0; i < spans.length; i++) {
+        long from = text.index_of_nth_char (spans[i].start);
+        long to = text.index_of_nth_char (spans[i].end);
+        stdout.printf ("[%d] %d %d %.6f %.6f %s\n",
+                       i, spans[i].start, spans[i].end,
+                       spans[i].t0, spans[i].t1,
+                       text.slice (from, to));
+    }
+    return 0;
+}
+
 int main (string[] args) {
+    if (args.length > 2 && args[1] == "estimate") {
+        if (args.length != 4) {
+            stderr.printf ("usage: %s estimate DURATION_S TEXT\n", args[0]);
+            return 2;
+        }
+        return print_estimate (double.parse (args[2]), args[3]);
+    }
+
     if (args.length != 2) {
-        stderr.printf ("usage: %s PATH\n", args[0]);
+        stderr.printf ("usage: %s PATH | %s estimate DURATION_S TEXT\n",
+                       args[0], args[0]);
         return 2;
     }
 
