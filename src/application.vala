@@ -22,6 +22,7 @@ public class Owlet.Application : Adw.Application {
     private GLib.Settings? _settings = null;
     private Owlet.GlobalShortcuts? _shortcuts = null;
     private Owlet.Tray? _tray = null;
+    private Owlet.MprisService? _mpris = null;
     // Path to the pidfile written for the owlet-signal fallback helper.
     // Null when no pidfile was written (XDG_RUNTIME_DIR unwritable, or
     // the process is a transient forwarding instance). Cleared in
@@ -169,9 +170,19 @@ public class Owlet.Application : Adw.Application {
         _tray.show_requested.connect (on_tray_show);
         _tray.dictate_requested.connect (on_tray_dictate);
         _tray.quit_requested.connect (() => { this.quit (); });
+
+        // MPRIS is constructed once; the well-known name is owned only
+        // while a readable document is on the content page.
+        _mpris = new Owlet.MprisService ();
+        _mpris.play_requested.connect (on_mpris_play);
+        _mpris.pause_requested.connect (on_mpris_pause);
+        _mpris.play_pause_requested.connect (on_mpris_play_pause);
+        _mpris.raise_requested.connect (on_tray_show);
     }
 
     public override void shutdown () {
+        if (_mpris != null)
+            _mpris.release ();
         if (_tray != null)
             _tray.hide ();
         remove_pidfile ();
@@ -244,6 +255,39 @@ public class Owlet.Application : Adw.Application {
 
     private void on_tray_dictate () {
         (this.active_window as Owlet.Window)?.toggle_dictation_background ();
+    }
+
+    public void sync_reader_mpris (bool readable, string title, Owlet.PlayerState state) {
+        if (_mpris == null)
+            return;
+        if (readable)
+            _mpris.export (title, state);
+        else
+            _mpris.release ();
+    }
+
+    private Owlet.Window? reader_window () {
+        var active = this.active_window as Owlet.Window;
+        if (active != null)
+            return active;
+        foreach (var w in this.get_windows ()) {
+            var ow = w as Owlet.Window;
+            if (ow != null)
+                return ow;
+        }
+        return null;
+    }
+
+    private void on_mpris_play () {
+        reader_window ()?.reader_play ();
+    }
+
+    private void on_mpris_pause () {
+        reader_window ()?.reader_pause ();
+    }
+
+    private void on_mpris_play_pause () {
+        reader_window ()?.reader_play_pause ();
     }
 
     // If the user turns close-to-tray off while the window is hidden,

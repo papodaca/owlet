@@ -34,6 +34,7 @@ owlet_sources = [
   'services/sound-feedback.vala',
   'services/silence-detector.vala',
   'services/tray.vala',
+  'services/mpris.vala',
   'services/dictation-hud.vala',
   'ui/preferences.vala',
   # Phase 5: portable SIGRTMIN (glibc exposes it as a function-based

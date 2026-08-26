@@ -60,6 +60,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private ulong _reader_progress_id = 0;
     private ulong _reader_completed_id = 0;
     private ulong _reader_failed_id = 0;
+    private uint test_close_timeout_id = 0;
 
     // How dictation was launched. FOREGROUND (in-window Dictate) keeps
     // the minimize + 250 ms delay and skips the HUD. BACKGROUND
@@ -191,6 +192,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.notify["state"].connect (() => {
             update_reader_transport_ui ();
             update_action_state ();
+            sync_mpris ();
         });
 
         reader_speed_dropdown.set_selected (
@@ -231,6 +233,19 @@ public class Owlet.Window : Adw.ApplicationWindow {
         if (test_open != null && test_open != "") {
             Idle.add (() => {
                 open_document_file (test_open);
+                return false;
+            });
+        }
+
+        // Test-only in-process Close seam. The UI harness touches this
+        // path after NameHasOwner is true; process kill is not Close.
+        string? test_close = GLib.Environment.get_variable ("OWLET_TEST_CLOSE");
+        if (test_close != null && test_close != "") {
+            test_close_timeout_id = Timeout.add (100, () => {
+                if (!GLib.FileUtils.test (test_close, GLib.FileTest.EXISTS))
+                    return true;
+                test_close_timeout_id = 0;
+                on_close_doc_action ();
                 return false;
             });
         }
@@ -393,6 +408,46 @@ public class Owlet.Window : Adw.ApplicationWindow {
             dictate_btn.active = true;
             start_dictation (DictationLaunchMode.BACKGROUND);
         }
+    }
+
+    // MPRIS / hardware media-key entry. Not win.reader-play: that
+    // action restarts the current sentence unless already paused.
+    public void reader_play_pause () {
+        if (!reader_on_content_page ())
+            return;
+        if (player.is_playing)
+            reader_pause ();
+        else
+            reader_play ();
+    }
+
+    public void reader_play () {
+        if (!reader_on_content_page ())
+            return;
+        if (player.is_playing)
+            return;
+        on_reader_play ();
+    }
+
+    public void reader_pause () {
+        if (!reader_on_content_page ())
+            return;
+        player.pause ();
+    }
+
+    private bool reader_on_content_page () {
+        return reader_doc != null
+            && reader_content_stack.visible_child_name == "content";
+    }
+
+    private void sync_mpris () {
+        var app = this.application as Owlet.Application;
+        if (app == null)
+            return;
+        string title = "";
+        if (reader_doc_path != null)
+            title = GLib.Path.get_basename (reader_doc_path);
+        app.sync_reader_mpris (reader_on_content_page (), title, player.state);
     }
 
     // Refuse the global "insert" shortcut while dictation is streaming
@@ -910,6 +965,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
                 reader_content_stack.visible_child_name = "content";
                 update_reader_transport_ui ();
                 start_reader_playback ();
+                sync_mpris ();
             } else {
                 start_reader_voice_download ();
             }
@@ -924,6 +980,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_content_stack.visible_child_name = "empty";
             stack.visible_child_name = "reader";
             update_reader_transport_ui ();
+            sync_mpris ();
             break;
 
         case Owlet.DocumentStatus.NOT_TEXT:
@@ -948,6 +1005,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         reader_position_label.label = "";
         reader_status_label.visible = false;
         stack.visible_child_name = source_ready ? "active" : "empty";
+        sync_mpris ();
     }
 
     private void on_reader_play () {
@@ -1011,6 +1069,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             _reader_progress_id = app.voice_models.progress.connect (on_reader_vm_progress);
             _reader_completed_id = app.voice_models.completed.connect (on_reader_vm_completed);
             _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
+            sync_mpris ();
             return;
         }
 
@@ -1026,6 +1085,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         _reader_failed_id = app.voice_models.failed.connect (on_reader_vm_failed);
 
         app.voice_models.download_voice_async.begin (null, null, Owlet.VoiceModels.DEFAULT_ARTIFACT_ID, reader_cancellable);
+        sync_mpris ();
     }
 
     private void on_reader_vm_progress (int64 downloaded, int64 total) {
@@ -1043,6 +1103,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_content_stack.visible_child_name = "content";
             update_reader_transport_ui ();
             start_reader_playback ();
+            sync_mpris ();
         }
     }
 
@@ -1052,6 +1113,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_no_voice_page.description = _("Download failed: %s").printf (message);
             reader_content_stack.visible_child_name = "no_voice";
             update_reader_transport_ui ();
+            sync_mpris ();
         }
     }
 
@@ -1103,7 +1165,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     private void update_reader_transport_ui () {
-        if (reader_doc == null || reader_content_stack.visible_child_name != "content") {
+        if (!reader_on_content_page ()) {
             reader_play_btn.visible = true;
             reader_play_btn.sensitive = false;
             reader_pause_btn.visible = false;
@@ -1120,6 +1182,10 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
     public override void dispose () {
         player.dispose ();
+        if (test_close_timeout_id != 0) {
+            GLib.Source.remove (test_close_timeout_id);
+            test_close_timeout_id = 0;
+        }
         if (start_timeout_id != 0) {
             GLib.Source.remove (start_timeout_id);
             start_timeout_id = 0;
