@@ -70,6 +70,17 @@ public class Owlet.Window : Adw.ApplicationWindow {
         BACKGROUND
     }
 
+    // Follow-along highlight (KTD4/KTD5). One reused tag paints the word
+    // being spoken and one mark anchors the follow-scroll; the cached
+    // character offsets into the joined reader buffer are the single
+    // source of "which word is current", so clearing them is what makes
+    // the map / play-enter paths stop chasing a word that is gone.
+    private Gtk.TextTag reader_word_tag;
+    private Gtk.TextMark reader_word_mark;
+    private bool reader_has_word = false;
+    private int reader_word_start = 0;
+    private int reader_word_end = 0;
+
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
     // so it stays at the boundary between committed (previous
@@ -189,10 +200,31 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.playback_stopped.connect (on_player_stopped);
         player.position_changed.connect (on_player_position_changed);
         player.error_occurred.connect (on_player_error);
+        player.word_changed.connect (on_player_word_changed);
         player.notify["state"].connect (() => {
             update_reader_transport_ui ();
             update_action_state ();
+            // Resume does not re-emit word_changed, so entering PLAYING is
+            // where the viewport returns to the frozen word (KTD5, AE4).
+            if (player.is_playing)
+                scroll_to_current_word ();
         });
+
+        var reader_buf = reader_text_view.buffer;
+        reader_word_tag = new Gtk.TextTag ("owlet-current-word");
+        reader_buf.tag_table.add (reader_word_tag);
+        reader_word_mark = new Gtk.TextMark ("owlet-current-word", true);
+        Gtk.TextIter reader_origin;
+        reader_buf.get_start_iter (out reader_origin);
+        reader_buf.add_mark (reader_word_mark, reader_origin);
+
+        apply_word_tag_colors ();
+        var style_manager = Adw.StyleManager.get_default ();
+        style_manager.notify["dark"].connect (apply_word_tag_colors);
+        style_manager.notify["high-contrast"].connect (apply_word_tag_colors);
+        style_manager.notify["accent-color"].connect (apply_word_tag_colors);
+
+        reader_text_view.map.connect (on_reader_text_view_mapped);
 
         reader_speed_dropdown.set_selected (
             SpeechPlayer.snap_speed_index (
@@ -943,6 +975,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
     public void open_document_file (string file_path) {
         player.stop ();
+        // Offsets are measured against the outgoing document, so they must
+        // not outlive it even when nothing was playing to emit a stop (R4).
+        clear_word_highlight (true);
         if (reader_cancellable != null && reader_download_initiated) {
             reader_cancellable.cancel ();
         }
@@ -991,6 +1026,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
     private void on_close_doc_action () {
         player.stop ();
+        clear_word_highlight (true);
         if (reader_cancellable != null && reader_download_initiated) {
             reader_cancellable.cancel ();
         }
@@ -1042,6 +1078,10 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
         reader_status_label.label = _("Preparing voice…");
         reader_status_label.visible = true;
+        // play () halts the previous listen internally without emitting a
+        // stop, so this is the only place a fresh Play can drop the old
+        // offsets before the first word_changed arrives (R4, R10).
+        clear_word_highlight (true);
         update_reader_transport_ui ();
 
         player.play (reader_doc, app.voice_models.get_voice_dir (),
@@ -1148,9 +1188,129 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private void on_player_stopped (bool natural_end) {
         reader_status_label.visible = false;
         // Stop and natural end both reset position to the start (KTD-3).
+        // The highlight goes with the audio, but the viewport stays put
+        // (R4, R10). A resume failure leaves playback paused and emits no
+        // stop, so the frozen word survives it (KTD5).
+        clear_word_highlight (true);
         reader_position_label.label = "";
         update_reader_transport_ui ();
         update_action_state ();
+    }
+
+    private void on_player_word_changed (int sentence_index, int word_index,
+                                         int start_offset, int end_offset) {
+        if (word_index < 0) {
+            // The speaking sentence has no highlightable word. Drop the
+            // tag for its duration rather than leaving the previous
+            // sentence's word lit (R1); the mark stays where it was.
+            clear_word_highlight (false);
+            return;
+        }
+
+        int prefix = reader_join_prefix (sentence_index);
+        if (prefix < 0)
+            return;
+        if (!set_current_word (prefix + start_offset, prefix + end_offset))
+            return;
+        // While playing, every new word pulls the viewport back — scrolling
+        // away by hand does not suspend follow-scroll (KTD5).
+        if (player.is_playing)
+            scroll_to_current_word ();
+    }
+
+    // Word events carry sentence-local offsets; the reader shows the
+    // sentences joined by "\n\n" (KTD3). Vala's string.length is a byte
+    // count, so the join prefix is summed in characters to match the
+    // buffer's character offsets. Negative when the event outlives the
+    // document it was measured against.
+    private int reader_join_prefix (int sentence_index) {
+        if (reader_doc == null || sentence_index < 0
+            || sentence_index >= reader_doc.sentences.length)
+            return -1;
+
+        int prefix = 0;
+        for (int i = 0; i < sentence_index; i++)
+            prefix += (int) reader_doc.sentences[i].char_count () + 2;
+        return prefix;
+    }
+
+    // Repaints the tag and moves the mark onto [start, end). False when the
+    // range does not fit the buffer, which leaves no cached word so the
+    // scroll paths have nothing stale to chase.
+    private bool set_current_word (int start, int end) {
+        var buf = reader_text_view.buffer;
+        Gtk.TextIter from, to;
+        buf.get_bounds (out from, out to);
+        buf.remove_tag (reader_word_tag, from, to);
+
+        if (start < 0 || end <= start || end > buf.get_char_count ()) {
+            reader_has_word = false;
+            return false;
+        }
+
+        buf.get_iter_at_offset (out from, start);
+        buf.get_iter_at_offset (out to, end);
+        buf.apply_tag (reader_word_tag, from, to);
+        buf.move_mark (reader_word_mark, from);
+        reader_word_start = start;
+        reader_word_end = end;
+        reader_has_word = true;
+        return true;
+    }
+
+    // `reset_mark` separates a transport halt, which sends the mark back to
+    // the top, from a sentence with no highlightable word, which only drops
+    // the tag. Either way the cached offsets go, so no current word exists.
+    private void clear_word_highlight (bool reset_mark) {
+        var buf = reader_text_view.buffer;
+        Gtk.TextIter from, to;
+        buf.get_bounds (out from, out to);
+        buf.remove_tag (reader_word_tag, from, to);
+
+        reader_has_word = false;
+        reader_word_start = 0;
+        reader_word_end = 0;
+
+        if (reset_mark) {
+            buf.get_start_iter (out from);
+            buf.move_mark (reader_word_mark, from);
+        }
+    }
+
+    // scroll_to_mark, not scroll_to_iter: it survives the hop out of a
+    // timeout and lets GTK defer until layout is valid. use_align=false
+    // with a small margin nudges the word into view instead of recentring
+    // the page on every word (KTD4).
+    private void scroll_to_current_word () {
+        if (!reader_has_word)
+            return;
+        reader_text_view.scroll_to_mark (reader_word_mark, 0.1, false, 0.0, 0.0);
+    }
+
+    // Shown again after close-to-tray or an unmap: the word is still
+    // current but the viewport is not (R9, AE5). The idle hop waits for
+    // layout, which map alone does not guarantee.
+    private void on_reader_text_view_mapped () {
+        if (!reader_has_word)
+            return;
+        Idle.add (() => {
+            scroll_to_current_word ();
+            return false;
+        });
+    }
+
+    // CSS cannot colour a range inside a buffer, so the tag copies the
+    // themed accent pair and re-copies it on light/dark, high-contrast and
+    // accent changes — including while paused, when nothing else repaints.
+    // get_style_context () is deprecated in GTK 4.10, but GTK4 offers no
+    // other way to resolve a stylesheet-named colour.
+    private void apply_word_tag_colors () {
+        var context = reader_text_view.get_style_context ();
+        Gdk.RGBA rgba;
+        if (context.lookup_color ("accent_bg_color", out rgba))
+            reader_word_tag.background_rgba = rgba;
+        if (context.lookup_color ("accent_fg_color", out rgba))
+            reader_word_tag.foreground_rgba = rgba;
     }
 
     private void on_player_error (string message) {

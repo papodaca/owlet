@@ -239,6 +239,24 @@ Must include:
   - Download then auto-play: with a stored non-1× speed, open a document that
     needs a voice download; after the download finishes, auto-play uses the
     menu's stored speed, not 1×.
+- **Word follow-along**: the highlight is estimated from each sentence's
+  measured PCM, so these checks are about whether a person reads it as in
+  sync — the automated suites only assert ordering and freeze.
+  - Play a multi-paragraph document: the highlight tracks the speaking word
+    and stays in view without centering every word. A brief unhighlighted gap
+    at preroll is expected.
+  - Scroll away while playing: the view returns to the speaking word at the
+    next word change (follow-scroll is not suspended by hand-scrolling).
+  - Pause: highlight frozen; scrolling away is allowed; resume returns to that
+    word and audio continues mid-sentence.
+  - Mid-play speed change: the current sentence's highlight rate is unchanged,
+    the next sentence still matches the old rate (one sentence is prefetched),
+    and the sentence after that matches the new rate.
+  - Stop: highlight gone, viewport not forced to the top; Play again
+    highlights the first word and scrolls to it.
+  - Close-to-tray then Show: current word highlighted and visible.
+  - Switch Appearance dark/light, high contrast, and accent (if available)
+    while paused and while playing; the current word stays readable.
 
 ## What is NOT tested
 
