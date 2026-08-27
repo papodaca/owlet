@@ -71,15 +71,12 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     // Follow-along highlight (KTD4/KTD5). One reused tag paints the word
-    // being spoken and one mark anchors the follow-scroll; the cached
-    // character offsets into the joined reader buffer are the single
-    // source of "which word is current", so clearing them is what makes
-    // the map / play-enter paths stop chasing a word that is gone.
+    // being spoken and one mark anchors the follow-scroll; the flag is
+    // what makes the map / play-enter paths stop chasing a word that is
+    // gone, since a mark alone always resolves to some position.
     private Gtk.TextTag reader_word_tag;
     private Gtk.TextMark reader_word_mark;
     private bool reader_has_word = false;
-    private int reader_word_start = 0;
-    private int reader_word_end = 0;
 
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
@@ -1252,15 +1249,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
         buf.get_iter_at_offset (out to, end);
         buf.apply_tag (reader_word_tag, from, to);
         buf.move_mark (reader_word_mark, from);
-        reader_word_start = start;
-        reader_word_end = end;
         reader_has_word = true;
         return true;
     }
 
     // `reset_mark` separates a transport halt, which sends the mark back to
     // the top, from a sentence with no highlightable word, which only drops
-    // the tag. Either way the cached offsets go, so no current word exists.
+    // the tag. Either way no current word is left for the scroll paths.
     private void clear_word_highlight (bool reset_mark) {
         var buf = reader_text_view.buffer;
         Gtk.TextIter from, to;
@@ -1268,8 +1263,6 @@ public class Owlet.Window : Adw.ApplicationWindow {
         buf.remove_tag (reader_word_tag, from, to);
 
         reader_has_word = false;
-        reader_word_start = 0;
-        reader_word_end = 0;
 
         if (reset_mark) {
             buf.get_start_iter (out from);
