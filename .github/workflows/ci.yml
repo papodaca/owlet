@@ -7,7 +7,8 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    # libadwaita ≥ 1.8 (Adw.ShortcutsDialog). ubuntu-latest is still 24.04.
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -17,10 +18,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            meson ninja-build valac gcc g++ pkg-config cmake \
+            meson ninja-build valac gcc g++ pkg-config cmake gettext \
             libgtk-4-dev libadwaita-1-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
             libsoup-3.0-dev libsecret-1-dev libjson-glib-dev \
+            libx11-dev libxext-dev libxrandr-dev libcairo2-dev libpango1.0-dev \
+            libblas-dev \
             desktop-file-utils appstream libglib2.0-dev \
             python3-pytest python3-pil python3-requests \
             xvfb xdotool imagemagick gnome-keyring libsecret-tools \
