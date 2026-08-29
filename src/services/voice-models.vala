@@ -33,10 +33,70 @@ public class Owlet.VoiceModels : GLib.Object {
     public const string DEFAULT_VOICE_NAME = "af_bella";
     public const int DEFAULT_VOICE_SID = 1;
 
+    // Kokoro en-v0.19 speaker roster. Index == sid. Citation:
+    // subprojects/sherpa-onnx/scripts/kokoro/v0.19/generate_voices_bin.py
+    public const string[] VOICE_NAMES = {
+        "af",
+        "af_bella",
+        "af_nicole",
+        "af_sarah",
+        "af_sky",
+        "am_adam",
+        "am_michael",
+        "bf_emma",
+        "bf_isabella",
+        "bm_george",
+        "bm_lewis",
+    };
+
     public const string[] DEFAULT_URLS = {
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2",
         "https://huggingface.co/csukuangfj/kokoro-en-v0_19/resolve/main/kokoro-en-v0_19.tar.bz2",
     };
+
+    public static int voice_count () {
+        return VOICE_NAMES.length;
+    }
+
+    // Unknown or empty names snap to af_bella (sid 1).
+    public static int index_for_name (string name) {
+        for (int i = 0; i < VOICE_NAMES.length; i++) {
+            if (VOICE_NAMES[i] == name)
+                return i;
+        }
+        return DEFAULT_VOICE_SID;
+    }
+
+    public static int sid_for_name (string name) {
+        return index_for_name (name);
+    }
+
+    public static unowned string name_at (uint index) {
+        if (index >= VOICE_NAMES.length)
+            return DEFAULT_VOICE_NAME;
+        return VOICE_NAMES[index];
+    }
+
+    public static unowned string snap_name (string name) {
+        return VOICE_NAMES[index_for_name (name)];
+    }
+
+    public static string label_at (uint index) {
+        switch (index) {
+        case 0: return _("AF (US, female)");
+        case 1: return _("Bella (US, female)");
+        case 2: return _("Nicole (US, female)");
+        case 3: return _("Sarah (US, female)");
+        case 4: return _("Sky (US, female)");
+        case 5: return _("Adam (US, male)");
+        case 6: return _("Michael (US, male)");
+        case 7: return _("Emma (UK, female)");
+        case 8: return _("Isabella (UK, female)");
+        case 9: return _("George (UK, male)");
+        case 10: return _("Lewis (UK, male)");
+        default: return _("Bella (US, female)");
+        }
+    }
 
     private const string[] REQUIRED_FILES = {
         "model.onnx",

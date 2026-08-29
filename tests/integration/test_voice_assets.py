@@ -218,3 +218,61 @@ def test_voice_incomplete_tarball_results_in_broken_status(voice_cli, http_serve
     )
     assert result.returncode != 0
     assert "Voice archive is missing required files" in result.stderr
+
+
+def test_voice_sid_known_name(voice_cli):
+    result = subprocess.run(
+        [str(voice_cli), "sid", "af_bella"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert "name: af_bella" in result.stdout
+    assert "sid: 1" in result.stdout
+
+
+def test_voice_sid_roster_edges(voice_cli):
+    af = subprocess.run(
+        [str(voice_cli), "sid", "af"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert "name: af\n" in af.stdout
+    assert "sid: 0" in af.stdout
+
+    lewis = subprocess.run(
+        [str(voice_cli), "sid", "bm_lewis"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert "name: bm_lewis" in lewis.stdout
+    assert "sid: 10" in lewis.stdout
+
+
+def test_voice_sid_unknown_name_snaps_to_default(voice_cli):
+    result = subprocess.run(
+        [str(voice_cli), "sid", "not-a-voice"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert "name: af_bella" in result.stdout
+    assert "sid: 1" in result.stdout
+
+
+def test_voice_sid_missing_name_is_usage_error(voice_cli):
+    result = subprocess.run(
+        [str(voice_cli), "sid"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "usage:" in result.stderr

@@ -40,6 +40,7 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
 
     // ----- Models page -----
     [GtkChild] unowned Adw.PreferencesGroup installed_group;
+    [GtkChild] unowned Adw.ComboRow voice_row;
     [GtkChild] unowned Adw.ActionRow voice_status_row;
     [GtkChild] unowned Gtk.Button voice_download_btn;
     [GtkChild] unowned Adw.PreferencesGroup download_progress_group;
@@ -254,6 +255,20 @@ public class Owlet.PreferencesDialog : Adw.PreferencesDialog {
     /* =================================================================== */
 
     private void populate_models_page () {
+        var voice_list = new Gtk.StringList (null);
+        for (uint i = 0; i < Owlet.VoiceModels.voice_count (); i++)
+            voice_list.append (Owlet.VoiceModels.label_at (i));
+        voice_row.set_model (voice_list);
+        voice_row.set_selected ((uint) Owlet.VoiceModels.index_for_name (
+            settings.get_string ("reader-voice")));
+        voice_row.notify["selected"].connect (() => {
+            uint s = voice_row.get_selected ();
+            if (s == Gtk.INVALID_LIST_POSITION
+                || s >= (uint) Owlet.VoiceModels.voice_count ())
+                return;
+            settings.set_string ("reader-voice", Owlet.VoiceModels.name_at (s));
+        });
+
         refresh_installed_models ();
     }
 

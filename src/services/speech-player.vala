@@ -90,6 +90,11 @@ public class Owlet.SpeechPlayer : GLib.Object {
         _current_speed = snap_speed (speed);
     }
 
+    // Does not restart playback; the next not-yet-generated sentence uses the new speaker.
+    public void set_sid (int sid) {
+        _current_sid = sid;
+    }
+
     private SherpaOnnx.OfflineTts? _engine = null;
     private string? _cached_voice_dir = null;
 

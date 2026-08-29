@@ -203,6 +203,15 @@
             <property name="title" translatable="yes">Voice model</property>
             <property name="description" translatable="yes">Kokoro English v0.19 neural voice for document reading</property>
             <child>
+              <object class="AdwComboRow" id="voice_row">
+                <property name="title" translatable="yes">Voice</property>
+                <property name="subtitle" translatable="yes">Speaker used when reading a document aloud</property>
+                <property name="expression">
+                  <lookup type="GtkStringObject" name="string"/>
+                </property>
+              </object>
+            </child>
+            <child>
               <object class="AdwActionRow" id="voice_status_row">
                 <property name="title" translatable="yes">Kokoro English (v0.19) — ~305 MB</property>
                 <property name="subtitle" translatable="yes">Checking status…</property>

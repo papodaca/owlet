@@ -21,6 +21,7 @@ EXPECTED_DEFAULTS = {
     "dictation-auto-stop-pause-ms": "1200",
     "dictation-auto-stop-threshold": "0.002",
     "reader-playback-speed": "1.0",
+    "reader-voice": "'af_bella'",
 }
 
 

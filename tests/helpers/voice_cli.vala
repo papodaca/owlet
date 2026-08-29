@@ -2,6 +2,7 @@
  *
  * Usage:
  *   owlet-voice-cli status [ARTIFACT_ID]
+ *   owlet-voice-cli sid NAME
  *   owlet-voice-cli download URL SHA256 [ARTIFACT_ID]
  *   owlet-voice-cli double-download URL1 SHA1 URL2 SHA2
  *   owlet-voice-cli cancel URL SHA256
@@ -9,7 +10,7 @@
 
 int main (string[] args) {
     if (args.length < 2) {
-        stderr.printf ("usage: %s <status|download|double-download|cancel> ...\n", args[0]);
+        stderr.printf ("usage: %s <status|sid|download|double-download|cancel> ...\n", args[0]);
         return 2;
     }
 
@@ -21,6 +22,17 @@ int main (string[] args) {
         var status = voice_models.get_status (artifact_id);
         stdout.printf ("status: %s\n", status.token ());
         stdout.printf ("dir: %s\n", voice_models.get_voice_dir (artifact_id));
+        return 0;
+    }
+
+    if (command == "sid") {
+        if (args.length < 3) {
+            stderr.printf ("usage: %s sid NAME\n", args[0]);
+            return 2;
+        }
+        string name = args[2];
+        stdout.printf ("name: %s\n", Owlet.VoiceModels.snap_name (name));
+        stdout.printf ("sid: %d\n", Owlet.VoiceModels.sid_for_name (name));
         return 0;
     }
 

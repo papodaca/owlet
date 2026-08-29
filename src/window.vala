@@ -236,6 +236,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
             player.set_speed (speed);
         });
 
+        player.set_sid (Owlet.VoiceModels.sid_for_name (
+            settings.get_string ("reader-voice")));
+        settings.changed["reader-voice"].connect (() => {
+            player.set_sid (Owlet.VoiceModels.sid_for_name (
+                settings.get_string ("reader-voice")));
+        });
+
         var reader_play_action = new GLib.SimpleAction ("reader-play", null);
         reader_play_action.activate.connect (on_reader_play);
         add_action (reader_play_action);
@@ -1082,7 +1089,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
         update_reader_transport_ui ();
 
         player.play (reader_doc, app.voice_models.get_voice_dir (),
-                     player.current_sentence_index, 1,
+                     player.current_sentence_index,
+                     Owlet.VoiceModels.sid_for_name (settings.get_string ("reader-voice")),
                      (float) settings.get_double ("reader-playback-speed"));
     }
 

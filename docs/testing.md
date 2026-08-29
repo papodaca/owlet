@@ -239,6 +239,12 @@ Must include:
   - Download then auto-play: with a stored non-1× speed, open a document that
     needs a voice download; after the download finishes, auto-play uses the
     menu's stored speed, not 1×.
+- **Reader voice**: Preferences → Models → Voice lists the Kokoro v0.19 speakers
+  (default Bella). The combo is usable before the voice model is installed.
+  - Pick a non-default voice (e.g. George), open a document; playback uses that
+    speaker. Quit, relaunch, open another document; the same voice is used.
+  - Mid-play: with a document speaking, change Voice in Preferences; the current
+    sentence finishes in the old voice and later sentences use the new one.
 - **Word follow-along**: the highlight is estimated from each sentence's
   measured PCM, so these checks are about whether a person reads it as in
   sync — the automated suites only assert ordering and freeze.
