@@ -112,6 +112,8 @@ public class Owlet.SpeechPlayer : GLib.Object {
     private int _current_sid = 1;
     private float _current_speed = 1.0f;
     private int _synth_index = 0;
+    private int _play_start_index = 0;
+    private int _start_char = 0;
 
     // Sample rate of the pipeline caps, cached so the worker thread can
     // size buffer timestamps without touching the engine.
@@ -211,7 +213,8 @@ public class Owlet.SpeechPlayer : GLib.Object {
                       string voice_dir,
                       int start_index = 0,
                       int sid = 1,
-                      float speed = 1.0f) {
+                      float speed = 1.0f,
+                      int start_char = 0) {
         if (document.status != Owlet.DocumentStatus.OK || document.sentences.length == 0) {
             Idle.add (() => {
                 error_occurred (_("Document has no readable text"));
@@ -235,6 +238,10 @@ public class Owlet.SpeechPlayer : GLib.Object {
         total_sentences = document.sentences.length;
         current_sentence_index = (start_index >= 0 && start_index < total_sentences) ? start_index : 0;
         _synth_index = current_sentence_index;
+        _play_start_index = current_sentence_index;
+        // First sentence may be a tail ("quick brown fox." from a click
+        // on "quick"); later sentences are spoken in full.
+        _start_char = start_char > 0 ? start_char : 0;
         _sample_rate = _engine.sample_rate ();
         // A new listen starts a fresh timeline; the internal stop above
         // emits no signal, so this is also where the reader's cached
@@ -558,6 +565,18 @@ public class Owlet.SpeechPlayer : GLib.Object {
             }
 
             string sentence_text = _current_doc.sentences[idx];
+            int skip = 0;
+            if (idx == _play_start_index && _start_char > 0)
+                skip = _start_char;
+            if (skip > 0) {
+                int nchars = (int) sentence_text.char_count ();
+                if (skip >= nchars) {
+                    _synth_index = idx + 1;
+                    continue;
+                }
+                sentence_text = sentence_text.substring (
+                    sentence_text.index_of_nth_char (skip));
+            }
             int sid = _current_sid;
             float speed = _current_speed;
             int sent_idx = idx + 1;
@@ -607,6 +626,14 @@ public class Owlet.SpeechPlayer : GLib.Object {
                     span = (int64) audio.n * Gst.SECOND / _sample_rate;
                     spans = Owlet.WordSpans.estimate (
                         sentence_text, (double) audio.n / _sample_rate);
+                    if (skip > 0) {
+                        for (int i = 0; i < spans.length; i++) {
+                            WordSpan shifted = spans[i];
+                            shifted.start += skip;
+                            shifted.end += skip;
+                            spans[i] = shifted;
+                        }
+                    }
                 }
 
                 var buf = new Gst.Buffer.wrapped ((owned) bytes);

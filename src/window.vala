@@ -1116,27 +1116,41 @@ public class Owlet.Window : Adw.ApplicationWindow {
         if (reader_doc == null)
             return;
 
-        int offset = reader_context_offset;
+        int offset = reader_start_from_here_offset ();
         reader_context_offset = -1;
-        if (offset < 0)
-            offset = reader_fallback_context_offset ();
 
         int sentence = reader_doc.sentence_index_at_display_offset (offset);
         if (sentence < 0)
             return;
+
+        int prefix = reader_doc.display_prefix_chars (sentence);
+        int local = offset - prefix;
+        if (local < 0)
+            local = 0;
+
+        string text = reader_doc.sentences[sentence];
+        int word_start = Owlet.WordSpans.token_start_at (text, local);
+        if (word_start >= (int) text.char_count ()
+            && sentence + 1 < reader_doc.sentences.length) {
+            sentence++;
+            word_start = 0;
+        }
+
         // Always play(), never resume(): a jump from pause or mid-play
-        // must discard in-flight audio and begin at the chosen sentence.
-        start_reader_playback (sentence);
+        // must discard in-flight audio and begin at the chosen word.
+        start_reader_playback (sentence, word_start);
     }
 
-    // Shift+F10 has no click coords. Prefer a selection, then the
-    // highlighted word (so a keyboard menu during playback starts
-    // "here"), then the insert cursor.
-    private int reader_fallback_context_offset () {
+    // Prefer a nonempty selection (the word the user marked), then the
+    // right-click location, then the highlighted word / insert cursor.
+    private int reader_start_from_here_offset () {
         var buf = reader_text_view.buffer;
-        Gtk.TextIter start, end;
-        if (buf.get_selection_bounds (out start, out end))
-            return start.get_offset ();
+        Gtk.TextIter sel_start, sel_end;
+        if (buf.get_selection_bounds (out sel_start, out sel_end)
+            && sel_start.get_offset () != sel_end.get_offset ())
+            return sel_start.get_offset ();
+        if (reader_context_offset >= 0)
+            return reader_context_offset;
         if (reader_has_word) {
             Gtk.TextIter iter;
             buf.get_iter_at_mark (out iter, reader_word_mark);
@@ -1158,7 +1172,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         on_close_doc_action ();
     }
 
-    private void start_reader_playback (int start_index = -1) {
+    private void start_reader_playback (int start_index = -1, int start_char = 0) {
         var app = this.application as Owlet.Application;
         if (app == null || reader_doc == null)
             return;
@@ -1175,7 +1189,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.play (reader_doc, app.voice_models.get_voice_dir (),
                      idx,
                      Owlet.VoiceModels.sid_for_name (settings.get_string ("reader-voice")),
-                     (float) settings.get_double ("reader-playback-speed"));
+                     (float) settings.get_double ("reader-playback-speed"),
+                     start_char);
     }
 
     private void start_reader_voice_download () {

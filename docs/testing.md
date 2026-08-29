@@ -264,12 +264,14 @@ Must include:
   - Switch Appearance dark/light, high contrast, and accent (if available)
     while paused and while playing; the current word stays readable.
 - **Start from here**: right-click in the reader body for a context item
-  that jumps playback to the sentence under the pointer (not the exact word).
-  - Stopped: right-click a later paragraph, Start from here; audio and
-    highlight begin on that sentence.
-  - Playing: same jump; previous audio stops immediately.
-  - Paused: does not resume from the pause point; starts the clicked
-    sentence.
+  that jumps playback to the word under the pointer (or the start of a
+  selected word). The rest of that sentence is spoken, then following
+  sentences continue as usual.
+  - Select "quick" in "one quick brown fox." and Start from here: audio
+    begins at "quick brown fox." and the highlight lands on "quick".
+  - Right-click inside a word without selecting: same jump, from that word.
+  - Playing or paused: previous audio stops immediately; does not resume
+    from the pause point.
 
 ## What is NOT tested
 

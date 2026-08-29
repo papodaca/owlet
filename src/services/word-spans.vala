@@ -47,40 +47,10 @@ namespace Owlet {
                 return {};
             }
 
-            int[] starts = {};
-            int[] ends = {};
-            int[] weights = {};
-
-            int token_start = -1;
-            int token_weight = 0;
-            int offset = 0;
-            int index = 0;
-            unichar ch = 0;
-
-            while (sentence.get_next_char (ref index, out ch)) {
-                if (ch.isspace ()) {
-                    if (token_start >= 0 && token_weight > 0) {
-                        starts += token_start;
-                        ends += offset;
-                        weights += token_weight;
-                    }
-                    token_start = -1;
-                    token_weight = 0;
-                } else {
-                    if (token_start < 0) {
-                        token_start = offset;
-                    }
-                    if (ch.isalnum ()) {
-                        token_weight++;
-                    }
-                }
-                offset++;
-            }
-            if (token_start >= 0 && token_weight > 0) {
-                starts += token_start;
-                ends += offset;
-                weights += token_weight;
-            }
+            int[] starts;
+            int[] ends;
+            int[] weights;
+            collect_tokens (sentence, out starts, out ends, out weights);
 
             if (starts.length == 0) {
                 return {};
@@ -103,6 +73,70 @@ namespace Owlet {
                 elapsed = t1;
             }
             return spans;
+        }
+
+        /* Character offset of the token containing `char_offset`, or the
+         * next token if the offset sits in whitespace. Past the last
+         * token this is sentence.char_count (), so a slice from there
+         * is empty and playback can move to the next sentence. */
+        public int token_start_at (string sentence, int char_offset) {
+            int[] starts;
+            int[] ends;
+            int[] weights;
+            collect_tokens (sentence, out starts, out ends, out weights);
+            if (starts.length == 0)
+                return 0;
+            if (char_offset < 0)
+                char_offset = 0;
+
+            for (int i = 0; i < starts.length; i++) {
+                if (char_offset < ends[i])
+                    return starts[i];
+            }
+            return (int) sentence.char_count ();
+        }
+
+        private void collect_tokens (string sentence,
+                                     out int[] starts,
+                                     out int[] ends,
+                                     out int[] weights) {
+            int[] tok_starts = {};
+            int[] tok_ends = {};
+            int[] tok_weights = {};
+
+            int token_start = -1;
+            int token_weight = 0;
+            int offset = 0;
+            int index = 0;
+            unichar ch = 0;
+
+            while (sentence.get_next_char (ref index, out ch)) {
+                if (ch.isspace ()) {
+                    if (token_start >= 0 && token_weight > 0) {
+                        tok_starts += token_start;
+                        tok_ends += offset;
+                        tok_weights += token_weight;
+                    }
+                    token_start = -1;
+                    token_weight = 0;
+                } else {
+                    if (token_start < 0) {
+                        token_start = offset;
+                    }
+                    if (ch.isalnum ()) {
+                        token_weight++;
+                    }
+                }
+                offset++;
+            }
+            if (token_start >= 0 && token_weight > 0) {
+                tok_starts += token_start;
+                tok_ends += offset;
+                tok_weights += token_weight;
+            }
+            starts = tok_starts;
+            ends = tok_ends;
+            weights = tok_weights;
         }
     }
 }

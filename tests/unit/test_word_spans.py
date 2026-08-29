@@ -141,6 +141,46 @@ def test_contraction_is_one_span(document_cli):
     assert spans[0].token == "can't"
 
 
+def _token_start(document_cli: Path, offset: int, text: str):
+    result = subprocess.run(
+        [str(document_cli), "token-start", str(offset), text],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    line = result.stdout.strip()
+    assert line.startswith("start: "), result.stdout
+    return int(line[len("start: ") :])
+
+
+def test_token_start_at_selected_word(document_cli):
+    """Start from here slices from the selected word, not mid-token."""
+    text = "one quick brown fox."
+    # "quick" is [4, 9)
+    assert _token_start(document_cli, 4, text) == 4
+    assert _token_start(document_cli, 6, text) == 4
+    assert _token_start(document_cli, 8, text) == 4
+    # Whitespace before "quick" still starts at "quick".
+    assert _token_start(document_cli, 3, text) == 4
+    assert _token_start(document_cli, 0, text) == 0
+    # Past the last token: empty slice, so playback can skip the sentence.
+    assert _token_start(document_cli, len(text), text) == len(text)
+
+
+def test_token_start_without_text_is_usage(document_cli):
+    result = subprocess.run(
+        [str(document_cli), "token-start", "0"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "usage:" in result.stderr
+
+
 @pytest.mark.parametrize(
     "duration,text",
     [

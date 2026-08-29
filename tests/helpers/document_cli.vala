@@ -2,6 +2,7 @@
  *
  * Usage: owlet-document-cli PATH
  *        owlet-document-cli estimate DURATION_S TEXT
+ *        owlet-document-cli token-start OFFSET TEXT
  *        owlet-document-cli at-offset PATH OFFSET
  *
  * Stdout contract (asserted by tests/unit/test_document_model.py):
@@ -15,15 +16,18 @@
  * tests/unit/test_word_spans.py):
  *     spans: N
  *     [0] START END T0 T1 TOKEN
+ * `token-start` prints the character offset of the word at OFFSET
+ * (same tokenizer as estimate):
+ *     start: N
  * `at-offset` prints the sentence index for a character offset into
  * the reader display buffer (sentences joined by "\n\n"):
  *     status: ok
  *     index: N
- * One argument is always a PATH, so `owlet-document-cli estimate` or
- * `at-offset` alone reads as a file name rather than a truncated
- * subcommand.
+ * One argument is always a PATH, so `owlet-document-cli estimate`,
+ * `token-start`, or `at-offset` alone reads as a file name rather
+ * than a truncated subcommand.
  *
- * Exit codes: 0 ok/empty/estimate/at-offset · 2 usage · 3 not-text
+ * Exit codes: 0 ok/empty/estimate/token-start/at-offset · 2 usage · 3 not-text
  * · 4 unsupported-encoding · 5 io-error.
  */
 
@@ -38,6 +42,11 @@ int print_estimate (double duration_s, string text) {
                        spans[i].t0, spans[i].t1,
                        text.slice (from, to));
     }
+    return 0;
+}
+
+int print_token_start (int offset, string text) {
+    stdout.printf ("start: %d\n", Owlet.WordSpans.token_start_at (text, offset));
     return 0;
 }
 
@@ -71,6 +80,14 @@ int main (string[] args) {
         return print_estimate (double.parse (args[2]), args[3]);
     }
 
+    if (args.length > 2 && args[1] == "token-start") {
+        if (args.length != 4) {
+            stderr.printf ("usage: %s token-start OFFSET TEXT\n", args[0]);
+            return 2;
+        }
+        return print_token_start (int.parse (args[2]), args[3]);
+    }
+
     if (args.length > 2 && args[1] == "at-offset") {
         if (args.length != 4) {
             stderr.printf ("usage: %s at-offset PATH OFFSET\n", args[0]);
@@ -80,8 +97,8 @@ int main (string[] args) {
     }
 
     if (args.length != 2) {
-        stderr.printf ("usage: %s PATH | %s estimate DURATION_S TEXT | %s at-offset PATH OFFSET\n",
-                       args[0], args[0], args[0]);
+        stderr.printf ("usage: %s PATH | %s estimate DURATION_S TEXT | %s token-start OFFSET TEXT | %s at-offset PATH OFFSET\n",
+                       args[0], args[0], args[0], args[0]);
         return 2;
     }
 
