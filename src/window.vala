@@ -46,6 +46,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private GLib.SimpleAction record_action;
     private GLib.SimpleAction stop_action;
     private GLib.SimpleAction dictate_action;
+    private GLib.SimpleAction reader_start_from_here_action;
 
     private Owlet.Recorder recorder;
     private Owlet.TranscriptionSource source;
@@ -77,6 +78,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
     private Gtk.TextTag reader_word_tag;
     private Gtk.TextMark reader_word_mark;
     private bool reader_has_word = false;
+    // Last secondary-click character offset in the reader buffer. -1
+    // means the context menu was not opened from a pointer click
+    // (Shift+F10), so Start from here falls back to selection / word /
+    // insert.
+    private int reader_context_offset = -1;
 
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
@@ -110,6 +116,10 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // action gating (record/stop/dictate) from the visible stack page so
     // recording works while other pages (like the reader page) are visible.
     private bool source_ready = false;
+
+    // map fires on every show, including close-to-tray restore. Prepare
+    // once so a later map cannot reload the model or leave the reader.
+    private bool source_prepare_started = false;
 
     // Cached settings (constructed once; read on every partial/final).
     private GLib.Settings settings;
@@ -223,6 +233,12 @@ public class Owlet.Window : Adw.ApplicationWindow {
 
         reader_text_view.map.connect (on_reader_text_view_mapped);
 
+        var reader_click = new Gtk.GestureClick ();
+        reader_click.set_button (Gdk.BUTTON_SECONDARY);
+        reader_click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
+        reader_click.pressed.connect (on_reader_context_pressed);
+        reader_text_view.add_controller (reader_click);
+
         reader_speed_dropdown.set_selected (
             SpeechPlayer.snap_speed_index (
                 (float) settings.get_double ("reader-playback-speed")));
@@ -254,6 +270,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var reader_stop_action = new GLib.SimpleAction ("reader-stop", null);
         reader_stop_action.activate.connect (on_reader_stop);
         add_action (reader_stop_action);
+
+        reader_start_from_here_action = new GLib.SimpleAction ("reader-start-from-here", null);
+        reader_start_from_here_action.activate.connect (on_reader_start_from_here);
+        add_action (reader_start_from_here_action);
+        reader_start_from_here_action.set_enabled (false);
 
         var reader_dl_action = new GLib.SimpleAction ("reader-download-voice", null);
         reader_dl_action.activate.connect (on_reader_download_voice);
@@ -298,8 +319,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
         // window is mapped (the `realize` signal is shadowed by
         // Gtk.Native's realize() method in the GTK4 VAPI, so we use
         // `map` which fires right after realize when the window
-        // becomes visible).
-        this.map.connect (on_realize);
+        // becomes visible). Guarded so close-to-tray restore does not
+        // re-enter prepare and reset the stack off the reader.
+        this.map.connect (on_map_prepare_source);
 
         // Place the utterance-start mark at the buffer origin; it
         // moves to end-of-buffer on each recording_started.
@@ -313,24 +335,36 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     public override bool close_request () {
-        // Pref off → destroy as today (last window quits the app).
-        // Pref on → hide, keep the Window alive for global shortcuts /
-        // dictation, and show the StatusNotifierItem tray.
-        if (settings.get_boolean ("close-to-tray")) {
+        var app = this.application as Owlet.Application;
+        bool quitting = app != null && app.quitting;
+        // Pref off, or an explicit Quit, destroys the window (last
+        // window quits the app). Pref on + the titlebar close button
+        // hides instead, so global shortcuts / dictation keep a live
+        // Window and the StatusNotifierItem tray can restore it.
+        if (!quitting && settings.get_boolean ("close-to-tray")) {
             this.hide ();
-            var app = this.application as Owlet.Application;
             if (app != null)
                 app.request_hide_to_tray ();
             return true;
         }
+        prepare_for_quit ();
         return base.close_request ();
+    }
+
+    // Stop TTS before destroy so GStreamer/sherpa threads are not
+    // still blocked when Gtk.Application shuts down.
+    public void prepare_for_quit () {
+        player.shutdown ();
     }
 
     /* ----------------------------------------------------------------- */
     /* Source dispatch + prepare                                          */
     /* ----------------------------------------------------------------- */
 
-    private void on_realize () {
+    private void on_map_prepare_source () {
+        if (source_prepare_started)
+            return;
+        source_prepare_started = true;
         prepare_source_async.begin ();
     }
 
@@ -371,15 +405,20 @@ public class Owlet.Window : Adw.ApplicationWindow {
         source.error_occurred.connect (on_source_error);
 
         source_ready = false;
-        stack.visible_child_name = "loading";
+        // A document can be opened (or already showing) while prepare
+        // is in flight. Do not steal the reader page on completion.
+        if (stack.visible_child_name != "reader")
+            stack.visible_child_name = "loading";
         try {
             yield source.prepare ();
             source_ready = true;
-            stack.visible_child_name = "active";
+            if (stack.visible_child_name != "reader")
+                stack.visible_child_name = "active";
         } catch (GLib.Error e) {
             source_ready = false;
             warning ("Source prepare failed: %s", e.message);
-            stack.visible_child_name = "empty";
+            if (stack.visible_child_name != "reader")
+                stack.visible_child_name = "empty";
             toast_overlay.add_toast (new Adw.Toast (
                 _("Prepare failed: %s").printf (e.message)));
         }
@@ -993,7 +1032,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
             reader_doc = doc;
             reader_doc_path = file_path;
             reader_doc_title_label.label = GLib.Path.get_basename (file_path);
-            reader_text_view.buffer.text = string.joinv ("\n\n", doc.sentences);
+            reader_text_view.buffer.text = string.joinv (Owlet.Document.DISPLAY_SEPARATOR, doc.sentences);
             stack.visible_child_name = "reader";
 
             var app = this.application as Owlet.Application;
@@ -1064,6 +1103,50 @@ public class Owlet.Window : Adw.ApplicationWindow {
         player.stop ();
     }
 
+    private void on_reader_context_pressed (int n_press, double x, double y) {
+        int buf_x, buf_y;
+        reader_text_view.window_to_buffer_coords (
+            Gtk.TextWindowType.WIDGET, (int) x, (int) y, out buf_x, out buf_y);
+        Gtk.TextIter iter;
+        reader_text_view.get_iter_at_location (out iter, buf_x, buf_y);
+        reader_context_offset = iter.get_offset ();
+    }
+
+    private void on_reader_start_from_here () {
+        if (reader_doc == null)
+            return;
+
+        int offset = reader_context_offset;
+        reader_context_offset = -1;
+        if (offset < 0)
+            offset = reader_fallback_context_offset ();
+
+        int sentence = reader_doc.sentence_index_at_display_offset (offset);
+        if (sentence < 0)
+            return;
+        // Always play(), never resume(): a jump from pause or mid-play
+        // must discard in-flight audio and begin at the chosen sentence.
+        start_reader_playback (sentence);
+    }
+
+    // Shift+F10 has no click coords. Prefer a selection, then the
+    // highlighted word (so a keyboard menu during playback starts
+    // "here"), then the insert cursor.
+    private int reader_fallback_context_offset () {
+        var buf = reader_text_view.buffer;
+        Gtk.TextIter start, end;
+        if (buf.get_selection_bounds (out start, out end))
+            return start.get_offset ();
+        if (reader_has_word) {
+            Gtk.TextIter iter;
+            buf.get_iter_at_mark (out iter, reader_word_mark);
+            return iter.get_offset ();
+        }
+        Gtk.TextIter insert;
+        buf.get_iter_at_mark (out insert, buf.get_insert ());
+        return insert.get_offset ();
+    }
+
     private void on_reader_download_voice () {
         start_reader_voice_download ();
     }
@@ -1075,7 +1158,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
         on_close_doc_action ();
     }
 
-    private void start_reader_playback () {
+    private void start_reader_playback (int start_index = -1) {
         var app = this.application as Owlet.Application;
         if (app == null || reader_doc == null)
             return;
@@ -1088,8 +1171,9 @@ public class Owlet.Window : Adw.ApplicationWindow {
         clear_word_highlight (true);
         update_reader_transport_ui ();
 
+        int idx = start_index >= 0 ? start_index : player.current_sentence_index;
         player.play (reader_doc, app.voice_models.get_voice_dir (),
-                     player.current_sentence_index,
+                     idx,
                      Owlet.VoiceModels.sid_for_name (settings.get_string ("reader-voice")),
                      (float) settings.get_double ("reader-playback-speed"));
     }
@@ -1224,19 +1308,13 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     // Word events carry sentence-local offsets; the reader shows the
-    // sentences joined by "\n\n" (KTD3). Vala's string.length is a byte
-    // count, so the join prefix is summed in characters to match the
-    // buffer's character offsets. Negative when the event outlives the
-    // document it was measured against.
+    // sentences joined by Document.DISPLAY_SEPARATOR (KTD3). Prefixes
+    // are summed in characters to match the buffer's character offsets.
+    // Negative when the event outlives the document it was measured against.
     private int reader_join_prefix (int sentence_index) {
-        if (reader_doc == null || sentence_index < 0
-            || sentence_index >= reader_doc.sentences.length)
+        if (reader_doc == null)
             return -1;
-
-        int prefix = 0;
-        for (int i = 0; i < sentence_index; i++)
-            prefix += (int) reader_doc.sentences[i].char_count () + 2;
-        return prefix;
+        return reader_doc.display_prefix_chars (sentence_index);
     }
 
     // Repaints the tag and moves the mark onto [start, end). False when the
@@ -1321,7 +1399,10 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     private void update_reader_transport_ui () {
-        if (!reader_on_content_page ()) {
+        bool on_content = reader_on_content_page ();
+        if (reader_start_from_here_action != null)
+            reader_start_from_here_action.set_enabled (on_content);
+        if (!on_content) {
             reader_play_btn.visible = true;
             reader_play_btn.sensitive = false;
             reader_pause_btn.visible = false;
@@ -1339,7 +1420,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     public override void dispose () {
-        player.dispose ();
+        player.shutdown ();
         if (test_close_timeout_id != 0) {
             GLib.Source.remove (test_close_timeout_id);
             test_close_timeout_id = 0;

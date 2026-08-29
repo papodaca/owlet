@@ -263,6 +263,13 @@ Must include:
   - Close-to-tray then Show: current word highlighted and visible.
   - Switch Appearance dark/light, high contrast, and accent (if available)
     while paused and while playing; the current word stays readable.
+- **Start from here**: right-click in the reader body for a context item
+  that jumps playback to the sentence under the pointer (not the exact word).
+  - Stopped: right-click a later paragraph, Start from here; audio and
+    highlight begin on that sentence.
+  - Playing: same jump; previous audio stops immediately.
+  - Paused: does not resume from the pause point; starts the clicked
+    sentence.
 
 ## What is NOT tested
 

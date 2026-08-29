@@ -23,6 +23,9 @@ public class Owlet.Application : Adw.Application {
     private Owlet.GlobalShortcuts? _shortcuts = null;
     private Owlet.Tray? _tray = null;
     private Owlet.MprisService? _mpris = null;
+    // close_request hides when close-to-tray is on. Quit must destroy
+    // those windows anyway, or the Gtk.Application hold never drops.
+    public bool quitting { get; private set; default = false; }
     // Path to the pidfile written for the owlet-signal fallback helper.
     // Null when no pidfile was written (XDG_RUNTIME_DIR unwritable, or
     // the process is a transient forwarding instance). Cleared in
@@ -42,7 +45,7 @@ public class Owlet.Application : Adw.Application {
             { "about", this.on_about_action },
             { "preferences", this.on_preferences_action },
             { "shortcuts", this.on_shortcuts_action },
-            { "quit", this.quit }
+            { "quit", this.on_quit_action }
         };
         this.add_action_entries (action_entries, this);
 
@@ -169,7 +172,7 @@ public class Owlet.Application : Adw.Application {
         _tray = new Owlet.Tray ();
         _tray.show_requested.connect (on_tray_show);
         _tray.dictate_requested.connect (on_tray_dictate);
-        _tray.quit_requested.connect (() => { this.quit (); });
+        _tray.quit_requested.connect (on_quit_action);
 
         // MPRIS is constructed once; the well-known name is owned only
         // while a readable document is on the content page.
@@ -245,8 +248,22 @@ public class Owlet.Application : Adw.Application {
             _tray.set_recording (active);
     }
 
+    private void on_quit_action () {
+        if (quitting)
+            return;
+        quitting = true;
+        Gtk.Window[] windows = {};
+        foreach (var w in this.get_windows ())
+            windows += w;
+        foreach (var w in windows) {
+            (w as Owlet.Window)?.prepare_for_quit ();
+            w.destroy ();
+        }
+        this.quit ();
+    }
+
     private void on_tray_show () {
-        var win = this.active_window;
+        var win = reader_window ();
         if (win != null)
             win.present ();
         if (_tray != null)
@@ -295,7 +312,7 @@ public class Owlet.Application : Adw.Application {
     private void on_close_to_tray_changed () {
         if (settings.get_boolean ("close-to-tray"))
             return;
-        var win = this.active_window;
+        var win = reader_window ();
         if (win != null && !win.visible)
             win.present ();
         if (_tray != null)
@@ -333,7 +350,7 @@ public class Owlet.Application : Adw.Application {
 
     public override void activate () {
         base.activate ();
-        var win = this.active_window;
+        var win = reader_window ();
         if (win != null) {
             // Re-launch / D-Bus activate while tray-hidden: restore and
             // tear down the tray icon.

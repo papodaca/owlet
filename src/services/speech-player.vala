@@ -144,6 +144,7 @@ public class Owlet.SpeechPlayer : GLib.Object {
     private int _listen_generation = 0;
     private int _last_word_sentence = -1;
     private int _last_word_index = -1;
+    private bool _shut_down = false;
 
     private static bool _gst_inited = false;
 
@@ -651,11 +652,29 @@ public class Owlet.SpeechPlayer : GLib.Object {
         return null;
     }
 
-    public override void dispose () {
-        stop_internal (false);
+    // Join the synth worker and drop the pipeline. Idempotent so Quit
+    // can run this before gtk_window_destroy, which also disposes us.
+    // Unblock appsrc before joining so a paused/playing push_buffer
+    // wait cannot deadlock set_state(NULL).
+    public void shutdown () {
+        if (_shut_down)
+            return;
+        _shut_down = true;
+        reset_word_clock ();
+        _cancel_worker = true;
+        if (_appsrc != null)
+            _appsrc.set_property ("block", false);
+        if (_pipeline != null)
+            _pipeline.send_event (new Event.flush_start ());
         stop_worker ();
         teardown_pipeline ();
         invalidate_engine ();
+        _current_doc = null;
+        state = PlayerState.STOPPED;
+    }
+
+    public override void dispose () {
+        shutdown ();
         base.dispose ();
     }
 }

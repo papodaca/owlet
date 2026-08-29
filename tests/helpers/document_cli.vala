@@ -2,6 +2,7 @@
  *
  * Usage: owlet-document-cli PATH
  *        owlet-document-cli estimate DURATION_S TEXT
+ *        owlet-document-cli at-offset PATH OFFSET
  *
  * Stdout contract (asserted by tests/unit/test_document_model.py):
  *     status: ok|empty|not-text|unsupported-encoding|io-error
@@ -14,10 +15,15 @@
  * tests/unit/test_word_spans.py):
  *     spans: N
  *     [0] START END T0 T1 TOKEN
- * One argument is always a PATH, so `owlet-document-cli estimate` alone
- * reads as a file name rather than a truncated estimate invocation.
+ * `at-offset` prints the sentence index for a character offset into
+ * the reader display buffer (sentences joined by "\n\n"):
+ *     status: ok
+ *     index: N
+ * One argument is always a PATH, so `owlet-document-cli estimate` or
+ * `at-offset` alone reads as a file name rather than a truncated
+ * subcommand.
  *
- * Exit codes: 0 ok/empty/estimate · 2 usage · 3 not-text
+ * Exit codes: 0 ok/empty/estimate/at-offset · 2 usage · 3 not-text
  * · 4 unsupported-encoding · 5 io-error.
  */
 
@@ -35,6 +41,27 @@ int print_estimate (double duration_s, string text) {
     return 0;
 }
 
+int print_at_offset (string path, int offset) {
+    var doc = Owlet.Document.load (path);
+    stdout.printf ("status: %s\n", doc.status.token ());
+    stdout.printf ("index: %d\n", doc.sentence_index_at_display_offset (offset));
+    if (doc.error_message != "")
+        stderr.printf ("%s\n", doc.error_message);
+    switch (doc.status) {
+    case Owlet.DocumentStatus.OK:
+    case Owlet.DocumentStatus.EMPTY:
+        return 0;
+    case Owlet.DocumentStatus.NOT_TEXT:
+        return 3;
+    case Owlet.DocumentStatus.UNSUPPORTED_ENCODING:
+        return 4;
+    case Owlet.DocumentStatus.IO_ERROR:
+        return 5;
+    default:
+        return 1;
+    }
+}
+
 int main (string[] args) {
     if (args.length > 2 && args[1] == "estimate") {
         if (args.length != 4) {
@@ -44,9 +71,17 @@ int main (string[] args) {
         return print_estimate (double.parse (args[2]), args[3]);
     }
 
+    if (args.length > 2 && args[1] == "at-offset") {
+        if (args.length != 4) {
+            stderr.printf ("usage: %s at-offset PATH OFFSET\n", args[0]);
+            return 2;
+        }
+        return print_at_offset (args[2], int.parse (args[3]));
+    }
+
     if (args.length != 2) {
-        stderr.printf ("usage: %s PATH | %s estimate DURATION_S TEXT\n",
-                       args[0], args[0]);
+        stderr.printf ("usage: %s PATH | %s estimate DURATION_S TEXT | %s at-offset PATH OFFSET\n",
+                       args[0], args[0], args[0]);
         return 2;
     }
 

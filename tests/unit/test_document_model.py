@@ -250,3 +250,70 @@ def test_multimegabyte_file_loads(document_cli, tmp_path):
     rc, status, sentences, _ = load_document(document_cli, path)
     assert (rc, status) == (0, "ok")
     assert sentences == [sentence.strip()] * repeats
+
+
+def _at_offset(document_cli: Path, path: Path, offset: int):
+    result = subprocess.run(
+        [str(document_cli), "at-offset", str(path), str(offset)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    lines = result.stdout.splitlines()
+    assert len(lines) >= 2, result.stdout
+    assert lines[0].startswith("status: "), lines[0]
+    assert lines[1].startswith("index: "), lines[1]
+    return result.returncode, lines[0][len("status: ") :], int(lines[1][len("index: ") :])
+
+
+def test_at_offset_maps_display_buffer(document_cli):
+    """Start from here: character offsets into the joined reader buffer.
+
+    The reader shows sentences joined by "\\n\\n". A click inside a sentence
+    starts that sentence; a click in the separator starts the next one.
+    """
+    path = FIXTURES / "utf8.txt"
+    rc, status, sentences, _ = load_document(document_cli, path)
+    assert (rc, status) == (0, "ok")
+    sep = "\n\n"
+    display = sep.join(sentences)
+
+    rc, st, index = _at_offset(document_cli, path, 0)
+    assert (rc, st, index) == (0, "ok", 0)
+
+    start1 = len(sentences[0]) + len(sep)
+    rc, st, index = _at_offset(document_cli, path, start1)
+    assert (rc, st, index) == (0, "ok", 1)
+
+    # Click on the first character of the "\\n\\n" after sentence 0.
+    rc, st, index = _at_offset(document_cli, path, len(sentences[0]))
+    assert (rc, st, index) == (0, "ok", 1)
+
+    yes_i = sentences.index("Yes…")
+    yes_start = sum(len(s) + len(sep) for s in sentences[:yes_i])
+    rc, st, index = _at_offset(document_cli, path, yes_start)
+    assert (rc, st, index) == (0, "ok", yes_i)
+    # Ellipsis is one character; still inside the same sentence.
+    rc, st, index = _at_offset(document_cli, path, yes_start + len("Yes…") - 1)
+    assert (rc, st, index) == (0, "ok", yes_i)
+
+    rc, st, index = _at_offset(document_cli, path, len(display) + 10)
+    assert (rc, st, index) == (0, "ok", len(sentences) - 1)
+
+
+def test_at_offset_empty_is_minus_one(document_cli):
+    rc, st, index = _at_offset(document_cli, FIXTURES / "empty.txt", 0)
+    assert (rc, st, index) == (0, "empty", -1)
+
+
+def test_at_offset_without_offset_is_usage(document_cli):
+    result = subprocess.run(
+        [str(document_cli), "at-offset", str(FIXTURES / "utf8.txt")],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "usage:" in result.stderr

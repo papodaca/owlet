@@ -67,6 +67,45 @@ public class Owlet.Document : GLib.Object {
     public string error_message { get; private set; default = ""; }
     public string[] sentences { get; private set; default = {}; }
 
+    /* The reader joins sentences with this separator. Offset mapping
+     * (Start from here, word highlight) counts characters, not bytes. */
+    public const string DISPLAY_SEPARATOR = "\n\n";
+
+    public int display_prefix_chars (int sentence_index) {
+        if (sentence_index < 0 || sentence_index >= sentences.length)
+            return -1;
+
+        int sep = (int) DISPLAY_SEPARATOR.char_count ();
+        int prefix = 0;
+        for (int i = 0; i < sentence_index; i++)
+            prefix += (int) sentences[i].char_count () + sep;
+        return prefix;
+    }
+
+    /* Inverse of display_prefix_chars: which sentence contains this
+     * character offset in the joined display buffer. A click in the
+     * separator maps to the following sentence. Empty documents return -1. */
+    public int sentence_index_at_display_offset (int char_offset) {
+        if (sentences.length == 0)
+            return -1;
+        if (char_offset < 0)
+            char_offset = 0;
+
+        int sep = (int) DISPLAY_SEPARATOR.char_count ();
+        int cursor = 0;
+        for (int i = 0; i < sentences.length; i++) {
+            int sent_end = cursor + (int) sentences[i].char_count ();
+            bool last = (i == sentences.length - 1);
+            int gap_end = sent_end + (last ? 0 : sep);
+            if (char_offset < sent_end)
+                return i;
+            if (!last && char_offset < gap_end)
+                return i + 1;
+            cursor = gap_end;
+        }
+        return sentences.length - 1;
+    }
+
     public static Document load (string path) {
         var doc = new Document ();
         var file = File.new_for_path (path);
