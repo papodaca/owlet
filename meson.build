@@ -1,5 +1,5 @@
 project('owlet', ['c', 'vala'],
-          version: '0.1.0',
+          version: '0.5.0',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=2', 'werror=false', ],
 )
@@ -14,11 +14,33 @@ gnome = import('gnome')
 valac = meson.get_compiler('vala')
 cc    = meson.get_compiler('c')
 
+# About / Config.PACKAGE_VERSION. Same rule as packaging/: an exact
+# vX.Y.Z tag on HEAD wins; otherwise the project() version above.
+# project() must stay a literal (it is meson's first statement), so
+# this lookup runs afterward. Reconfigure after tagging.
+package_version = meson.project_version()
+git_prog = find_program('git', required: false)
+if git_prog.found()
+  git_describe = run_command(
+    git_prog, '-C', meson.project_source_root(),
+    'describe', '--tags', '--exact-match', 'HEAD',
+    check: false,
+  )
+  if git_describe.returncode() == 0
+    tag = git_describe.stdout().strip()
+    if tag.startswith('v')
+      package_version = tag.substring(1)
+    elif tag != ''
+      package_version = tag
+    endif
+  endif
+endif
+message('Owlet version: ' + package_version)
 
 srcdir = meson.project_source_root() / 'src'
 
 config_h = configuration_data()
-config_h.set_quoted('PACKAGE_VERSION', meson.project_version ())
+config_h.set_quoted('PACKAGE_VERSION', package_version)
 config_h.set_quoted('GETTEXT_PACKAGE', 'owlet')
 config_h.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
 # GPU_BACKEND is filled in below, after the auto-detect block has

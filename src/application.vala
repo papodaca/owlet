@@ -370,7 +370,7 @@ public class Owlet.Application : Adw.Application {
             application_icon = "im.apodaca.owlet",
             developer_name = "Ethan",
             translator_credits = _("translator-credits"),
-            version = "0.1.0",
+            version = Config.PACKAGE_VERSION,
             developers = developers,
             copyright = "© 2026 Ethan",
         };
