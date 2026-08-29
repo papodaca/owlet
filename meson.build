@@ -171,7 +171,7 @@ if gpu_backend == 'hip'
   endif
   cmake_amd_targets = '\'' + amd_targets + '\''
   cmake_args += [
-    '-DGGML_HIP=ON',
+    '-DTRANSCRIBE_HIP=ON',
     '-DAMDGPU_TARGETS=' + cmake_amd_targets,
     '-DCMAKE_HIP_ARCHITECTURES=' + cmake_amd_targets,
     # HIP language flags are separate from CXXFLAGS; force -fPIC so

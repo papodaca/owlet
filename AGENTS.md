@@ -174,5 +174,5 @@ Still open (see `docs/plans/`):
 Only when changing `subprojects/transcribe.cpp` itself: read that
 tree's `AGENTS.md` (`uv run` for Python, pinned clang-format script,
 C ABI exception discipline). For normal Owlet work, treat the submodule
-as a pinned dependency (currently `v0.1.2`) and edit the Vala/VAPI
+as a pinned dependency (currently `v0.2.2`) and edit the Vala/VAPI
 side instead.

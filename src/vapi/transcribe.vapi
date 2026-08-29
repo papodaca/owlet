@@ -1,12 +1,12 @@
 /* transcribe.vapi
  *
  * Hand-written Vala binding for the public C API of transcribe.cpp
- * (subprojects/transcribe.cpp, v0.1.2). Bindings cover the subset Owlet
+ * (subprojects/transcribe.cpp, v0.2.2). Bindings cover the subset Owlet
  * needs through Phase 2-4: status, version, logging, model load/free,
  * session init/free, run, single-result accessors, per-row segment /
  * word / token copy-out, capabilities, and the feature probe.
  *
- * Streaming, batch run, family extensions, the backend-device struct,
+ * Streaming, batch run, family extensions, device enumeration,
  * timings, and the convenience one-shot opener are intentionally NOT
  * bound here; they will be added when the phase that needs them lands.
  *
@@ -121,6 +121,13 @@ namespace Transcribe {
         ON = 2,
     }
 
+    [CCode (cname = "transcribe_diarize_mode", cprefix = "TRANSCRIBE_DIARIZE_MODE_", has_type_id = false)]
+    public enum DiarizeMode {
+        DEFAULT = 0,
+        OFF = 1,
+        ON = 2,
+    }
+
     [CCode (cname = "transcribe_backend_request", cprefix = "TRANSCRIBE_BACKEND_", has_type_id = false)]
     public enum BackendRequest {
         AUTO = 0,
@@ -129,6 +136,7 @@ namespace Transcribe {
         VULKAN = 3,
         CPU_ACCEL = 4,
         CUDA = 5,
+        ROCM = 6,
     }
 
     [CCode (cname = "transcribe_feature", cprefix = "TRANSCRIBE_FEATURE_", has_type_id = false)]
@@ -149,7 +157,7 @@ namespace Transcribe {
     public struct ModelLoadParams {
         public size_t struct_size;
         public BackendRequest backend;
-        public int gpu_device;
+        public void * device; /* NULL = automatic selection */
 
         [CCode (cname = "transcribe_model_load_params_init")]
         public ModelLoadParams ();
@@ -173,6 +181,7 @@ namespace Transcribe {
         public TimestampKind          timestamps;
         public PncMode                 pnc;
         public ItnMode                 itn;
+        public DiarizeMode             diarize;
         public unowned string?        language;
         public unowned string?        target_language;
         public bool                    keep_special_tags;
@@ -222,6 +231,7 @@ namespace Transcribe {
         public int      first_token;
         public int      n_tokens;
         public unowned string text;
+        public int32    speaker_id;
 
         [CCode (cname = "transcribe_segment_init")]
         public Segment ();
@@ -362,8 +372,8 @@ namespace Transcribe {
     [CCode (cname = "transcribe_init_backends_default")]
     public Status init_backends_default ();
 
-    [CCode (cname = "transcribe_backend_device_count")]
-    public int backend_device_count ();
+    [CCode (cname = "transcribe_device_count")]
+    public int device_count ();
 
     [CCode (cname = "transcribe_backend_available")]
     public bool backend_available (BackendRequest kind);
