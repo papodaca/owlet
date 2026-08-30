@@ -310,6 +310,12 @@ sherpa_cmake_args = [
   '-DCMAKE_BUILD_TYPE=Release',
   '-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON',
   '-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0',
+  # GCC 16 treats -Werror=format-security without -Wformat as an error.
+  # sherpa-onnx 1.13.6 adds -Wno-format to espeak-ng after Arch/Debian
+  # CFLAGS inject both flags, so the later -Wno-format leaves
+  # format-security as a hard error. Setting CMAKE_C_FLAGS drops the
+  # env -Werror=format-security; Release still supplies -O3.
+  '-DCMAKE_C_FLAGS=-Wno-error=format-security',
   '-DBUILD_SHARED_LIBS=OFF',
   '-DSHERPA_ONNX_ENABLE_PYTHON=OFF',
   '-DSHERPA_ONNX_ENABLE_TESTS=OFF',

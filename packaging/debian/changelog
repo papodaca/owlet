@@ -1,3 +1,9 @@
+owlet (0.5.0-1) UNRELEASED; urgency=medium
+
+   * Add vtt feature
+
+ -- Ethan Apodaca <papodaca@gmail.com>  Sat, 29 Aug 2026 23:50:39 +0000
+
 owlet (0.1.0+git33.ec81dc6-1) UNRELEASED; urgency=medium
 
   * Initial Debian packaging (CPU / Vulkan / HIP split packages).

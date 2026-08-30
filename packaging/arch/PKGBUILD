@@ -10,7 +10,7 @@ case "${_build_backend}" in
     return 1
     ;;
 esac
-pkgver=0.1.0
+pkgver=0.5.0
 pkgrel=1
 pkgdesc='Speech-to-text GNOME app using local transcribe.cpp (GTK4/libadwaita)'
 url='https://github.com/papodaca/owlet'
