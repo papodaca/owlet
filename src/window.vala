@@ -23,6 +23,7 @@ public class Owlet.Window : Adw.ApplicationWindow {
     [GtkChild] private unowned Gtk.Stack stack;
     [GtkChild] private unowned Gtk.TextView transcript_view;
     [GtkChild] private unowned Adw.ToastOverlay toast_overlay;
+    [GtkChild] private unowned Gtk.Button open_doc_btn;
     [GtkChild] private unowned Gtk.ToggleButton dictate_btn;
     [GtkChild] private unowned Adw.Banner recording_banner;
 
@@ -83,6 +84,11 @@ public class Owlet.Window : Adw.ApplicationWindow {
     // (Shift+F10), so Start from here falls back to selection / word /
     // insert.
     private int reader_context_offset = -1;
+
+    // GtkButton still emits clicked after we claim a competing
+    // GestureClick, so Alt is snapshotted on press and the click
+    // handler chooses clipboard vs file dialog.
+    private bool open_doc_alt_click = false;
 
     // Mark at the start of the current recording's text region.
     // left_gravity=true keeps the mark before text inserted at it,
@@ -197,6 +203,22 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var open_doc_action = new GLib.SimpleAction ("open-doc", null);
         open_doc_action.activate.connect (on_open_doc_action);
         add_action (open_doc_action);
+
+        var read_clipboard_action = new GLib.SimpleAction ("read-clipboard", null);
+        read_clipboard_action.activate.connect (() => {
+            read_clipboard_aloud.begin ();
+        });
+        add_action (read_clipboard_action);
+
+        open_doc_btn.clicked.connect (on_open_doc_btn_clicked);
+        var open_click = new Gtk.GestureClick ();
+        open_click.set_button (Gdk.BUTTON_PRIMARY);
+        open_click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
+        open_click.pressed.connect ((n_press, x, y) => {
+            Gdk.ModifierType mods = open_click.get_current_event_state ();
+            open_doc_alt_click = (mods & Gdk.ModifierType.ALT_MASK) != 0;
+        });
+        open_doc_btn.add_controller (open_click);
 
         var close_doc_action = new GLib.SimpleAction ("close-doc", null);
         close_doc_action.activate.connect (on_close_doc_action);
@@ -518,10 +540,8 @@ public class Owlet.Window : Adw.ApplicationWindow {
         var app = this.application as Owlet.Application;
         if (app == null)
             return;
-        string title = "";
-        if (reader_doc_path != null)
-            title = GLib.Path.get_basename (reader_doc_path);
-        app.sync_reader_mpris (reader_on_content_page (), title, player.state);
+        app.sync_reader_mpris (reader_on_content_page (),
+                              reader_doc_title_label.label, player.state);
     }
 
     // Refuse the global "insert" shortcut while dictation is streaming
@@ -983,6 +1003,43 @@ public class Owlet.Window : Adw.ApplicationWindow {
         open_doc_dialog_async.begin ();
     }
 
+    private void on_open_doc_btn_clicked () {
+        bool alt = open_doc_alt_click;
+        open_doc_alt_click = false;
+        if (alt)
+            read_clipboard_aloud.begin ();
+        else
+            on_open_doc_action ();
+    }
+
+    private async void read_clipboard_aloud () {
+        var display = Gdk.Display.get_default ();
+        if (display == null)
+            return;
+        string? text = null;
+        try {
+            text = yield display.get_clipboard ().read_text_async (null);
+        } catch (GLib.Error e) {
+            toast_overlay.add_toast (new Adw.Toast (_("No text on the clipboard")));
+            return;
+        }
+        if (text == null || text.strip () == "") {
+            toast_overlay.add_toast (new Adw.Toast (_("No text on the clipboard")));
+            return;
+        }
+        open_document_text (text);
+    }
+
+    public void open_document_text (string text) {
+        var doc = Owlet.Document.from_validated_text (text);
+        if (doc.status != Owlet.DocumentStatus.OK) {
+            toast_overlay.add_toast (new Adw.Toast (_("No text on the clipboard")));
+            return;
+        }
+        begin_reader_document_replace ();
+        present_ok_document (doc, _("Clipboard"), null);
+    }
+
     private async void open_doc_dialog_async () {
         var dialog = new Gtk.FileDialog ();
         dialog.title = _("Open Text or Markdown Document");
@@ -1017,34 +1074,12 @@ public class Owlet.Window : Adw.ApplicationWindow {
     }
 
     public void open_document_file (string file_path) {
-        player.stop ();
-        // Offsets are measured against the outgoing document, so they must
-        // not outlive it even when nothing was playing to emit a stop (R4).
-        clear_word_highlight (true);
-        if (reader_cancellable != null && reader_download_initiated) {
-            reader_cancellable.cancel ();
-        }
-        disconnect_reader_vm_signals ();
+        begin_reader_document_replace ();
 
         var doc = Owlet.Document.load (file_path);
         switch (doc.status) {
         case Owlet.DocumentStatus.OK:
-            reader_doc = doc;
-            reader_doc_path = file_path;
-            reader_doc_title_label.label = GLib.Path.get_basename (file_path);
-            reader_text_view.buffer.text = string.joinv (Owlet.Document.DISPLAY_SEPARATOR, doc.sentences);
-            stack.visible_child_name = "reader";
-
-            var app = this.application as Owlet.Application;
-            var voice_status = (app != null) ? app.voice_models.get_status () : Owlet.VoiceStatus.NOT_INSTALLED;
-
-            if (voice_status == Owlet.VoiceStatus.INSTALLED) {
-                reader_content_stack.visible_child_name = "content";
-                update_reader_transport_ui ();
-                start_reader_playback ();
-            } else {
-                start_reader_voice_download ();
-            }
+            present_ok_document (doc, GLib.Path.get_basename (file_path), file_path);
             break;
 
         case Owlet.DocumentStatus.EMPTY:
@@ -1064,6 +1099,36 @@ public class Owlet.Window : Adw.ApplicationWindow {
         default:
             toast_overlay.add_toast (new Adw.Toast (doc.error_message));
             break;
+        }
+    }
+
+    private void begin_reader_document_replace () {
+        player.stop ();
+        // Offsets are measured against the outgoing document, so they must
+        // not outlive it even when nothing was playing to emit a stop (R4).
+        clear_word_highlight (true);
+        if (reader_cancellable != null && reader_download_initiated) {
+            reader_cancellable.cancel ();
+        }
+        disconnect_reader_vm_signals ();
+    }
+
+    private void present_ok_document (Owlet.Document doc, string title, string? file_path) {
+        reader_doc = doc;
+        reader_doc_path = file_path;
+        reader_doc_title_label.label = title;
+        reader_text_view.buffer.text = string.joinv (Owlet.Document.DISPLAY_SEPARATOR, doc.sentences);
+        stack.visible_child_name = "reader";
+
+        var app = this.application as Owlet.Application;
+        var voice_status = (app != null) ? app.voice_models.get_status () : Owlet.VoiceStatus.NOT_INSTALLED;
+
+        if (voice_status == Owlet.VoiceStatus.INSTALLED) {
+            reader_content_stack.visible_child_name = "content";
+            update_reader_transport_ui ();
+            start_reader_playback ();
+        } else {
+            start_reader_voice_download ();
         }
     }
 

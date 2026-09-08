@@ -1172,7 +1172,7 @@ msgid "Read Aloud"
 msgstr ""
 
 #: src/window.ui:19
-msgid "Read a document aloud (Ctrl+O)"
+msgid "Read a document aloud (Ctrl+O). Alt+click reads the clipboard"
 msgstr ""
 
 #: src/window.ui:26
@@ -1338,6 +1338,14 @@ msgstr ""
 #: src/window.vala:782
 #, c-format
 msgid "Source error: %s"
+msgstr ""
+
+#: src/window.vala:1011 src/window.vala:1015 src/window.vala:1024
+msgid "No text on the clipboard"
+msgstr ""
+
+#: src/window.vala:1028
+msgid "Clipboard"
 msgstr ""
 
 #: src/window.vala:868

@@ -16,8 +16,7 @@
               <object class="GtkButton" id="open_doc_btn">
                 <property name="icon-name">document-open-symbolic</property>
                 <property name="label" translatable="yes">Read Aloud</property>
-                <property name="tooltip-text" translatable="yes">Read a document aloud (Ctrl+O)</property>
-                <property name="action-name">win.open-doc</property>
+                <property name="tooltip-text" translatable="yes">Read a document aloud (Ctrl+O). Alt+click reads the clipboard</property>
               </object>
             </child>
             <child type="start">
