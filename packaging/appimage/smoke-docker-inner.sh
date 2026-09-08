@@ -68,6 +68,7 @@ cd "${ROOT}/packaging/appimage"
 sudo -u builder env \
   PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
   OWLET_BACKEND="${BACKEND}" \
+  CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-}" \
   APPIMAGE_EXTRACT_AND_RUN=1 \
   HOME=/home/builder \
   ./build.sh

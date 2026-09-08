@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  pull_request:
   push:
     tags:
       - 'v*'
@@ -37,9 +38,11 @@ jobs:
       - name: Build package
         env:
           BACKEND: ${{ matrix.backend }}
+          CMAKE_BUILD_PARALLEL_LEVEL: ${{ matrix.backend == 'hip' && '1' || '2' }}
         run: |
           docker run --rm \
             -e BACKEND \
+            -e CMAKE_BUILD_PARALLEL_LEVEL \
             -v "$PWD":/workspace \
             -w /workspace \
             archlinux:latest \
@@ -80,9 +83,11 @@ jobs:
       - name: Build package
         env:
           BACKEND: ${{ matrix.backend }}
+          CMAKE_BUILD_PARALLEL_LEVEL: ${{ matrix.backend == 'hip' && '1' || '2' }}
         run: |
           docker run --rm \
             -e BACKEND \
+            -e CMAKE_BUILD_PARALLEL_LEVEL \
             -v "$PWD":/workspace \
             -w /workspace \
             ubuntu:26.04 \
@@ -111,9 +116,11 @@ jobs:
       - name: Build AppImage
         env:
           BACKEND: ${{ matrix.backend }}
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
         run: |
           docker run --rm \
             -e BACKEND \
+            -e CMAKE_BUILD_PARALLEL_LEVEL \
             -e OWLET_DOCKER_ROOT=/workspace \
             -v "$PWD":/workspace \
             -w /workspace \
@@ -129,6 +136,7 @@ jobs:
 
   publish:
     name: Publish GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: [arch, debian, appimage]
     runs-on: ubuntu-latest
     steps:

@@ -71,5 +71,6 @@ cd /workspace/packaging/debian
 sudo -u builder env \
   PATH="/opt/rocm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
   OWLET_BACKEND="${BACKEND}" \
+  CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-}" \
   HOME=/home/builder \
   ./build.sh

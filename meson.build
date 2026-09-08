@@ -244,13 +244,35 @@ endif
 # transcribe_dep builds the archives first. `cmake --build --target
 # transcribe` is itself incremental, so re-running ninja is cheap when
 # nothing changed.
+#
+# cmake --parallel with no count uses nproc. On GitHub's 4-core / 16 GiB
+# runners that OOMs (exit 137) while compiling sherpa-onnx-core at -O3;
+# docker-in-docker for release.yml is tighter still. CMAKE_BUILD_PARALLEL_LEVEL
+# wins when set (CI sets 2). Otherwise cap by MemAvailable at ~4 GiB per
+# compiler so a local machine still uses the cores it can feed.
+sidecar_pick_jobs = '''
+ncpu=$(nproc)
+mem_kb=$(awk '/MemAvailable:/ {print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)
+if [ -n "${CMAKE_BUILD_PARALLEL_LEVEL:-}" ]; then
+  jobs=$CMAKE_BUILD_PARALLEL_LEVEL
+else
+  if [ "$mem_kb" -gt 0 ]; then
+    jobs=$((mem_kb / 4194304))
+  else
+    jobs=$ncpu
+  fi
+  [ "$jobs" -lt 1 ] && jobs=1
+  [ "$jobs" -gt "$ncpu" ] && jobs=$ncpu
+fi
+echo "sidecar cmake --parallel $jobs (nproc=$ncpu MemAvailable_kB=${mem_kb:-unknown} CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:-unset})"
+'''
 configure_cmd = ' '.join(['cmake'] + cmake_args)
-build_cmd     = ' '.join(['cmake', '--build', transcribe_builddir, '--target', 'transcribe', '--parallel'])
+build_cmd     = 'cmake --build ' + transcribe_builddir + ' --target transcribe --parallel "$jobs"'
 touch_cmd     = ' '.join(['cmake', '-E', 'touch', '@OUTPUT@'])
 # path_prefix is empty for non-HIP backends; HIP prepends /opt/rocm/bin
 # (or wherever hipcc was found) to PATH so cmake's enable_language(HIP)
 # can locate hipcc + clang without polluting the user's session.
-sidecar_script = path_prefix + configure_cmd + ' && ' + build_cmd + ' && ' + touch_cmd
+sidecar_script = sidecar_pick_jobs + path_prefix + configure_cmd + ' && ' + build_cmd + ' && ' + touch_cmd
 
 transcribe_build = custom_target(
   'transcribe-build',
@@ -332,9 +354,9 @@ sherpa_cmake_args = [
 ]
 
 sherpa_configure_cmd = ' '.join(['cmake'] + sherpa_cmake_args)
-sherpa_build_cmd     = ' '.join(['cmake', '--build', sherpa_builddir, '--target', 'sherpa-onnx-c-api', '--parallel'])
+sherpa_build_cmd     = 'cmake --build ' + sherpa_builddir + ' --target sherpa-onnx-c-api --parallel "$jobs"'
 sherpa_touch_cmd     = ' '.join(['cmake', '-E', 'touch', '@OUTPUT@'])
-sherpa_sidecar_script = sherpa_configure_cmd + ' && ' + sherpa_build_cmd + ' && ' + sherpa_touch_cmd
+sherpa_sidecar_script = sidecar_pick_jobs + sherpa_configure_cmd + ' && ' + sherpa_build_cmd + ' && ' + sherpa_touch_cmd
 
 sherpa_build = custom_target(
   'sherpa-build',

@@ -17,6 +17,7 @@ esac
 
 docker run --rm \
   -e "BACKEND=${BACKEND}" \
+  -e CMAKE_BUILD_PARALLEL_LEVEL \
   -v "${REPO_ROOT}:/workspace" \
   -w /workspace \
   archlinux:latest \

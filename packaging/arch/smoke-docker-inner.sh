@@ -18,4 +18,7 @@ trap 'chown -R "$host_uid:$host_gid" /workspace' EXIT
 chown -R builder:builder /workspace
 
 cd /workspace/packaging/arch
-sudo -u builder env OWLET_BACKEND="${BACKEND}" makepkg -s --noconfirm
+sudo -u builder env \
+  OWLET_BACKEND="${BACKEND}" \
+  CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-}" \
+  makepkg -s --noconfirm

@@ -22,6 +22,7 @@ esac
 docker_args=(
   --rm
   -e "BACKEND=${BACKEND}"
+  -e CMAKE_BUILD_PARALLEL_LEVEL
 )
 
 if [[ -f ${REPO_ROOT}/.git ]]; then
